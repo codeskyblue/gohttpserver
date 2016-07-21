@@ -8,6 +8,23 @@
 			"Rev": "7ff89c75808766205bfa4411abb436c98c33eb5e"
 		},
 		{
+			"ImportPath": "github.com/alecthomas/kingpin",
+			"Comment": "v2.1.3",
+			"Rev": "aef28d186e59d39ed537473dfce4472108ea1045"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/template",
+			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/template/parse",
+			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
+		},
+		{
+			"ImportPath": "github.com/alecthomas/units",
+			"Rev": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
+		},
+		{
 			"ImportPath": "github.com/davecgh/go-spew/spew",
 			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		},
