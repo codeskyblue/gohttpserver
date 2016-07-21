@@ -1,0 +1,16 @@
+language: go
+sudo: false
+
+go:
+    - 1.6
+    - tip
+
+before_install:
+  - go get github.com/mattn/goveralls
+  - go get golang.org/x/tools/cmd/cover
+
+script:
+  - go get -v -t ./...
+  - go test -coverprofile profile.cov .
+  - go test ./example
+  - ${GOPATH}/bin/goveralls -coverprofile profile.cov -service=travis-ci
