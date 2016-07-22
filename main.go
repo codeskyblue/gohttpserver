@@ -1,8 +1,11 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/alecthomas/kingpin"
 	"github.com/kataras/iris"
+	"github.com/kataras/iris/utils"
 )
 
 type Configure struct {
@@ -23,5 +26,17 @@ func main() {
 	iris.Get("/hi", func(ctx *iris.Context) {
 		ctx.Write("Hi %s", "iris")
 	})
+
+	iris.Get("/*file", func(ctx *iris.Context) {
+		requestPath := ctx.Param("file")
+		path := strings.Replace(requestPath, "/", utils.PathSeparator, -1)
+
+		if !utils.DirectoryExists(path) {
+			ctx.NotFound()
+			return
+		}
+		ctx.ServeFile(path, false)
+	})
+
 	iris.Listen(gcfg.Addr)
 }
