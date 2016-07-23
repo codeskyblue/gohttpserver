@@ -1,11 +1,12 @@
 package main
 
 import (
-	"strings"
+	"log"
+	"net/http"
+	"strconv"
 
 	"github.com/alecthomas/kingpin"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/utils"
+	"github.com/gorilla/mux"
 )
 
 type Configure struct {
@@ -18,25 +19,21 @@ type Configure struct {
 
 var gcfg = Configure{}
 
-func main() {
+func IndexHandler(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Gorilla!\n"))
+}
+
+func parseFlags() {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
 	kingpin.Parse()
+}
 
-	iris.Get("/hi", func(ctx *iris.Context) {
-		ctx.Write("Hi %s", "iris")
-	})
+func main() {
+	parseFlags()
 
-	iris.Get("/*file", func(ctx *iris.Context) {
-		requestPath := ctx.Param("file")
-		path := strings.Replace(requestPath, "/", utils.PathSeparator, -1)
-
-		if !utils.DirectoryExists(path) {
-			ctx.NotFound()
-			return
-		}
-		ctx.ServeFile(path, false)
-	})
-
-	iris.Listen(gcfg.Addr)
+	r := mux.NewRouter()
+	r.HandleFunc("/", IndexHandler)
+	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
+	log.Fatal(http.ListenAndServe(gcfg.Addr, r))
 }
