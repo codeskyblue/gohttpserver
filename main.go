@@ -19,8 +19,31 @@ type Configure struct {
 
 var gcfg = Configure{}
 
-func IndexHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Gorilla!\n"))
+func FileHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "unknown")
+}
+
+type HTTPStaticServer struct {
+	Root string
+	m    *mux.Router
+}
+
+func NewHTTPStaticServer(root string) *HTTPStaticServer {
+	m := mux.NewRouter()
+	s := &HTTPStaticServer{
+		Root: root,
+		m:    m,
+	}
+	m.HandleFunc("/", s.hIndex)
+	return s
+}
+
+func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.m.ServeHTTP(w, r)
+}
+
+func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Hello world!"))
 }
 
 func parseFlags() {
@@ -31,9 +54,8 @@ func parseFlags() {
 
 func main() {
 	parseFlags()
+	ss := NewHTTPStaticServer("/")
 
-	r := mux.NewRouter()
-	r.HandleFunc("/", IndexHandler)
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
-	log.Fatal(http.ListenAndServe(gcfg.Addr, r))
+	log.Fatal(http.ListenAndServe(gcfg.Addr, ss))
 }
