@@ -26,7 +26,7 @@ func parseFlags() {
 
 func main() {
 	parseFlags()
-	ss := NewHTTPStaticServer("/")
+	ss := NewHTTPStaticServer("./")
 
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
 	log.Fatal(http.ListenAndServe(gcfg.Addr, ss))
