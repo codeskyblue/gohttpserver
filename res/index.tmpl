@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>gohttp server</title>
+	</head>
+	<body id="app">
+		<h1>{{message}}</h1>
+		<p><a href="/-/raw/">Explore</a></p>
+		<script src="/-/res/jquery-3.1.0.min.js"></script>
+		<script src="/-/res/vue-1.0.min.js"></script>
+		<script>
+		$.getJSON("/-/json/hello", function(res) {
+			console.log(res);
+		})
+		new Vue({
+			el: "#app",
+			data: {
+				message: "Hello vue.js",
+			}
+		})
+		</script>
+	</body>
+	
+</html>

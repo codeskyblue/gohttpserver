@@ -3,8 +3,7 @@ triggers:
 - name: ""
   pattens:
   - '**/*.go'
-  - '**/*.c'
-  - '**/*.py'
+  - '**/*.tmpl'
   env:
     DEBUG: "1"
   cmd: go build && ./gohttp-vue

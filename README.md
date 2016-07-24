@@ -18,6 +18,9 @@ Listen port 8000 on all interface
 ./gohttp-vue --addr :8000
 ```
 
+## FAQ
+- [How to generate self signed certificate with openssl](http://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl)
+
 ## Developer Guide
 Depdencies are managed by godep
 
