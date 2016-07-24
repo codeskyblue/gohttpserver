@@ -36,10 +36,10 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
-	indexPath := filepath.Join("./res", "index.tmpl")
+	indexPath := filepath.Join("./res", "index.tmpl.html")
 	t := template.New("index").Delims("[[", "]]")
 	tmpl := template.Must(t.ParseFiles(indexPath))
-	tmpl.ExecuteTemplate(w, "index.tmpl", nil)
+	tmpl.ExecuteTemplate(w, "index.tmpl.html", nil)
 }
 
 func (s *HTTPStaticServer) hAssets(w http.ResponseWriter, r *http.Request) {
