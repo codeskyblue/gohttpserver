@@ -50,16 +50,18 @@
                     <th>Actions</th>
                 </thead>
                 <tbody>
-                    <td>
-                        <a href="#">
-                            <span class="glyphicon glyphicon-file"></span> Foo.txt
-                        </a>
-                    </td>
-                    <td>10M</td>
-                    <td>
-                        <a style="padding: 0px 1em" href="#"><span class="glyphicon glyphicon-download-alt"></span></a>
-                        <a href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
-                    </td>
+                    <template v-for="f in files">
+                        <td>
+                            <a href="#">
+                                <span class="glyphicon glyphicon-file"></span> {{f.name}}
+                            </a>
+                        </td>
+                        <td>{{f.size}}</td>
+                        <td>
+                            <a style="padding: 0px 1em" href="/-/raw/{{f.path}}?download=true"><span class="glyphicon glyphicon-download-alt"></span></a>
+                            <a v-on:click="genQrcode(f.name)" href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
+                        </td>
+                    </template>
                 </tbody>
             </table>
         </div>
@@ -67,7 +69,23 @@
             <!-- webpack content here -->
             <h1>{{message}}</h1>
             <p><a href="/-/raw/">Explore</a></p>
-            <div id="qrcodeCanvas"></div>
+            <!-- Small qrcode modal -->
+            <div id="qrcode-modal" class="modal fade" tabindex="-1" role="dialog">
+                <div class="modal-dialog modal-sm">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">Modal title:Foo.txt</h4>
+                        </div>
+                        <div class="modal-body">
+                            <div id="qrcodeCanvas"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-md-12">
             <div id="footer" class="pull-right">
@@ -85,12 +103,27 @@
         console.log(res);
     })
     jQuery('#qrcodeCanvas').qrcode({
-        text: "http://jetienne.com"
+        text: "http://jetienne.com/"
     });
     new Vue({
         el: "#app",
         data: {
             message: "Hello vue.js",
+            files: [{
+                name: "Foo.txt",
+                path: "bar-folder/foo.txt",
+                size: "11M",
+                type: "file",
+            }]
+        },
+        methods: {
+            genQrcode: function(text) {
+                var urlPath = location.protocol + "//" + location.host + location.pathname + text;
+                $('#qrcodeCanvas').empty().qrcode({
+                    text: urlPath
+                });
+                $("#qrcode-modal").modal("show");
+            }
         }
     })
     </script>
