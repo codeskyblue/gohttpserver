@@ -51,11 +51,14 @@
                 </thead>
                 <tbody>
                     <td>
-                        <span class="glyphicon glyphicon-file"></span> Foo.txt
+                        <a href="#">
+                            <span class="glyphicon glyphicon-file"></span> Foo.txt
+                        </a>
                     </td>
                     <td>10M</td>
                     <td>
-                        <a href="#">Download</a>
+                        <a style="padding: 0px 1em" href="#"><span class="glyphicon glyphicon-download-alt"></span></a>
+                        <a href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
                     </td>
                 </tbody>
             </table>
@@ -64,6 +67,7 @@
             <!-- webpack content here -->
             <h1>{{message}}</h1>
             <p><a href="/-/raw/">Explore</a></p>
+            <div id="qrcodeCanvas"></div>
         </div>
         <div class="col-md-12">
             <div id="footer" class="pull-right">
@@ -72,12 +76,17 @@
         </div>
     </div>
     <script src="/-/res/js/jquery-3.1.0.min.js"></script>
+    <script src="/-/res/js/jquery.qrcode.js"></script>
+    <script src="/-/res/js/qrcode.js"></script>
     <script src="/-/res/js/vue-1.0.min.js"></script>
     <script src="/-/res/bootstrap-3.3.5/js/bootstrap.min.js"></script>
     <script>
     $.getJSON("/-/json/hello", function(res) {
         console.log(res);
     })
+    jQuery('#qrcodeCanvas').qrcode({
+        text: "http://jetienne.com"
+    });
     new Vue({
         el: "#app",
         data: {
