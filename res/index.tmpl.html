@@ -45,23 +45,27 @@
         <div class="col-md-12">
             <table class="table">
                 <thead>
-                    <th>Name</th>
-                    <th>Size</th>
-                    <th>Actions</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Size</th>
+                        <th>
+                            <center>Actions</center>
+                        </th>
+                    </tr>
                 </thead>
                 <tbody>
-                    <template v-for="f in files">
+                    <tr v-for="f in files">
                         <td>
-                            <a href="#">
-                                <span class="glyphicon glyphicon-file"></span> {{f.name}}
+                            <a href="{{f.name}}">
+                                <span style="padding-right: 0.5em" class="glyphicon" v-bind:class='genFileClass(f.type, f.name)'></span> {{f.name}}
                             </a>
                         </td>
                         <td>{{f.size}}</td>
-                        <td>
+                        <td style="text-align: center">
                             <a style="padding: 0px 1em" href="/-/raw/{{f.path}}?download=true"><span class="glyphicon glyphicon-download-alt"></span></a>
                             <a v-on:click="genQrcode(f.name)" href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
                         </td>
-                    </template>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -110,6 +114,11 @@
         data: {
             message: "Hello vue.js",
             files: [{
+                name: "components/js",
+                path: "foo/components/js",
+                size: "11M",
+                type: "dir",
+            }, {
                 name: "Foo.txt",
                 path: "bar-folder/foo.txt",
                 size: "11M",
@@ -123,6 +132,12 @@
                     text: urlPath
                 });
                 $("#qrcode-modal").modal("show");
+            },
+            genFileClass: function(type, ext) {
+                if (type == "dir") {
+                    return "glyphicon-folder-open";
+                }
+                return "glyphicon-file"
             }
         }
     })
