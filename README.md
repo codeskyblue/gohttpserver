@@ -6,6 +6,25 @@ Rewrite https://github.com/codeskyblue/gohttp with golang+vue
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 
+## Features
+1. [ ] Support QRCode code generate
+1. [ ] All assets package to Standalone binary
+1. [ ] Different file type different icon
+1. [ ] Support show or hide hidden files
+1. [ ] Upload support
+1. [ ] README.md preview
+1. [x] HTTP Basic Auth
+1. [ ] When only one dir under dir, path will combine two together
+1. [ ] Directory zip download
+1. [ ] Code preview
+1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
+1. [ ] Support modify the index page
+1. [ ] Download count statistics
+1. [ ] CORS enabled
+1. [ ] Offline download
+1. [ ] Edit file support
+1. [ ] Global file search
+
 ## Installation
 ```
 go get -v github.com/codeskyblue/gohttp-vue

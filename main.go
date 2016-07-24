@@ -4,8 +4,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/alecthomas/kingpin"
+	"github.com/goji/httpauth"
 )
 
 type Configure struct {
@@ -23,15 +25,24 @@ func parseFlags() {
 	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
+	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
 
 	kingpin.Parse()
 }
 
 func main() {
 	parseFlags()
-	ss := NewHTTPStaticServer("./")
-	http.Handle("/", ss)
 
+	var hdlr http.Handler = NewHTTPStaticServer("./")
+
+	// HTTP Basic Authentication
+	userpass := strings.SplitN(gcfg.HttpAuth, ":", 2)
+	if len(userpass) == 2 {
+		user, pass := userpass[0], userpass[1]
+		hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
+	}
+
+	http.Handle("/", hdlr)
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
 
 	var err error
