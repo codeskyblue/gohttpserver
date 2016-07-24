@@ -50,6 +50,6 @@ go get -v github.com/tools/godep
 Reference Web sites
 
 * <https://vuejs.org.cn/>
-
+* Icon from <http://www.easyicon.net/558394-file_explorer_icon.html>
 ## LICENSE
 This project is under license [MIT](LICENSE)

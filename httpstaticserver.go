@@ -44,7 +44,7 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hAssets(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	w.Header().Set("Content-Type", "text/plain") // -_-! not working in chrome
+	// w.Header().Set("Content-Type", "text/plain") // -_-! not working in chrome
 	http.ServeFile(w, r, filepath.Join("./res", path))
 }
 
