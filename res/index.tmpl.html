@@ -56,14 +56,16 @@
                 <tbody>
                     <tr v-for="f in files">
                         <td>
-                            <a href="{{f.name}}">
+                            <a href="/{{f.path}}">
                                 <span style="padding-right: 0.5em" class="glyphicon" v-bind:class='genFileClass(f.type, f.name)'></span> {{f.name}}
                             </a>
                         </td>
                         <td>{{f.size}}</td>
                         <td style="text-align: center">
-                            <a style="padding: 0px 1em" href="/-/raw/{{f.path}}?download=true"><span class="glyphicon glyphicon-download-alt"></span></a>
-                            <a v-on:click="genQrcode(f.name)" href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
+                            <template v-if="f.type == 'file'">
+                                <a style="padding: 0px 1em" href="/-/raw/{{f.path}}?download=true"><span class="glyphicon glyphicon-download-alt"></span></a>
+                                <a v-on:click="genQrcode(f.name)" href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
+                            </template>
                         </td>
                     </tr>
                 </tbody>
@@ -103,26 +105,18 @@
     <script src="/-/res/js/vue-1.0.min.js"></script>
     <script src="/-/res/bootstrap-3.3.5/js/bootstrap.min.js"></script>
     <script>
-    $.getJSON("/-/json/hello", function(res) {
-        console.log(res);
-    })
     jQuery('#qrcodeCanvas').qrcode({
         text: "http://jetienne.com/"
     });
-    new Vue({
+    var vm = new Vue({
         el: "#app",
         data: {
             message: "Hello vue.js",
             files: [{
-                name: "components/js",
-                path: "foo/components/js",
-                size: "11M",
+                name: "loading ...",
+                path: "",
+                size: "...",
                 type: "dir",
-            }, {
-                name: "Foo.txt",
-                path: "bar-folder/foo.txt",
-                size: "11M",
-                type: "file",
             }]
         },
         methods: {
@@ -140,6 +134,17 @@
                 return "glyphicon-file"
             }
         }
+    })
+
+    $.getJSON("/-/json" + location.pathname, function(res) {
+        // console.log(res)
+        res.sort(function(a, b) {
+            var obj2n = function(v) {
+                return v.type == "dir" ? 0 : 1;
+            }
+            return obj2n(a) - obj2n(b);
+        })
+        vm.files = res;
     })
     </script>
 </body>

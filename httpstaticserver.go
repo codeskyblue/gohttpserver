@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/gorilla/mux"
@@ -24,10 +25,10 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		Root: root,
 		m:    m,
 	}
-	m.HandleFunc("/", s.hIndex)
 	m.HandleFunc("/-/res/{path:.*}", s.hAssets)
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
+	m.HandleFunc("/{path:.*}", s.hIndex)
 	return s
 }
 
@@ -57,15 +58,41 @@ func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Reque
 type ListResponse struct {
 	Name string `json:"name"`
 	Path string `json:"path"`
+	Type string `json:"type"`
+	Size string `json:"size"`
 }
 
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	lr := ListResponse{
-		Name: "Hello",
-		Path: path,
+	lrs := make([]ListResponse, 0)
+	fd, err := os.Open(filepath.Join(s.Root, path))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
 	}
-	data, _ := json.Marshal(lr)
+	defer fd.Close()
+
+	files, err := fd.Readdir(-1)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	for _, file := range files {
+		lr := ListResponse{
+			Name: file.Name(),
+			Path: filepath.Join(path, file.Name()), // lstrip "/"
+		}
+		if file.IsDir() {
+			lr.Type = "dir"
+			lr.Size = "-"
+		} else {
+			lr.Type = "file"
+			lr.Size = formatSize(file)
+		}
+		lrs = append(lrs, lr)
+	}
+
+	data, _ := json.Marshal(lrs)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 }
