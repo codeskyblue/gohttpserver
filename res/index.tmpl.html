@@ -81,14 +81,15 @@
                     <div class="modal-content">
                         <div class="modal-header">
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                            <h4 class="modal-title" id="myModalLabel">Modal title:Foo.txt</h4>
+                            <h4 class="modal-title" id="qrcode-title"></h4>
                         </div>
                         <div class="modal-body">
                             <div id="qrcodeCanvas"></div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                        </div>
+                        <!-- <div class="modal-footer">
+    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+</div>
+ -->
                     </div>
                 </div>
             </div>
@@ -121,6 +122,7 @@
         },
         methods: {
             genQrcode: function(text) {
+                $("#qrcode-title").html(text);
                 var urlPath = location.protocol + "//" + location.host + location.pathname + text;
                 $('#qrcodeCanvas').empty().qrcode({
                     text: urlPath
@@ -132,9 +134,16 @@
                     return "glyphicon-folder-open";
                 }
                 return "glyphicon-file"
+            },
+            changeDir: function(reqPath) {
+                window.history.pushState({}, "", reqPath);
             }
         }
     })
+
+    window.onpopstate = function(event) {
+        decodeURI(location.pathname)
+    }
 
     $.getJSON("/-/json" + location.pathname, function(res) {
         // console.log(res)
