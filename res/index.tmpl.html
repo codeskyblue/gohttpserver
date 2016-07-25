@@ -7,6 +7,7 @@
     <title>gohttp server</title>
     <link rel="shortcut icon" type="image/png" href="/-/res/favicon.png" />
     <link rel="stylesheet" type="text/css" href="/-/res/bootstrap-3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/-/res/font-awesome-4.6.3/css/font-awesome.min.css">
 </head>
 
 <body id="app">
@@ -57,7 +58,7 @@
                     <tr v-for="f in files">
                         <td>
                             <a href="/{{f.path}}">
-                                <span style="padding-right: 0.5em" class="glyphicon" v-bind:class='genFileClass(f.type, f.name)'></span> {{f.name}}
+                                <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
                             </a>
                         </td>
                         <td>{{f.size}}</td>
@@ -133,11 +134,11 @@
                 });
                 $("#qrcode-modal").modal("show");
             },
-            genFileClass: function(type, ext) {
-                if (type == "dir") {
-                    return "glyphicon-folder-open";
+            genFileClass: function(f) {
+                if (f.type == "dir") {
+                    return "fa-folder-open";
                 }
-                return "glyphicon-file"
+                return "fa-file-text-o"
             },
             changeDir: function(reqPath) {
                 window.history.pushState({}, "", reqPath);
