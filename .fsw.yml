@@ -6,7 +6,7 @@ triggers:
   - '**/*.tmpl'
   env:
     DEBUG: "1"
-  cmd: go build && ./gohttp-vue
+  cmd: go build && ./gohttpserver
   shell: true
   delay: 100ms
   signal: KILL
