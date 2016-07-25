@@ -114,6 +114,11 @@
     jQuery('#qrcodeCanvas').qrcode({
         text: "http://jetienne.com/"
     });
+
+    function getExtention(fname) {
+        return fname.slice((fname.lastIndexOf(".") - 1 >>> 0) + 2);
+    }
+
     var vm = new Vue({
         el: "#app",
         data: {
@@ -136,7 +141,34 @@
             },
             genFileClass: function(f) {
                 if (f.type == "dir") {
+                    if (f.name == '.git') {
+                        return 'fa-git-square';
+                    }
                     return "fa-folder-open";
+                }
+                var ext = getExtention(f.name);
+                switch (ext) {
+                    case "go":
+                    case "py":
+                    case "js":
+                    case "java":
+                    case "c":
+                    case "cpp":
+                    case "h":
+                        return "fa-file-code-o";
+                    case "pdf":
+                        return "fa-file-pdf-o";
+                    case "zip":
+                        return "fa-file-zip-o";
+                    case "mp3":
+                    case "wav":
+                        return "fa-file-audio-o";
+                    case "jpg":
+                    case "png":
+                    case "gif":
+                    case "jpeg":
+                    case "tiff":
+                        return "fa-file-picture-o";
                 }
                 return "fa-file-text-o"
             },

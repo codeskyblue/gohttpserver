@@ -9,7 +9,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 ## Features
 1. [x] Support QRCode code generate
 1. [ ] All assets package to Standalone binary
-1. [ ] Different file type different icon
+1. [x] Different file type different icon
 1. [ ] Support show or hide hidden files
 1. [ ] Upload support
 1. [ ] README.md preview
