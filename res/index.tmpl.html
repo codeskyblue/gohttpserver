@@ -63,8 +63,12 @@
                         <td>{{f.size}}</td>
                         <td style="text-align: center">
                             <template v-if="f.type == 'file'">
-                                <a style="padding: 0px 1em" href="/-/raw/{{f.path}}?download=true"><span class="glyphicon glyphicon-download-alt"></span></a>
-                                <a v-on:click="genQrcode(f.name)" href="#"><span class="glyphicon glyphicon-qrcode"></span> QRCode</a>
+                                <a class="btn btn-default btn-xs" href="/-/raw/{{f.path}}?download=true">
+                                    Download <span class="glyphicon glyphicon-download-alt"></span>
+                                </a>
+                                <a class="btn btn-default btn-xs" v-on:click="genQrcode(f.name)" href="#">
+                                    QRCode <span class="glyphicon glyphicon-qrcode"></span>
+                                </a>
                             </template>
                         </td>
                     </tr>

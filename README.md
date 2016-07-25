@@ -26,6 +26,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Offline download
 1. [ ] Edit file support
 1. [ ] Global file search
+1. [ ] Hidden work `download` and `qrcode` in small screen
 
 ## Installation
 ```
