@@ -41,8 +41,9 @@ var vm = new Vue({
             this.showHidden = !this.showHidden;
         },
         genQrcode: function(text) {
-            $("#qrcode-title").html(text);
             var urlPath = location.protocol + "//" + location.host + location.pathname + text;
+            $("#qrcode-title").html(text);
+            $("#qrcode-link").attr("href", urlPath);
             $('#qrcodeCanvas').empty().qrcode({
                 text: urlPath
             });
