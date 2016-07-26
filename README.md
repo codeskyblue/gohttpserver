@@ -9,7 +9,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Breadcrumb path quick change
 1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
-1. [ ] Support show or hide hidden files
+1. [x] Support show or hide hidden files
 1. [ ] Upload support
 1. [ ] README.md preview
 1. [ ] Code preview
@@ -65,6 +65,8 @@ That's all. ^_^
 * <https://vuejs.org.cn/>
 * Icon from <http://www.easyicon.net/558394-file_explorer_icon.html>
 * <https://github.com/elazarl/go-bindata-assetfs>
+* Code Highlight <https://craig.is/making/rainbows>
+* Markdown-JS <https://github.com/evilstreak/markdown-js>
 
 ## LICENSE
 This project is under license [MIT](LICENSE)
