@@ -9,7 +9,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 ## Features
 1. [x] Support QRCode code generate
 1. [x] Breadcrumb path quick change
-1. [ ] All assets package to Standalone binary
+1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
 1. [ ] Support show or hide hidden files
 1. [ ] Upload support
@@ -47,13 +47,25 @@ Listen port 8000 on all interface
 ## Developer Guide
 Depdencies are managed by godep
 
-```
+```sh
 go get -v github.com/tools/godep
+go get github.com/jteeuwen/go-bindata/...
+go get github.com/elazarl/go-bindata-assetfs/...
 ```
 
-Reference Web sites
+## How to build single binary release
+```sh
+go-bindata-assetfs -tags bindata res/...
+go build -tags bindata
+```
+
+That's all. ^_^
+
+## Reference Web sites
 
 * <https://vuejs.org.cn/>
 * Icon from <http://www.easyicon.net/558394-file_explorer_icon.html>
+* <https://github.com/elazarl/go-bindata-assetfs>
+
 ## LICENSE
 This project is under license [MIT](LICENSE)

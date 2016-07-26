@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"html/template"
 	"log"
 	"net/http"
 	"os"
@@ -41,10 +40,11 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	relPath := filepath.Join(s.Root, path)
 	finfo, err := os.Stat(relPath)
 	if err == nil && finfo.IsDir() {
-		indexPath := filepath.Join("./res", "index.tmpl.html")
-		t := template.New("index").Delims("[[", "]]")
-		tmpl := template.Must(t.ParseFiles(indexPath))
-		tmpl.ExecuteTemplate(w, "index.tmpl.html", nil)
+		// indexPath := filepath.Join("./res", "index.tmpl.html")
+		// t := template.New("index").Delims("[[", "]]")
+		// tmpl := template.Must(t.ParseFiles(indexPath))
+		// tmpl.ExecuteTemplate(w, "index.tmpl.html", nil)
+		tmpl.Execute(w, nil)
 	} else {
 		http.ServeFile(w, r, relPath)
 	}

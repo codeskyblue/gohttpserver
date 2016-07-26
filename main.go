@@ -50,6 +50,9 @@ func main() {
 	}
 
 	http.Handle("/", hdlr)
+
+	// indexContent, _ := Asset("res/index.tmpl.html")
+	// log.Println(string(indexContent))
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
 
 	var err error
