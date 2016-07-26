@@ -8,6 +8,11 @@
     <link rel="shortcut icon" type="image/png" href="/-/res/favicon.png" />
     <link rel="stylesheet" type="text/css" href="/-/res/bootstrap-3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/-/res/font-awesome-4.6.3/css/font-awesome.min.css">
+    <style>
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+    </style>
 </head>
 
 <body id="app">
@@ -48,8 +53,11 @@
                 <li>
                     <a v-on:click='changePath("/", $event)' href="/"><i class="fa fa-home"></i></a>
                 </li>
-                <li v-for="bc in breadcrumb">
+                <li v-for="bc in breadcrumb.slice(0, breadcrumb.length-1)">
                     <a v-on:click='changePath(bc.path, $event)' href="{{bc.path}}">{{bc.name}}</a>
+                </li>
+                <li v-if="breadcrumb.length >= 1">
+                    {{breadcrumb.slice(-1)[0].name}}
                 </li>
             </ol>
             <table class="table table-hover">
@@ -202,16 +210,18 @@
                 e.preventDefault()
             },
             updateBreadcrumb: function() {
-                console.log("B", this.breadcrumb)
                 var pathname = location.pathname || "/";
                 var parts = pathname.split('/');
                 this.breadcrumb = [];
+                if (pathname == "/") {
+                    return this.breadcrumb;
+                }
                 var i = 2;
                 for (; i <= parts.length; i += 1) {
                     var name = parts[i - 1];
                     var path = parts.slice(0, i).join('/');
                     this.breadcrumb.push({
-                        name: name,
+                        name: name + (i == parts.length ? ' /' : ''),
                         path: path
                     })
                 }

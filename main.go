@@ -8,6 +8,7 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/goji/httpauth"
+	"github.com/rs/cors"
 )
 
 type Configure struct {
@@ -16,6 +17,7 @@ type Configure struct {
 	HttpAuth string
 	Cert     string
 	Key      string
+	Cors     bool
 }
 
 var gcfg = Configure{}
@@ -25,6 +27,7 @@ func parseFlags() {
 	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
+	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
 
 	kingpin.Parse()
@@ -40,6 +43,10 @@ func main() {
 	if len(userpass) == 2 {
 		user, pass := userpass[0], userpass[1]
 		hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
+	}
+	// CORS
+	if gcfg.Cors {
+		hdlr = cors.Default().Handler(hdlr)
 	}
 
 	http.Handle("/", hdlr)

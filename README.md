@@ -23,7 +23,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
 1. [ ] Support modify the index page
 1. [ ] Download count statistics
-1. [ ] CORS enabled
+1. [x] CORS enabled
 1. [ ] Offline download
 1. [ ] Edit file support
 1. [ ] Global file search
