@@ -37,10 +37,17 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
-	indexPath := filepath.Join("./res", "index.tmpl.html")
-	t := template.New("index").Delims("[[", "]]")
-	tmpl := template.Must(t.ParseFiles(indexPath))
-	tmpl.ExecuteTemplate(w, "index.tmpl.html", nil)
+	path := mux.Vars(r)["path"]
+	relPath := filepath.Join(s.Root, path)
+	finfo, err := os.Stat(relPath)
+	if err == nil && finfo.IsDir() {
+		indexPath := filepath.Join("./res", "index.tmpl.html")
+		t := template.New("index").Delims("[[", "]]")
+		tmpl := template.Must(t.ParseFiles(indexPath))
+		tmpl.ExecuteTemplate(w, "index.tmpl.html", nil)
+	} else {
+		http.ServeFile(w, r, relPath)
+	}
 }
 
 func (s *HTTPStaticServer) hAssets(w http.ResponseWriter, r *http.Request) {
