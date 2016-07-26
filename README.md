@@ -8,17 +8,18 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 
 ## Features
 1. [x] Support QRCode code generate
+1. [x] Breadcrumb path quick change
 1. [ ] All assets package to Standalone binary
 1. [x] Different file type different icon
 1. [ ] Support show or hide hidden files
 1. [ ] Upload support
 1. [ ] README.md preview
+1. [ ] Code preview
 1. [x] HTTP Basic Auth
 1. [ ] \.htaccess support
-1. [ ] Partial reload pages when directory change
+1. [x] Partial reload pages when directory change
 1. [ ] When only one dir under dir, path will combine two together
 1. [ ] Directory zip download
-1. [ ] Code preview
 1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
 1. [ ] Support modify the index page
 1. [ ] Download count statistics

@@ -44,7 +44,15 @@
     </nav>
     <div class="container">
         <div class="col-md-12">
-            <table class="table">
+            <ol class="breadcrumb">
+                <li>
+                    <a v-on:click='changePath("/", $event)' href="/"><i class="fa fa-home"></i></a>
+                </li>
+                <li v-for="bc in breadcrumb">
+                    <a v-on:click='changePath(bc.path, $event)' href="{{bc.path}}">{{bc.name}}</a>
+                </li>
+            </ol>
+            <table class="table table-hover">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -57,7 +65,7 @@
                 <tbody>
                     <tr v-for="f in files">
                         <td>
-                            <a href="/{{f.path}}">
+                            <a v-on:click='clickFileOrDir(f, $event)' href="/{{f.path}}">
                                 <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
                             </a>
                         </td>
@@ -65,10 +73,12 @@
                         <td style="text-align: center">
                             <template v-if="f.type == 'file'">
                                 <a class="btn btn-default btn-xs" href="/-/raw/{{f.path}}?download=true">
-                                    Download <span class="glyphicon glyphicon-download-alt"></span>
+                                    <span class="hidden-xs">Download</span>
+                                    <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
                                 <a class="btn btn-default btn-xs" v-on:click="genQrcode(f.name)" href="#">
-                                    QRCode <span class="glyphicon glyphicon-qrcode"></span>
+                                    <span class="hidden-xs">QRCode</span>
+                                    <span class="glyphicon glyphicon-qrcode"></span>
                                 </a>
                             </template>
                         </td>
@@ -119,10 +129,17 @@
         return fname.slice((fname.lastIndexOf(".") - 1 >>> 0) + 2);
     }
 
+    function pathJoin(parts, sep) {
+        var separator = sep || '/';
+        var replace = new RegExp(separator + '{1,}', 'g');
+        return parts.join(separator).replace(replace, separator);
+    }
+
     var vm = new Vue({
         el: "#app",
         data: {
             message: "Hello vue.js",
+            breadcrumb: [],
             files: [{
                 name: "loading ...",
                 path: "",
@@ -172,26 +189,61 @@
                 }
                 return "fa-file-text-o"
             },
-            changeDir: function(reqPath) {
-                window.history.pushState({}, "", reqPath);
+            clickFileOrDir: function(f, e) {
+                if (f.type == "file") {
+                    return true;
+                }
+                var reqPath = pathJoin([location.pathname, f.name]);
+                loadDirectory(reqPath);
+                e.preventDefault()
+            },
+            changePath: function(reqPath, e) {
+                loadDirectory(reqPath);
+                e.preventDefault()
+            },
+            updateBreadcrumb: function() {
+                console.log("B", this.breadcrumb)
+                var pathname = location.pathname || "/";
+                var parts = pathname.split('/');
+                this.breadcrumb = [];
+                var i = 2;
+                for (; i <= parts.length; i += 1) {
+                    var name = parts[i - 1];
+                    var path = parts.slice(0, i).join('/');
+                    this.breadcrumb.push({
+                        name: name,
+                        path: path
+                    })
+                }
+                return this.breadcrumb;
             }
         }
     })
 
     window.onpopstate = function(event) {
-        decodeURI(location.pathname)
+        var pathname = decodeURI(location.pathname)
+        loadFileList()
     }
 
-    $.getJSON("/-/json" + location.pathname, function(res) {
-        // console.log(res)
-        res.sort(function(a, b) {
-            var obj2n = function(v) {
-                return v.type == "dir" ? 0 : 1;
-            }
-            return obj2n(a) - obj2n(b);
+    function loadDirectory(reqPath) {
+        window.history.pushState({}, "", reqPath);
+        loadFileList()
+    }
+
+    function loadFileList() {
+        $.getJSON("/-/json" + location.pathname, function(res) {
+            // console.log(res)
+            res.sort(function(a, b) {
+                var obj2n = function(v) {
+                    return v.type == "dir" ? 0 : 1;
+                }
+                return obj2n(a) - obj2n(b);
+            })
+            vm.files = res;
         })
-        vm.files = res;
-    })
+        vm.updateBreadcrumb()
+    }
+    loadFileList() // For page first loading
     </script>
 </body>
 
