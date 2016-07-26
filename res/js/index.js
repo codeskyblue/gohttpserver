@@ -94,7 +94,7 @@ var vm = new Vue({
             e.preventDefault()
         },
         updateBreadcrumb: function() {
-            var pathname = location.pathname || "/";
+            var pathname = decodeURI(location.pathname || "/");
             var parts = pathname.split('/');
             this.breadcrumb = [];
             if (pathname == "/") {

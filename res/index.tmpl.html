@@ -87,6 +87,12 @@
                         </td>
                         <td>{{f.size}}</td>
                         <td style="text-align: center">
+                            <template v-if="f.type == 'dir'">
+                                <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">
+                                    Archieve Zip
+                                    <span class="glyphicon glyphicon-download-alt"></span>
+                                </a>
+                            </template>
                             <template v-if="f.type == 'file'">
                                 <a class="btn btn-default btn-xs" href="/-/raw/{{f.path}}?download=true">
                                     <span class="hidden-xs">Download</span>

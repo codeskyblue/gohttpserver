@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +28,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		m:     m,
 	}
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
+	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
 	return s
@@ -45,6 +47,11 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	} else {
 		http.ServeFile(w, r, relPath)
 	}
+}
+
+func (s *HTTPStaticServer) hZip(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	CompressToZip(w, path)
 }
 
 func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Request) {
@@ -81,6 +88,9 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 			Path: filepath.Join(path, file.Name()), // lstrip "/"
 		}
 		if file.IsDir() {
+			fileName := deepPath(filepath.Join(s.Root, path), file.Name())
+			lr.Name = fileName
+			lr.Path = filepath.Join(path, fileName)
 			lr.Type = "dir"
 			lr.Size = "-"
 		} else {
@@ -93,4 +103,22 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.Marshal(lrs)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
+}
+
+func deepPath(basedir, name string) string {
+	isDir := true
+	// loop max 5, incase of for loop not finished
+	maxDepth := 5
+	for depth := 0; depth <= maxDepth && isDir; depth += 1 {
+		finfos, err := ioutil.ReadDir(filepath.Join(basedir, name))
+		if err != nil || len(finfos) != 1 {
+			break
+		}
+		if finfos[0].IsDir() {
+			name = filepath.Join(name, finfos[0].Name())
+		} else {
+			break
+		}
+	}
+	return name
 }

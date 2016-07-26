@@ -16,8 +16,8 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] HTTP Basic Auth
 1. [ ] \.htaccess support
 1. [x] Partial reload pages when directory change
-1. [ ] When only one dir under dir, path will combine two together
-1. [ ] Directory zip download
+1. [x] When only one dir under dir, path will combine two together
+1. [x] Directory zip download
 1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
 1. [ ] Support modify the index page
 1. [ ] Download count statistics
