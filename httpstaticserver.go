@@ -11,8 +11,9 @@ import (
 )
 
 type HTTPStaticServer struct {
-	Root string
-	m    *mux.Router
+	Root  string
+	Theme string
+	m     *mux.Router
 }
 
 func NewHTTPStaticServer(root string) *HTTPStaticServer {
@@ -21,10 +22,10 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	}
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
-		Root: root,
-		m:    m,
+		Root:  root,
+		Theme: "default", // TODO: need to parse from command line
+		m:     m,
 	}
-	m.HandleFunc("/-/res/{path:.*}", s.hAssets)
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
@@ -40,20 +41,10 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	relPath := filepath.Join(s.Root, path)
 	finfo, err := os.Stat(relPath)
 	if err == nil && finfo.IsDir() {
-		// indexPath := filepath.Join("./res", "index.tmpl.html")
-		// t := template.New("index").Delims("[[", "]]")
-		// tmpl := template.Must(t.ParseFiles(indexPath))
-		// tmpl.ExecuteTemplate(w, "index.tmpl.html", nil)
-		tmpl.Execute(w, nil)
+		tmpl.Execute(w, s)
 	} else {
 		http.ServeFile(w, r, relPath)
 	}
-}
-
-func (s *HTTPStaticServer) hAssets(w http.ResponseWriter, r *http.Request) {
-	path := mux.Vars(r)["path"]
-	// w.Header().Set("Content-Type", "text/plain") // -_-! not working in chrome
-	http.ServeFile(w, r, filepath.Join("./res", path))
 }
 
 func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Request) {
