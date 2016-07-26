@@ -18,6 +18,7 @@ type Configure struct {
 	Cert     string
 	Key      string
 	Cors     bool
+	Theme    string
 }
 
 var gcfg = Configure{}
@@ -29,6 +30,7 @@ func parseFlags() {
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
+	kingpin.Flag("theme", "web theme, one of <black|green>").Default("green").StringVar(&gcfg.Theme)
 
 	kingpin.Parse()
 }
@@ -36,7 +38,7 @@ func parseFlags() {
 func main() {
 	parseFlags()
 
-	var hdlr http.Handler = NewHTTPStaticServer("./")
+	var hdlr http.Handler = NewHTTPStaticServer("./", gcfg.Theme)
 
 	// HTTP Basic Authentication
 	userpass := strings.SplitN(gcfg.HttpAuth, ":", 2)

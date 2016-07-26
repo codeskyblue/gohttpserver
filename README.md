@@ -26,7 +26,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Edit file support
 1. [ ] Global file search
 1. [x] Hidden work `download` and `qrcode` in small screen
-1. [ ] Theme select support
+1. [x] Theme select support
 
 ## Installation
 ```
@@ -51,6 +51,8 @@ go get -v github.com/tools/godep
 go get github.com/jteeuwen/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
 ```
+
+Theme are all defined in [res/themes](res/themes) directory. Now only two, black and green.
 
 ## How to build single binary release
 ```sh

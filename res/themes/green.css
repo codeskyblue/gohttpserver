@@ -1,0 +1,19 @@
+body {
+}
+
+a {
+	color: #1fa67a;
+}
+
+.navbar-inverse {
+	background-color: #1b926c;
+	border-color: #1fa67a;
+}
+
+.navbar-inverse .navbar-brand {
+	color: white;
+}
+
+.navbar {
+	border-radius: 0px;
+}
