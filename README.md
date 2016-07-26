@@ -1,4 +1,4 @@
-# gohttp-vue
+# gohttpserver
 Rewrite https://github.com/codeskyblue/gohttp with golang+vue
 
 ## Not ready yet.
@@ -27,18 +27,18 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Offline download
 1. [ ] Edit file support
 1. [ ] Global file search
-1. [ ] Hidden work `download` and `qrcode` in small screen
+1. [x] Hidden work `download` and `qrcode` in small screen
 
 ## Installation
 ```
-go get -v github.com/codeskyblue/gohttp-vue
+go get -v github.com/codeskyblue/gohttpserver
 ```
 
 ## Usage
 Listen port 8000 on all interface
 
 ```
-./gohttp-vue --addr :8000
+./gohttpserver --addr :8000
 ```
 
 ## FAQ
