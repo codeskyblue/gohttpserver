@@ -1,7 +1,5 @@
 # gohttpserver
-Rewrite https://github.com/codeskyblue/gohttp with golang+vue
-
-## Not ready yet.
+Make the best HTTP File Server. Rewrite from https://github.com/codeskyblue/gohttp with golang+vue
 
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
