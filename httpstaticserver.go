@@ -28,7 +28,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	m.HandleFunc("/-/res/{path:.*}", s.hAssets)
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
-	m.HandleFunc("/{path:.*}", s.hIndex)
+	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
 	return s
 }
 
