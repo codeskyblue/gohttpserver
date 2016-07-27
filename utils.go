@@ -15,11 +15,11 @@ func formatSize(file os.FileInfo) string {
 	size := file.Size()
 	switch {
 	case size > 1024*1024:
-		return fmt.Sprintf("%.1fM", float64(size)/1024/1024)
+		return fmt.Sprintf("%.1f MB", float64(size)/1024/1024)
 	case size > 1024:
-		return fmt.Sprintf("%.1fK", float64(size)/1024)
+		return fmt.Sprintf("%.1f KB", float64(size)/1024)
 	default:
-		return strconv.Itoa(int(size))
+		return strconv.Itoa(int(size)) + " B"
 	}
 	return ""
 }
