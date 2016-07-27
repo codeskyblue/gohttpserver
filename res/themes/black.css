@@ -1,10 +1,9 @@
-body {
-}
+body {}
 
-a {
-	color: black;
+td>a {
+    color: black;
 }
 
 .navbar {
-	border-radius: 0px;
+    border-radius: 0px;
 }

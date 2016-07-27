@@ -3,10 +3,10 @@ triggers:
 - name: ""
   pattens:
   - '**/*.go'
-  - '**/*.tmpl'
+  - '**/*.tmpl.html'
   env:
     DEBUG: "1"
-  cmd: go build && ./gohttpserver
+  cmd: killall gohttpserver && go build && ./gohttpserver&
   shell: true
   delay: 100ms
   signal: KILL

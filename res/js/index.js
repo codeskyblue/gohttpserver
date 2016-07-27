@@ -18,6 +18,7 @@ var vm = new Vue({
         message: "Hello vue.js",
         breadcrumb: [],
         showHidden: false,
+        previewFile: null,
         files: [{
             name: "loading ...",
             path: "",
@@ -28,12 +29,52 @@ var vm = new Vue({
     computed: {
         computedFiles: function() {
             var that = this;
-            return this.files.filter(function(f) {
+            this.previewFile = null;
+
+            var files = this.files.filter(function(f) {
+                if (f.name == 'README.md') {
+                    that.previewFile = {
+                        name: f.name,
+                        path: f.path,
+                        size: f.size,
+                        type: 'markdown',
+                        contentHTML: '',
+                    }
+                }
                 if (that.showHidden && f.name.slice(0, 1) === '.') {
                     return false;
                 }
                 return true;
             });
+            // console.log(this.previewFile)
+            if (this.previewFile) {
+                var name = this.previewFile.name; // For now only README.md
+                console.log(pathJoin([location.pathname, 'README.md']))
+                $.ajax({
+                    url: pathJoin([location.pathname, 'README.md']),
+                    method: 'GET',
+                    success: function(res) {
+                        var converter = new showdown.Converter({
+                            tables: true,
+                            omitExtraWLInCodeBlocks: true,
+                            parseImgDimensions: true,
+                            simplifiedAutoLink: true,
+                            literalMidWordUnderscores: true,
+                            tasklists: true,
+                            ghCodeBlocks: true,
+                            smoothLivePreview: true,
+                        });
+
+                        var html = converter.makeHtml(res);
+                        that.previewFile.contentHTML = html;
+                    },
+                    error: function(err) {
+                        console.log(err)
+                    }
+                })
+            }
+
+            return files;
         },
     },
     methods: {

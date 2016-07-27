@@ -8,12 +8,9 @@
     <link rel="shortcut icon" type="image/png" href="/-/res/favicon.png" />
     <link rel="stylesheet" type="text/css" href="/-/res/bootstrap-3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/-/res/font-awesome-4.6.3/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="/-/res/css/github-markdown.css">
+    <link rel="stylesheet" type="text/css" href="/-/res/css/style.css">
     <link rel="stylesheet" type="text/css" href="/-/res/themes/[[.Theme]].css">
-    <style>
-    body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-    }
-    </style>
 </head>
 
 <body id="app">
@@ -108,10 +105,21 @@
                 </tbody>
             </table>
         </div>
+        <div class="col-md-12" id="preview" v-if="previewFile">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h3 class="panel-title" style="font-weight: normal">
+                        <i class="fa" v-bind:class='genFileClass(previewFile)'></i>
+                        {{previewFile.name}}
+                    </h3>
+                </div>
+                <div class="panel-body">
+                    <article class="markdown-body">{{{previewFile.contentHTML }}}
+                    </article>
+                </div>
+            </div>
+        </div>
         <div class="col-md-12" id="content">
-            <!-- webpack content here -->
-            <h1>{{message}}</h1>
-            <p><a href="/-/raw/">Explore</a></p>
             <!-- Small qrcode modal -->
             <div id="qrcode-modal" class="modal fade" tabindex="-1" role="dialog">
                 <div class="modal-dialog modal-sm">
@@ -140,7 +148,8 @@
     <script src="/-/res/js/jquery.qrcode.js"></script>
     <script src="/-/res/js/qrcode.js"></script>
     <script src="/-/res/js/vue-1.0.min.js"></script>
-    <script src="/-/res/js/markdown.min.js"></script>
+    <script src="/-/res/js/showdown-1.4.2.min.js"></script>
+    <!-- <script src="https://rawgit.com/showdownjs/showdown/develop/dist/showdown.min.js"></script> -->
     <script src="/-/res/bootstrap-3.3.5/js/bootstrap.min.js"></script>
     <script src="/-/res/js/index.js"></script>
 </body>

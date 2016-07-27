@@ -30,7 +30,7 @@ func parseFlags() {
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
-	kingpin.Flag("theme", "web theme, one of <black|green>").Default("green").StringVar(&gcfg.Theme)
+	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
 
 	kingpin.Parse()
 }
