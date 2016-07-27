@@ -14,17 +14,18 @@ import (
 type HTTPStaticServer struct {
 	Root  string
 	Theme string
-	m     *mux.Router
+
+	m *mux.Router
 }
 
-func NewHTTPStaticServer(root string) *HTTPStaticServer {
+func NewHTTPStaticServer(root string, theme string) *HTTPStaticServer {
 	if root == "" {
 		root = "."
 	}
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
-		Theme: "default", // TODO: need to parse from command line
+		Theme: theme, // TODO: need to parse from command line
 		m:     m,
 	}
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
