@@ -20,6 +20,7 @@ type Configure struct {
 	Cors     bool
 	Theme    string
 	XProxy   bool
+	Upload   bool
 }
 
 var gcfg = Configure{}
@@ -33,6 +34,7 @@ func parseFlags() {
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
 	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
 	kingpin.Flag("xproxy", "Used when behide proxy like nginx").BoolVar(&gcfg.XProxy)
+	kingpin.Flag("upload", "Enable upload support").BoolVar(&gcfg.Upload)
 
 	kingpin.Parse()
 }
@@ -40,8 +42,14 @@ func parseFlags() {
 func main() {
 	parseFlags()
 
-	var hdlr http.Handler = NewHTTPStaticServer("./", gcfg.Theme)
+	ss := NewHTTPStaticServer("./")
+	ss.Theme = gcfg.Theme
 
+	if gcfg.Upload {
+		ss.EnableUpload()
+	}
+
+	var hdlr http.Handler = ss
 	// HTTP Basic Authentication
 	userpass := strings.SplitN(gcfg.HttpAuth, ":", 2)
 	if len(userpass) == 2 {
@@ -55,6 +63,7 @@ func main() {
 	if gcfg.XProxy {
 		hdlr = handlers.ProxyHeaders(hdlr)
 	}
+
 	http.Handle("/", hdlr)
 
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))

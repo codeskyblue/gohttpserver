@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -13,20 +14,21 @@ import (
 )
 
 type HTTPStaticServer struct {
-	Root  string
-	Theme string
+	Root   string
+	Theme  string
+	Upload bool
 
 	m *mux.Router
 }
 
-func NewHTTPStaticServer(root string, theme string) *HTTPStaticServer {
+func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	if root == "" {
 		root = "."
 	}
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
-		Theme: theme, // TODO: need to parse from command line
+		Theme: "black",
 		m:     m,
 	}
 	m.HandleFunc("/-/status", s.hStatus)
@@ -42,12 +44,55 @@ func NewHTTPStaticServer(root string, theme string) *HTTPStaticServer {
 	return s
 }
 
+func (s *HTTPStaticServer) EnableUpload() {
+	s.Upload = true
+	s.m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
+}
+
 func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.m.ServeHTTP(w, r)
 }
 
 func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("Hello world"))
+	data, _ := json.MarshalIndent(s, "", "    ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseMultipartForm(1 << 30) // max memory 1G
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(req.MultipartForm.File["file"]) == 0 {
+		http.Error(w, "Need multipart file", http.StatusInternalServerError)
+		return
+	}
+
+	path := mux.Vars(req)["path"]
+	dirpath := filepath.Join(s.Root, path)
+
+	for _, mfile := range req.MultipartForm.File["file"] {
+		file, err := mfile.Open()
+		defer file.Close()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		dst, err := os.Create(filepath.Join(dirpath, mfile.Filename)) // BUG(ssx): There is a leak here
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer dst.Close()
+		if _, err := io.Copy(dst, file); err != nil {
+			log.Println("Handle upload file:", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	w.Write([]byte("Upload success"))
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {

@@ -10,7 +10,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
 1. [x] Support show or hide hidden files
-1. [ ] Upload support
+1. [ ] Upload support(processing ...)
 1. [x] README.md preview
 1. [ ] Code preview
 1. [x] HTTP Basic Auth
@@ -36,10 +36,19 @@ go get -v github.com/codeskyblue/gohttpserver
 ```
 
 ## Usage
-Listen port 8000 on all interface
+Listen port 8000 on all interface, and enable upload
 
 ```
-./gohttpserver --addr :8000
+./gohttpserver --addr :8000 --upload
+```
+
+### Upload with CURL
+For example, upload a file named `foo.txt` to directory `somedir`
+
+PS: max upload size limited to 1G (hard coded)
+
+```sh
+$ curl -F file=@foo.txt localhost:8000/somedir
 ```
 
 ## FAQ
