@@ -1,19 +1,27 @@
-body {
+body {}
+
+td>a:hover {
+    color: #1fa67a;
+    font-weight: normal;
 }
 
-a {
-	color: #1fa67a;
+td>a {
+    color: rgb(51, 51, 51);
+}
+
+a:hover {
+    font-weight: bold;
 }
 
 .navbar-inverse {
-	background-color: #1b926c;
-	border-color: #1fa67a;
+    background-color: #1b926c;
+    border-color: #1fa67a;
 }
 
 .navbar-inverse .navbar-brand {
-	color: white;
+    color: white;
 }
 
 .navbar {
-	border-radius: 0px;
+    border-radius: 0px;
 }

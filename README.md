@@ -19,6 +19,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] When only one dir under dir, path will combine two together
 1. [x] Directory zip download
 1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
+1. [ ] Plist proxy
 1. [ ] Support modify the index page
 1. [ ] Download count statistics
 1. [x] CORS enabled
@@ -27,6 +28,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Global file search
 1. [x] Hidden work `download` and `qrcode` in small screen
 1. [x] Theme select support
+1. [ ] OK to working behide Nginx
 
 ## Installation
 ```
@@ -70,6 +72,7 @@ That's all. ^_^
 * Code Highlight <https://craig.is/making/rainbows>
 * Markdown-JS <https://github.com/showdownjs/showdown>
 * <https://github.com/sindresorhus/github-markdown-css>
+* <http://www.gorillatoolkit.org/pkg/handlers>
 
 ## LICENSE
 This project is under license [MIT](LICENSE)
