@@ -29,6 +29,8 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Theme select support
 1. [x] OK to working behide Nginx
 1. [ ] \.htaccess support
+1. [ ] Check md5sum and sha
+1. [ ] Folder upload
 
 ## Installation
 ```
