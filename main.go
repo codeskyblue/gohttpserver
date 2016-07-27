@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -12,15 +13,16 @@ import (
 )
 
 type Configure struct {
-	Addr     string
-	Root     string
-	HttpAuth string
-	Cert     string
-	Key      string
-	Cors     bool
-	Theme    string
-	XProxy   bool
-	Upload   bool
+	Addr       string
+	Root       string
+	HttpAuth   string
+	Cert       string
+	Key        string
+	Cors       bool
+	Theme      string
+	XProxy     bool
+	Upload     bool
+	PlistProxy *url.URL
 }
 
 var gcfg = Configure{}
@@ -35,6 +37,7 @@ func parseFlags() {
 	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
 	kingpin.Flag("xproxy", "Used when behide proxy like nginx").BoolVar(&gcfg.XProxy)
 	kingpin.Flag("upload", "Enable upload support").BoolVar(&gcfg.Upload)
+	kingpin.Flag("plistproxy", "IPA Plist file proxy, https needed").Short('p').URLVar(&gcfg.PlistProxy)
 
 	kingpin.Parse()
 }
@@ -45,6 +48,7 @@ func main() {
 	ss := NewHTTPStaticServer("./")
 	ss.Theme = gcfg.Theme
 
+	log.Println(gcfg.PlistProxy)
 	if gcfg.Upload {
 		ss.EnableUpload()
 	}

@@ -38,6 +38,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/icon/{path:.*}", s.hIpaIcon)
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
+	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 	// TODO: /ipa/link, /ipa/info
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
@@ -158,6 +159,15 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "text/xml")
 	w.Write(data)
+}
+
+func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
+	// need ua_parser
+	w.Write([]byte("redirect to itms service")) // url need urjJoin if setted plist proxy
+
+	// WeChat need to tell to open with Safari
+
+	// Browser just tell not supported.
 }
 
 func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Request) {
