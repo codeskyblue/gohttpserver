@@ -8,7 +8,7 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/goji/httpauth"
-	"github.com/rs/cors"
+	"github.com/gorilla/handlers"
 )
 
 type Configure struct {
@@ -19,6 +19,7 @@ type Configure struct {
 	Key      string
 	Cors     bool
 	Theme    string
+	XProxy   bool
 }
 
 var gcfg = Configure{}
@@ -31,6 +32,7 @@ func parseFlags() {
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
 	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
+	kingpin.Flag("xproxy", "Used when behide proxy like nginx").BoolVar(&gcfg.XProxy)
 
 	kingpin.Parse()
 }
@@ -48,13 +50,13 @@ func main() {
 	}
 	// CORS
 	if gcfg.Cors {
-		hdlr = cors.Default().Handler(hdlr)
+		hdlr = handlers.CORS()(hdlr)
 	}
-
+	if gcfg.XProxy {
+		hdlr = handlers.ProxyHeaders(hdlr)
+	}
 	http.Handle("/", hdlr)
 
-	// indexContent, _ := Asset("res/index.tmpl.html")
-	// log.Println(string(indexContent))
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
 
 	var err error

@@ -14,7 +14,6 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] README.md preview
 1. [ ] Code preview
 1. [x] HTTP Basic Auth
-1. [ ] \.htaccess support
 1. [x] Partial reload pages when directory change
 1. [x] When only one dir under dir, path will combine two together
 1. [x] Directory zip download
@@ -28,7 +27,8 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Global file search
 1. [x] Hidden work `download` and `qrcode` in small screen
 1. [x] Theme select support
-1. [ ] OK to working behide Nginx
+1. [x] OK to working behide Nginx
+1. [ ] \.htaccess support
 
 ## Installation
 ```

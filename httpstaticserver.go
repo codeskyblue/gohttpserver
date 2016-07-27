@@ -29,6 +29,7 @@ func NewHTTPStaticServer(root string, theme string) *HTTPStaticServer {
 		Theme: theme, // TODO: need to parse from command line
 		m:     m,
 	}
+	m.HandleFunc("/-/status", s.hStatus)
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
@@ -43,6 +44,10 @@ func NewHTTPStaticServer(root string, theme string) *HTTPStaticServer {
 
 func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.m.ServeHTTP(w, r)
+}
+
+func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("Hello world"))
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
