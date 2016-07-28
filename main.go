@@ -31,6 +31,7 @@ var (
 
 func parseFlags() {
 	kingpin.HelpFlag.Short('h')
+	kingpin.Flag("root", "root directory").Short('r').Default("./").StringVar(&gcfg.Root)
 	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
@@ -47,7 +48,7 @@ func parseFlags() {
 func main() {
 	parseFlags()
 
-	ss := NewHTTPStaticServer("./")
+	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme
 
 	log.Println(gcfg.PlistProxy)

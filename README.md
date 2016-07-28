@@ -41,7 +41,7 @@ go get -v github.com/codeskyblue/gohttpserver
 Listen port 8000 on all interface, and enable upload
 
 ```
-./gohttpserver --addr :8000 --upload
+./gohttpserver -r ./ --addr :8000 --upload
 ```
 
 ### ipa plist proxy
