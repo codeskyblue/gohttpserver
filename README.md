@@ -12,14 +12,13 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Support show or hide hidden files
 1. [ ] Upload support(processing ...)
 1. [x] README.md preview
-1. [ ] Code preview
+1. [ ] Code file preview
 1. [x] HTTP Basic Auth
 1. [x] Partial reload pages when directory change
 1. [x] When only one dir under dir, path will combine two together
 1. [x] Directory zip download
 1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
 1. [ ] Plist proxy
-1. [ ] Support modify the index page
 1. [ ] Download count statistics
 1. [x] CORS enabled
 1. [ ] Offline download
@@ -29,8 +28,9 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Theme select support
 1. [x] OK to working behide Nginx
 1. [ ] \.htaccess support
-1. [ ] Check md5sum and sha
+1. [ ] Calculate md5sum and sha
 1. [ ] Folder upload
+1. [ ] Support sort by size or modified time
 
 ## Installation
 ```
