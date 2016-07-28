@@ -46,6 +46,10 @@
 			"ImportPath": "github.com/gorilla/mux",
 			"Comment": "v1.1-15-gd391bea",
 			"Rev": "d391bea3118c9fc17a88d62c9189bb791255e0ef"
+		},
+		{
+			"ImportPath": "github.com/mash/go-accesslog",
+			"Rev": "9ba8e13f36087d6cb83d9a9f17f9e8da137d5ee9"
 		}
 	]
 }
