@@ -10,6 +10,7 @@ import (
 	"github.com/alecthomas/kingpin"
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
+	accesslog "github.com/mash/go-accesslog"
 )
 
 type Configure struct {
@@ -25,8 +26,16 @@ type Configure struct {
 	PlistProxy *url.URL
 }
 
+type logger struct {
+}
+
+func (l logger) Log(record accesslog.LogRecord) {
+	log.Println(record.Method + " " + record.Uri)
+}
+
 var (
 	gcfg = Configure{}
+	l    = logger{}
 )
 
 func parseFlags() {
@@ -60,6 +69,9 @@ func main() {
 	}
 
 	var hdlr http.Handler = ss
+
+	hdlr = accesslog.NewLoggingHandler(hdlr, l)
+
 	// HTTP Basic Authentication
 	userpass := strings.SplitN(gcfg.HttpAuth, ":", 2)
 	if len(userpass) == 2 {
