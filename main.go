@@ -25,7 +25,9 @@ type Configure struct {
 	PlistProxy *url.URL
 }
 
-var gcfg = Configure{}
+var (
+	gcfg = Configure{}
+)
 
 func parseFlags() {
 	kingpin.HelpFlag.Short('h')
@@ -51,6 +53,9 @@ func main() {
 	log.Println(gcfg.PlistProxy)
 	if gcfg.Upload {
 		ss.EnableUpload()
+	}
+	if gcfg.PlistProxy != nil {
+		ss.PlistProxy = gcfg.PlistProxy.String()
 	}
 
 	var hdlr http.Handler = ss

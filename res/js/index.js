@@ -82,9 +82,14 @@ var vm = new Vue({
             this.showHidden = !this.showHidden;
         },
         genQrcode: function(text) {
-            var urlPath = location.protocol + "//" + location.host + location.pathname + text;
+            var urlPath = location.protocol + "//" + pathJoin([location.host, location.pathname, text]);
             $("#qrcode-title").html(text);
             $("#qrcode-link").attr("href", urlPath);
+
+            if (getExtention(text) == "ipa") {
+                urlPath = location.protocol + "//" + pathJoin([location.host, "/-/ipa/link", location.pathname, text]);
+                console.log(urlPath)
+            }
             $('#qrcodeCanvas').empty().qrcode({
                 text: urlPath
             });

@@ -5,18 +5,21 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
 type HTTPStaticServer struct {
-	Root   string
-	Theme  string
-	Upload bool
+	Root       string
+	Theme      string
+	Upload     bool
+	PlistProxy string
 
 	m *mux.Router
 }
@@ -34,6 +37,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	m.HandleFunc("/-/status", s.hStatus)
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
+	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/icon/{path:.*}", s.hIpaIcon)
@@ -101,7 +105,8 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	relPath := filepath.Join(s.Root, path)
 	finfo, err := os.Stat(relPath)
 	if err == nil && finfo.IsDir() {
-		tmpl.Execute(w, s)
+		tmpl.ExecuteTemplate(w, "index", s)
+		// tmpl.Execute(w, s)
 	} else {
 		http.ServeFile(w, r, relPath)
 	}
@@ -112,7 +117,22 @@ func (s *HTTPStaticServer) hZip(w http.ResponseWriter, r *http.Request) {
 	CompressToZip(w, filepath.Join(s.Root, path))
 }
 
+func (s *HTTPStaticServer) hUnzip(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	zipPath, path := vars["zip_path"], vars["path"]
+	ctype := mime.TypeByExtension(filepath.Ext(path))
+	if ctype != "" {
+		w.Header().Set("Content-Type", ctype)
+	}
+	err := ExtractFromZip(filepath.Join(s.Root, zipPath), path, w)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+}
+
 func (s *HTTPStaticServer) hIpaIcon(w http.ResponseWriter, r *http.Request) {
+	// Useless now.
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
 	data, err := parseIpaIcon(relPath)
@@ -122,6 +142,18 @@ func (s *HTTPStaticServer) hIpaIcon(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(data)
+}
+
+func genURLStr(r *http.Request, path string) *url.URL {
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	return &url.URL{
+		Scheme: scheme,
+		Host:   r.Host,
+		Path:   path,
+	}
 }
 
 func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
@@ -137,22 +169,16 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
+
 	scheme := "http"
 	if r.TLS != nil {
 		scheme = "https"
 	}
-	ipaURL := url.URL{
+	baseURL := &url.URL{
 		Scheme: scheme,
 		Host:   r.Host,
-		Path:   path,
 	}
-	imgURL := url.URL{
-		Scheme: scheme,
-		Host:   r.Host,
-		Path:   filepath.Join("/-/ipa/icon", path),
-	}
-	// TODO: image ignore here.
-	data, err := generateDownloadPlist(ipaURL.String(), imgURL.String(), plinfo)
+	data, err := generateDownloadPlist(baseURL, path, plinfo)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -162,12 +188,20 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
-	// need ua_parser
-	w.Write([]byte("redirect to itms service")) // url need urjJoin if setted plist proxy
+	path := mux.Vars(r)["path"]
+	plistUrl := genURLStr(r, "/-/ipa/plist/"+path).String()
+	if s.PlistProxy != "" {
+		plistUrl = strings.TrimSuffix(s.PlistProxy, "/") + "/" + r.Host + "/-/ipa/plist/" + path
+	}
 
-	// WeChat need to tell to open with Safari
-
-	// Browser just tell not supported.
+	w.Header().Set("Content-Type", "text/html")
+	tmpl.ExecuteTemplate(w, "ipa-install", map[string]string{
+		"Name":      filepath.Base(path),
+		"PlistLink": plistUrl,
+	})
+	// w.Write([]byte(fmt.Sprintf(
+	// 	`<a href='itms-services://?action=download-manifest&url=%s'>Click this link to install</a>`,
+	// 	plistUrl)))
 }
 
 func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Request) {

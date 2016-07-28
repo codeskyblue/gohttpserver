@@ -6,18 +6,12 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"path/filepath"
 	"regexp"
 
 	goplist "github.com/DHowett/go-plist"
 )
-
-type plistBundle struct {
-	CFBundleIdentifier  string `plist:"CFBundleIdentifier"`
-	CFBundleVersion     string `plist:"CFBundleVersion"`
-	CFBundleDisplayName string `plist:"CFBundleDisplayName"`
-	CFBundleIconFile    string `plist:"CFBundleIconFile"`
-}
 
 func parseIpaIcon(path string) (data []byte, err error) {
 	iconPattern := regexp.MustCompile(`(?i)^Payload/[^/]*/icon\.png$`)
@@ -81,6 +75,19 @@ func parseIPA(path string) (plinfo *plistBundle, err error) {
 	return
 }
 
+type plistBundle struct {
+	CFBundleIdentifier  string `plist:"CFBundleIdentifier"`
+	CFBundleVersion     string `plist:"CFBundleVersion"`
+	CFBundleDisplayName string `plist:"CFBundleDisplayName"`
+	CFBundleName        string `plist:"CFBundleName"`
+	CFBundleIconFile    string `plist:"CFBundleIconFile"`
+	CFBundleIcons       struct {
+		CFBundlePrimaryIcon struct {
+			CFBundleIconFiles []string `plist:"CFBundleIconFiles"`
+		} `plist:"CFBundlePrimaryIcon"`
+	} `plist:"CFBundleIcons"`
+}
+
 // ref: https://gist.github.com/frischmilch/b15d81eabb67925642bd#file_manifest.plist
 type plAsset struct {
 	Kind string `plist:"kind"`
@@ -101,33 +108,36 @@ type downloadPlist struct {
 	Items []*plItem `plist:"items"`
 }
 
-func generateDownloadPlist(ipaUrl, imgUrl string, plinfo *plistBundle) ([]byte, error) {
+func generateDownloadPlist(baseURL *url.URL, ipaPath string, plinfo *plistBundle) ([]byte, error) {
 	dp := new(downloadPlist)
 	item := new(plItem)
+	baseURL.Path = ipaPath
+	ipaUrl := baseURL.String()
 	item.Assets = append(item.Assets, &plAsset{
 		Kind: "software-package",
 		URL:  ipaUrl,
 	})
 
-	// FIXME(ssx): find icon from CFBundleIconFile
-	_ = imgUrl
-	// , &plAsset{
-	// 	Kind: "display-image",
-	// 	URL:  imgUrl,
-	// })
+	iconFiles := plinfo.CFBundleIcons.CFBundlePrimaryIcon.CFBundleIconFiles
+	if iconFiles != nil && len(iconFiles) > 0 {
+		baseURL.Path = "/-/unzip/" + ipaPath + "/-/**/" + iconFiles[0] + ".png"
+		imgUrl := baseURL.String()
+		item.Assets = append(item.Assets, &plAsset{
+			Kind: "display-image",
+			URL:  imgUrl,
+		})
+	}
 
 	item.Metadata.Kind = "software"
 
 	item.Metadata.BundleIdentifier = plinfo.CFBundleIdentifier
 	item.Metadata.BundleVersion = plinfo.CFBundleVersion
-	item.Metadata.Title = plinfo.CFBundleDisplayName
+	item.Metadata.Title = plinfo.CFBundleName
 	if item.Metadata.Title == "" {
 		item.Metadata.Title = filepath.Base(ipaUrl)
 	}
 
 	dp.Items = append(dp.Items, item)
 	data, err := goplist.MarshalIndent(dp, goplist.XMLFormat, "    ")
-	// fmt.Println(string(data))
-	// fmt.Println(err)
 	return data, err
 }
