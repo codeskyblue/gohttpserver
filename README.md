@@ -17,8 +17,8 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Partial reload pages when directory change
 1. [x] When only one dir under dir, path will combine two together
 1. [x] Directory zip download
-1. [ ] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
-1. [ ] Plist proxy
+1. [x] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
+1. [x] Plist proxy
 1. [ ] Download count statistics
 1. [x] CORS enabled
 1. [ ] Offline download
@@ -43,6 +43,16 @@ Listen port 8000 on all interface, and enable upload
 ```
 ./gohttpserver --addr :8000 --upload
 ```
+
+### ipa plist proxy
+This is used for server which not https enabled.
+
+```
+./gohttpserver --plistproxy=https://someproxyhost.com/
+```
+
+Proxy web site should have ability, when request `https://proxyhost.com/www.github.com`
+return the same page as request from `http://www.github.com`
 
 ### Upload with CURL
 For example, upload a file named `foo.txt` to directory `somedir`
