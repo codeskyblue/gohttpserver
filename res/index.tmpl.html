@@ -32,11 +32,12 @@
                     </ul>
                     <form class="navbar-form navbar-right">
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Not finished.">
+                            <input type="text" name="search" class="form-control" placeholder="Not finished.">
                             <span class="input-group-btn">
-                  <button class="btn btn-default" type="button">
-                    <span class="glyphicon glyphicon-search"></span>
+                                <button class="btn btn-default" type="button">   
+                                <span class="glyphicon glyphicon-search"></span>
                             </button>
+                            </span>
                         </div>
                     </form>
                     <ul id="nav-right-bar" class="nav navbar-nav navbar-right">
@@ -63,7 +64,7 @@
                     <tr colspan=3>
                         <td>
                             <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
-                                Show hidden <i class="fa" v-bind:class='showHidden ? "fa-eye-slash" : "fa-eye"'></i>
+                                Show hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
                             </button>
                             <button class="btn btn-xs btn-default">
                                 Upload file(todo) <i class="fa fa-upload"></i>

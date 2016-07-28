@@ -41,7 +41,7 @@ var vm = new Vue({
                         contentHTML: '',
                     }
                 }
-                if (that.showHidden && f.name.slice(0, 1) === '.') {
+                if (!that.showHidden && f.name.slice(0, 1) === '.') {
                     return false;
                 }
                 return true;
