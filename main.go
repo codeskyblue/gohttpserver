@@ -30,7 +30,7 @@ type logger struct {
 }
 
 func (l logger) Log(record accesslog.LogRecord) {
-	log.Println(record.Method + " " + record.Uri)
+	log.Printf("%s [code %d] %s", record.Method, record.Status, record.Uri)
 }
 
 var (

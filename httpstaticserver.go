@@ -40,10 +40,9 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
 	// routers for Apple *.ipa
-	m.HandleFunc("/-/ipa/icon/{path:.*}", s.hIpaIcon)
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
-	// TODO: /ipa/link, /ipa/info
+	// TODO: /ipa/info
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
 	return s
@@ -129,19 +128,6 @@ func (s *HTTPStaticServer) hUnzip(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), 500)
 		return
 	}
-}
-
-func (s *HTTPStaticServer) hIpaIcon(w http.ResponseWriter, r *http.Request) {
-	// Useless now.
-	path := mux.Vars(r)["path"]
-	relPath := filepath.Join(s.Root, path)
-	data, err := parseIpaIcon(relPath)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound) // If parse icon error, 404 maybe the best way.
-		return
-	}
-	w.Header().Set("Content-Type", "image/png")
-	w.Write(data)
 }
 
 func genURLStr(r *http.Request, path string) *url.URL {
