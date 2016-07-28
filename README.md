@@ -31,6 +31,8 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [ ] Calculate md5sum and sha
 1. [ ] Folder upload
 1. [ ] Support sort by size or modified time
+1. [ ] Add version info into index page
+1. [ ] Add api `/-/stat/some.(apk|ipa)` to get detail info
 
 ## Installation
 ```
