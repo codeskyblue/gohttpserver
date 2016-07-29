@@ -1,8 +1,12 @@
 # gohttpserver
-Make the best HTTP File Server. Rewrite from https://github.com/codeskyblue/gohttp with golang+vue
+Make the best HTTP File Server.
+
+> Rewrite from https://github.com/codeskyblue/gohttp with golang+vue
 
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
+
+Upload size now limited to 1G
 
 ## Features
 1. [x] Support QRCode code generate
@@ -96,6 +100,7 @@ That's all. ^_^
 * Markdown-JS <https://github.com/showdownjs/showdown>
 * <https://github.com/sindresorhus/github-markdown-css>
 * <http://www.gorillatoolkit.org/pkg/handlers>
+* <http://www.dropzonejs.com/>
 
 ## LICENSE
 This project is under license [MIT](LICENSE)

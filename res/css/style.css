@@ -6,9 +6,10 @@ body {
     margin-bottom: 1em;
 }
 
+/* Not used */
 div.dropzone {
     display: block;
-    text-align: center;
+    /*text-align: center;*/
     border: 2px dashed #666;
     border-radius: 5px;
     cursor: pointer;

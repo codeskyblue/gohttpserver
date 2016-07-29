@@ -194,5 +194,17 @@ function loadFileList() {
     vm.updateBreadcrumb()
 }
 
-loadFileList() // For page first loading
-$("div.dropzone").dropzone({ url: location.pathname });
+// For page first loading
+loadFileList()
+
+Dropzone.options.myDropzone = {
+    url: location.pathname,
+    paramName: "file",
+    maxFilesize: 1024,
+    addRemoveLinks: true,
+    init: function() {
+        this.on("uploadprogress", function(file, progress) {
+            console.log("File progress", progress);
+        });
+    }
+}
