@@ -95,6 +95,9 @@ var vm = new Vue({
             });
             $("#qrcode-modal").modal("show");
         },
+        shouldHaveQrcode: function(name) {
+            return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
+        },
         genFileClass: function(f) {
             if (f.type == "dir") {
                 if (f.name == '.git') {
@@ -125,6 +128,12 @@ var vm = new Vue({
                 case "jpeg":
                 case "tiff":
                     return "fa-file-picture-o";
+                case "ipa":
+                    return "fa-apple";
+                case "apk":
+                    return "fa-android";
+                case "exe":
+                    return "fa-windows";
             }
             return "fa-file-text-o"
         },

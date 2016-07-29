@@ -65,6 +65,7 @@ func main() {
 		ss.EnableUpload()
 	}
 	if gcfg.PlistProxy != nil {
+		gcfg.PlistProxy.Scheme = "https"
 		ss.PlistProxy = gcfg.PlistProxy.String()
 	}
 

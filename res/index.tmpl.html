@@ -75,7 +75,7 @@
                         <th>Name</th>
                         <th>Size</th>
                         <th>
-                            <center>Actions</center>
+                            Actions
                         </th>
                     </tr>
                 </thead>
@@ -87,7 +87,7 @@
                             </a>
                         </td>
                         <td>{{f.size}}</td>
-                        <td style="text-align: center">
+                        <td style="text-align: left">
                             <template v-if="f.type == 'dir'">
                                 <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">
                                     Archieve Zip
@@ -99,7 +99,8 @@
                                     <span class="hidden-xs">Download</span>
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
-                                <a class="btn btn-default btn-xs" v-on:click="genQrcode(f.name)" href="#">
+                                <a class="btn btn-default btn-xs" v-if="shouldHaveQrcode(f.name)
+" v-on:click="genQrcode(f.name)" href="#">
                                     <span class="hidden-xs">QRCode</span>
                                     <span class="glyphicon glyphicon-qrcode"></span>
                                 </a>
