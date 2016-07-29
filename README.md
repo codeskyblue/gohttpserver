@@ -10,7 +10,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
 1. [x] Support show or hide hidden files
-1. [ ] Upload support(processing ...)
+1. [x] Upload support (for security reason, you need enabled it by option `--upload`)
 1. [x] README.md preview
 1. [ ] Code file preview
 1. [x] HTTP Basic Auth
