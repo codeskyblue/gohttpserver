@@ -193,4 +193,6 @@ function loadFileList() {
     })
     vm.updateBreadcrumb()
 }
+
 loadFileList() // For page first loading
+$("div.dropzone").dropzone({ url: location.pathname });

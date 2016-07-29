@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" href="/-/res/bootstrap-3.3.5/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="/-/res/font-awesome-4.6.3/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="/-/res/css/github-markdown.css">
+    <link rel="stylesheet" type="text/css" href="/-/res/css/dropzone.css">
     <link rel="stylesheet" type="text/css" href="/-/res/css/style.css">
     <link rel="stylesheet" type="text/css" href="/-/res/themes/[[.Theme]].css">
 </head>
@@ -66,17 +67,17 @@
                             <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
                                 Show hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
                             </button>
-                            <button class="btn btn-xs btn-default">
-                                Upload file(todo) <i class="fa fa-upload"></i>
+                            [[ if .Upload ]]
+                            <button class="btn btn-xs btn-default" data-toggle="modal" data-target="#upload-modal">
+                                Upload file <i class="fa fa-upload"></i>
                             </button>
+                            [[ end ]]
                         </td>
                     </tr>
                     <tr>
                         <th>Name</th>
                         <th>Size</th>
-                        <th>
-                            Actions
-                        </th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -142,9 +143,28 @@
                     </div>
                 </div>
             </div>
+            <!-- Upload modal-->
+            <div id="upload-modal" class="modal fade" tabindex="-1" role="dialog">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title">
+                                <i class="fa fa-upload"></i> File upload
+                            </h4>
+                        </div>
+                        <div class="modal-body">
+                            <form action="/testdata" class="dropzone"></form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="col-md-12">
-            <div id="footer" class="pull-right">
+            <div id="footer" class="pull-right" style="margin: 2em 1em">
                 <a href="https://github.com/codeskyblue/gohttpserver">gohttpserver</a>, written by <a href="https://github.com/codeskyblue">codeskyblue</a>. 2016. go 1.6
             </div>
         </div>
@@ -154,7 +174,7 @@
     <script src="/-/res/js/qrcode.js"></script>
     <script src="/-/res/js/vue-1.0.min.js"></script>
     <script src="/-/res/js/showdown-1.4.2.min.js"></script>
-    <!-- <script src="https://rawgit.com/showdownjs/showdown/develop/dist/showdown.min.js"></script> -->
+    <script src="/-/res/js/dropzone.js"></script>
     <script src="/-/res/bootstrap-3.3.5/js/bootstrap.min.js"></script>
     <script src="/-/res/js/index.js"></script>
 </body>
