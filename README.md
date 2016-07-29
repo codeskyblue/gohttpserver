@@ -8,6 +8,9 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 
 Upload size now limited to 1G
 
+## Screenshots
+![screen](screenshot.png)
+
 ## Features
 1. [x] Support QRCode code generate
 1. [x] Breadcrumb path quick change
@@ -41,6 +44,8 @@ Upload size now limited to 1G
 ## Installation
 ```
 go get -v github.com/codeskyblue/gohttpserver
+cd $GOPATH/src/github.com/codeskyblue/gohttpserver
+go build && ./gohttpserver
 ```
 
 ## Usage
