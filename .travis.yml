@@ -1,6 +1,10 @@
 language: go
 go:
+  - 1.5
   - 1.6
+  - dev
+env:
+  global:
+    - GO15VENDOREXPERIMENT=1
 script:
-  - go get -t
   - go test -v
