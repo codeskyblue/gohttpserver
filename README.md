@@ -1,9 +1,10 @@
 # gohttpserver
 [![Build Status](https://travis-ci.org/codeskyblue/gohttpserver.svg?branch=master)](https://travis-ci.org/codeskyblue/gohttpserver)
 
-Make the best HTTP File Server.
+Make the best HTTP File Server. Better UI, upload support, apple&android install package qrcode generate.
 
-> Rewrite from https://github.com/codeskyblue/gohttp with golang+vue
+- 目标: 做最好的HTTP文件服务器
+- 功能: 人性化的UI体验，文件的上传支持，安卓和苹果安装包的二维码直接生成。
 
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
@@ -21,7 +22,6 @@ Upload size now limited to 1G
 1. [x] Support show or hide hidden files
 1. [x] Upload support (for security reason, you need enabled it by option `--upload`)
 1. [x] README.md preview
-1. [ ] Code file preview
 1. [x] HTTP Basic Auth
 1. [x] Partial reload pages when directory change
 1. [x] When only one dir under dir, path will combine two together
@@ -31,6 +31,7 @@ Upload size now limited to 1G
 1. [ ] Download count statistics
 1. [x] CORS enabled
 1. [ ] Offline download
+1. [ ] Code file preview
 1. [ ] Edit file support
 1. [ ] Global file search
 1. [x] Hidden work `download` and `qrcode` in small screen
@@ -108,6 +109,9 @@ That's all. ^_^
 * <https://github.com/sindresorhus/github-markdown-css>
 * <http://www.gorillatoolkit.org/pkg/handlers>
 * <http://www.dropzonejs.com/>
+
+## History
+The first version is <https://github.com/codeskyblue/gohttp>
 
 ## LICENSE
 This project is under license [MIT](LICENSE)
