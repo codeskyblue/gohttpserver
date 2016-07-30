@@ -1,1 +1,1 @@
-web: ./gohttpserver --addr :$PORT --root testdata --upload --theme green
+web: gohttpserver --addr :$PORT --root testdata --upload --theme green
