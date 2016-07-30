@@ -3,6 +3,8 @@
 
 Make the best HTTP File Server. Better UI, upload support, apple&android install package qrcode generate.
 
+[Demo site](https://gohttpserver.herokuapp.com/)
+
 - 目标: 做最好的HTTP文件服务器
 - 功能: 人性化的UI体验，文件的上传支持，安卓和苹果安装包的二维码直接生成。
 
