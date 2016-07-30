@@ -1,4 +1,6 @@
 # gohttpserver
+[![Build Status](https://travis-ci.org/codeskyblue/gohttpserver.svg?branch=master)](https://travis-ci.org/codeskyblue/gohttpserver)
+
 Make the best HTTP File Server.
 
 > Rewrite from https://github.com/codeskyblue/gohttp with golang+vue
