@@ -191,14 +191,17 @@ function loadFileList() {
         })
         vm.files = res;
     })
-    vm.updateBreadcrumb()
+    vm.updateBreadcrumb();
+    // if (Dropzone.options.myDropzone) {
+    // Dropzone.options.myDropzone.url = location.pathname;
+    // }
 }
 
 // For page first loading
 loadFileList()
 
 Dropzone.options.myDropzone = {
-    url: location.pathname,
+    // url: location.pathname,
     paramName: "file",
     maxFilesize: 1024,
     addRemoveLinks: true,
@@ -206,5 +209,8 @@ Dropzone.options.myDropzone = {
         this.on("uploadprogress", function(file, progress) {
             console.log("File progress", progress);
         });
+        this.on("complete", function(file) {
+            loadFileList()
+        })
     }
 }
