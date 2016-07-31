@@ -7,15 +7,18 @@ REVCNT=$(git rev-list --count HEAD)
 DEVCNT=$(git rev-list --count $VERSION)
 if test $REVCNT != $DEVCNT
 then
-	echo $(expr $REVCNT - $DEVCNT)
+	VERSION="$VERSION.dev$(expr $REVCNT - $DEVCNT)"
 fi
 echo "VER: $VERSION"
+
+GITCOMMIT=$(git rev-parse HEAD)
+BUILDTIME=$(date -u +%Y/%m/%d-%H:%M:%S)
 
 build() {
 	echo "$1 $2 ..."
 	GOOS=$1 GOARCH=$2 go build \
 		-tags bindata \
-		-ldflags "-X main.VERSION=$VERSION -X main.BUILDTIME=$(date -u +%Y/%m/%d-%H:%M:%S) -X main.GITCOMMIT=$(git rev-parse HEAD)" \
+		-ldflags "-X main.VERSION=$VERSION -X main.BUILDTIME=$BUILDTIME -X main.GITCOMMIT=$GITCOMMIT" \
 		-o dist/gohttpserver-${3:-""}
 }
 
