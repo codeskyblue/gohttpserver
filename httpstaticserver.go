@@ -48,6 +48,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 			log.Println("making fs index ...")
 			s.makeIndex()
 			log.Println("indexing finished, next index after 10 minutes")
+			//time.Sleep(time.Second * 1)
 			time.Sleep(time.Minute * 10)
 		}
 	}()
@@ -288,7 +289,8 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) makeIndex() error {
-	return filepath.Walk(s.Root, func(path string, info os.FileInfo, err error) error {
+	var indexes = make([]IndexFileItem, 0)
+	var err = filepath.Walk(s.Root, func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
 		}
@@ -296,9 +298,11 @@ func (s *HTTPStaticServer) makeIndex() error {
 			path, _ = filepath.Rel(s.Root, path)
 		}
 		path = filepath.ToSlash(path)
-		s.indexes = append(s.indexes, IndexFileItem{path, info})
+		indexes = append(indexes, IndexFileItem{path, info})
 		return nil
 	})
+	s.indexes = indexes
+	return err
 }
 
 func (s *HTTPStaticServer) findIndex(text string) []IndexFileItem {
