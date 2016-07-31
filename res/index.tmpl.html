@@ -29,7 +29,7 @@
                 </div>
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
                     <ul class="nav navbar-nav">
-                        <li><a href="{{.dir}}">{{.dir}}</a></li>
+                        <!-- <li><a href="{{.dir}}">{{.dir}}</a></li> -->
                     </ul>
                     <form class="navbar-form navbar-right">
                         <div class="input-group">
@@ -62,8 +62,8 @@
             </ol>
             <table class="table table-hover">
                 <thead>
-                    <tr colspan=3>
-                        <td>
+                    <tr>
+                        <td colspan=3>
                             <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
                                 Show hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
                             </button>
@@ -91,7 +91,7 @@
                         <td style="text-align: left">
                             <template v-if="f.type == 'dir'">
                                 <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">
-                                    Archieve Zip
+                                    <span class="hidden-xs">Archive</span> Zip
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
                             </template>
