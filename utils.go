@@ -37,8 +37,7 @@ func SublimeContains(s, substr string) bool {
 	if len(rsubstr) > len(rs) {
 		return false
 	}
-	// abcdefg
-	// df
+
 	var ok = true
 	var i, j = 0, 0
 	for ; i < len(rsubstr); i++ {

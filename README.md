@@ -45,6 +45,7 @@ Upload size now limited to 1G
 1. [ ] Support sort by size or modified time
 1. [ ] Add version info into index page
 1. [ ] Add api `/-/stat/some.(apk|ipa)` to get detail info
+1. [x] Auto tag version
 
 ## Installation
 ```

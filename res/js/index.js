@@ -19,6 +19,7 @@ var vm = new Vue({
         breadcrumb: [],
         showHidden: false,
         previewFile: null,
+        version: "loading",
         files: [{
             name: "loading ...",
             path: "",
@@ -199,6 +200,11 @@ function loadFileList() {
 
 // For page first loading
 loadFileList()
+
+// update version
+$.getJSON("/-/sysinfo", function(res) {
+    vm.version = res.version;
+})
 
 Dropzone.options.myDropzone = {
     // url: location.pathname,

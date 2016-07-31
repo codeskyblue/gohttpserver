@@ -2,9 +2,21 @@
 
 set -eu
 
+VERSION=$(git describe --abbrev=0 --tags)
+REVCNT=$(git rev-list --count HEAD)
+DEVCNT=$(git rev-list --count $VERSION)
+if test $REVCNT != $DEVCNT
+then
+	echo $(expr $REVCNT - $DEVCNT)
+fi
+echo "VER: $VERSION"
+
 build() {
 	echo "$1 $2 ..."
-	GOOS=$1 GOARCH=$2 go build -tags bindata -o dist/gohttpserver-${3:-""}
+	GOOS=$1 GOARCH=$2 go build \
+		-tags bindata \
+		-ldflags "-X main.VERSION=$VERSION -X main.BUILDTIME=$(date -u +%Y/%m/%d-%H:%M:%S) -X main.GITCOMMIT=$(git rev-parse HEAD)" \
+		-o dist/gohttpserver-${3:-""}
 }
 
 go-bindata-assetfs -tags bindata res/...

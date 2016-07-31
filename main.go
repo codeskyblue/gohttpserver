@@ -1,11 +1,15 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"log"
 	"net/http"
 	"net/url"
+	"runtime"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/alecthomas/kingpin"
 	"github.com/goji/httpauth"
@@ -36,10 +40,36 @@ func (l logger) Log(record accesslog.LogRecord) {
 var (
 	gcfg = Configure{}
 	l    = logger{}
+
+	VERSION   = "unknown"
+	BUILDTIME = "unknown time"
+	GITCOMMIT = "unknown git commit"
+	SITE      = "https://github.com/codeskyblue/gohttpserver"
 )
+
+func versionMessage() string {
+	t := template.Must(template.New("version").Parse(`GoHTTPServer
+  Version:        {{.Version}}
+  Go version:     {{.GoVersion}}
+  OS/Arch:        {{.OSArch}}
+  Git commit:     {{.GitCommit}}
+  Built:          {{.Built}}
+  Site:           {{.Site}}`))
+	buf := bytes.NewBuffer(nil)
+	t.Execute(buf, map[string]interface{}{
+		"Version":   VERSION,
+		"GoVersion": runtime.Version(),
+		"OSArch":    runtime.GOOS + "/" + runtime.GOARCH,
+		"GitCommit": GITCOMMIT,
+		"Built":     BUILDTIME,
+		"Site":      SITE,
+	})
+	return buf.String()
+}
 
 func parseFlags() {
 	kingpin.HelpFlag.Short('h')
+	kingpin.Version(versionMessage())
 	kingpin.Flag("root", "root directory").Short('r').Default("./").StringVar(&gcfg.Root)
 	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
@@ -88,6 +118,13 @@ func main() {
 	}
 
 	http.Handle("/", hdlr)
+	http.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		data, _ := json.Marshal(map[string]interface{}{
+			"version": VERSION,
+		})
+		w.Write(data)
+	})
 
 	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
 
