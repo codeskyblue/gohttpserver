@@ -57,6 +57,18 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.m.ServeHTTP(w, r)
 }
 
+func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	relPath := filepath.Join(s.Root, path)
+
+	finfo, err := os.Stat(relPath)
+	if err == nil && finfo.IsDir() {
+		tmpl.ExecuteTemplate(w, "index", s)
+	} else {
+		http.ServeFile(w, r, relPath)
+	}
+}
+
 func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.MarshalIndent(s, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
@@ -97,18 +109,6 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	w.Write([]byte("Upload success"))
-}
-
-func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
-	path := mux.Vars(r)["path"]
-	relPath := filepath.Join(s.Root, path)
-	finfo, err := os.Stat(relPath)
-	if err == nil && finfo.IsDir() {
-		tmpl.ExecuteTemplate(w, "index", s)
-		// tmpl.Execute(w, s)
-	} else {
-		http.ServeFile(w, r, relPath)
-	}
 }
 
 func (s *HTTPStaticServer) hZip(w http.ResponseWriter, r *http.Request) {
@@ -192,7 +192,6 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	log.Println("Path:", s.Root, path)
 	http.ServeFile(w, r, filepath.Join(s.Root, path))
 }
 
@@ -204,34 +203,64 @@ type ListResponse struct {
 }
 
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
-	path := mux.Vars(r)["path"]
-	lrs := make([]ListResponse, 0)
-	fd, err := os.Open(filepath.Join(s.Root, path))
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	defer fd.Close()
+	requestPath := mux.Vars(r)["path"]
+	localPath := filepath.Join(s.Root, requestPath)
+	search := r.FormValue("search")
 
-	files, err := fd.Readdir(-1)
-	if err != nil {
-		http.Error(w, err.Error(), 500)
-		return
-	}
-	for _, file := range files {
-		lr := ListResponse{
-			Name: file.Name(),
-			Path: filepath.Join(path, file.Name()), // lstrip "/"
+	// path string -> info os.FileInfo
+	fileInfoMap := make(map[string]os.FileInfo, 0)
+
+	if search != "" {
+		err := filepath.Walk(localPath, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+			if strings.Contains(strings.ToLower(path), strings.ToLower(search)) {
+				relPath, _ := filepath.Rel(localPath, path)
+				fileInfoMap[relPath] = info
+			}
+			return nil
+		})
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
 		}
-		if file.IsDir() {
-			fileName := deepPath(filepath.Join(s.Root, path), file.Name())
-			lr.Name = fileName
-			lr.Path = filepath.Join(path, fileName)
+	} else {
+		fd, err := os.Open(localPath)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		defer fd.Close()
+
+		infos, err := fd.Readdir(-1)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		for _, info := range infos {
+			fileInfoMap[filepath.Join(requestPath, info.Name())] = info
+		}
+	}
+
+	lrs := make([]ListResponse, 0)
+	for path, info := range fileInfoMap {
+		lr := ListResponse{
+			Name: info.Name(),
+			Path: path, // filepath.Join(path, file.Name()), // lstrip "/"
+		}
+		if search != "" {
+			lr.Name = path
+		}
+		if info.IsDir() {
+			name := deepPath(localPath, info.Name())
+			lr.Name = name
+			lr.Path = filepath.Join(filepath.Dir(path), name)
 			lr.Type = "dir"
 			lr.Size = "-"
 		} else {
 			lr.Type = "file"
-			lr.Size = formatSize(file)
+			lr.Size = formatSize(info)
 		}
 		lrs = append(lrs, lr)
 	}

@@ -6,7 +6,7 @@ triggers:
   - '**/*.tmpl.html'
   env:
     DEBUG: "1"
-  cmd: (killall gohttpserver; true) && go build && ./gohttpserver --upload&
+  cmd: go build && ./gohttpserver --upload --root testdata
   shell: true
   delay: 100ms
   signal: KILL

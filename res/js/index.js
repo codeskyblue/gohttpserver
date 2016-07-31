@@ -12,6 +12,13 @@ function pathJoin(parts, sep) {
     return parts.join(separator).replace(replace, separator);
 }
 
+function getQueryString(name) {
+    var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
+    var r = decodeURI(window.location.search).substr(1).match(reg);
+    if (r != null) return r[2];
+    return null;
+}
+
 var vm = new Vue({
     el: "#app",
     data: {
@@ -20,6 +27,7 @@ var vm = new Vue({
         showHidden: false,
         previewFile: null,
         version: "loading",
+        search: getQueryString("search") || "Search text",
         files: [{
             name: "loading ...",
             path: "",
@@ -178,11 +186,13 @@ window.onpopstate = function(event) {
 
 function loadDirectory(reqPath) {
     window.history.pushState({}, "", reqPath);
-    loadFileList()
+    loadFileList(reqPath)
 }
 
-function loadFileList() {
-    $.getJSON("/-/json" + location.pathname, function(res) {
+function loadFileList(pathname) {
+    var pathname = pathname || location.pathname;
+    // console.log("load filelist:", pathname)
+    $.getJSON("/-/json" + pathname, function(res) {
         // console.log(res)
         res.sort(function(a, b) {
             var obj2n = function(v) {
@@ -193,13 +203,10 @@ function loadFileList() {
         vm.files = res;
     })
     vm.updateBreadcrumb();
-    // if (Dropzone.options.myDropzone) {
-    // Dropzone.options.myDropzone.url = location.pathname;
-    // }
 }
 
 // For page first loading
-loadFileList()
+loadFileList(location.pathname + location.search)
 
 // update version
 $.getJSON("/-/sysinfo", function(res) {

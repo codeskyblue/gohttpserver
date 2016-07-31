@@ -35,7 +35,7 @@ Upload size now limited to 1G
 1. [ ] Offline download
 1. [ ] Code file preview
 1. [ ] Edit file support
-1. [ ] Global file search
+1. [x] Global file search
 1. [x] Hidden work `download` and `qrcode` in small screen
 1. [x] Theme select support
 1. [x] OK to working behide Nginx
