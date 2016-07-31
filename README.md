@@ -43,9 +43,10 @@ Upload size now limited to 1G
 1. [ ] Calculate md5sum and sha
 1. [ ] Folder upload
 1. [ ] Support sort by size or modified time
-1. [ ] Add version info into index page
-1. [ ] Add api `/-/stat/some.(apk|ipa)` to get detail info
+1. [x] Add version info into index page
+1. [ ] Add api `/-/info/some.(apk|ipa)` to get detail info
 1. [x] Auto tag version
+1. [x] Custom title support
 
 ## Installation
 ```

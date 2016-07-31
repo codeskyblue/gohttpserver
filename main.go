@@ -28,6 +28,7 @@ type Configure struct {
 	XProxy     bool
 	Upload     bool
 	PlistProxy *url.URL
+	Title      string
 }
 
 type logger struct {
@@ -80,6 +81,7 @@ func parseFlags() {
 	kingpin.Flag("xproxy", "Used when behide proxy like nginx").BoolVar(&gcfg.XProxy)
 	kingpin.Flag("upload", "Enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("plistproxy", "IPA Plist file proxy, https needed").Short('p').URLVar(&gcfg.PlistProxy)
+	kingpin.Flag("title", "Server title").Default("Go HTTP File Server").StringVar(&gcfg.Title)
 
 	kingpin.Parse()
 }
@@ -89,8 +91,8 @@ func main() {
 
 	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme
+	ss.Title = gcfg.Title
 
-	log.Println(gcfg.PlistProxy)
 	if gcfg.Upload {
 		ss.EnableUpload()
 	}

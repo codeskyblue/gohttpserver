@@ -15,7 +15,7 @@ function pathJoin(parts, sep) {
 function getQueryString(name) {
     var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)");
     var r = decodeURI(window.location.search).substr(1).match(reg);
-    if (r != null) return r[2];
+    if (r != null) return r[2].replace(/\+/g, ' ');
     return null;
 }
 
@@ -27,7 +27,7 @@ var vm = new Vue({
         showHidden: false,
         previewFile: null,
         version: "loading",
-        search: getQueryString("search") || "Search text",
+        search: getQueryString("search"),
         files: [{
             name: "loading ...",
             path: "",
@@ -138,6 +138,7 @@ var vm = new Vue({
                 case "tiff":
                     return "fa-file-picture-o";
                 case "ipa":
+                case "dmg":
                     return "fa-apple";
                 case "apk":
                     return "fa-android";

@@ -11,17 +11,25 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 )
+
+type IndexFileItem struct {
+	Path string
+	Info os.FileInfo
+}
 
 type HTTPStaticServer struct {
 	Root       string
 	Theme      string
 	Upload     bool
+	Title      string
 	PlistProxy string
 
-	m *mux.Router
+	indexes []IndexFileItem
+	m       *mux.Router
 }
 
 func NewHTTPStaticServer(root string) *HTTPStaticServer {
@@ -34,6 +42,16 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		Theme: "black",
 		m:     m,
 	}
+
+	go func() {
+		for {
+			log.Println("making fs index ...")
+			s.makeIndex()
+			log.Println("indexing finished, next index after 10 minutes")
+			time.Sleep(time.Minute * 10)
+		}
+	}()
+
 	m.HandleFunc("/-/status", s.hStatus)
 	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
@@ -211,19 +229,14 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	fileInfoMap := make(map[string]os.FileInfo, 0)
 
 	if search != "" {
-		err := filepath.Walk(localPath, func(path string, info os.FileInfo, err error) error {
-			if info.IsDir() {
-				return nil
+		results := s.findIndex(search)
+		if len(results) > 50 { // max 50
+			results = results[:50]
+		}
+		for _, item := range results {
+			if filepath.HasPrefix(item.Path, requestPath) {
+				fileInfoMap[item.Path] = item.Info
 			}
-			if strings.Contains(strings.ToLower(path), strings.ToLower(search)) {
-				relPath, _ := filepath.Rel(localPath, path)
-				fileInfoMap[relPath] = info
-			}
-			return nil
-		})
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
 		}
 	} else {
 		fd, err := os.Open(localPath)
@@ -247,10 +260,14 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	for path, info := range fileInfoMap {
 		lr := ListResponse{
 			Name: info.Name(),
-			Path: path, // filepath.Join(path, file.Name()), // lstrip "/"
+			Path: path,
 		}
 		if search != "" {
-			lr.Name = path
+			name, err := filepath.Rel(requestPath, path)
+			if err != nil {
+				log.Println(requestPath, path, err)
+			}
+			lr.Name = filepath.ToSlash(name) // fix for windows
 		}
 		if info.IsDir() {
 			name := deepPath(localPath, info.Name())
@@ -270,6 +287,37 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+func (s *HTTPStaticServer) makeIndex() error {
+	return filepath.Walk(s.Root, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			return nil
+		}
+		if filepath.IsAbs(path) {
+			path, _ = filepath.Rel(s.Root, path)
+		}
+		path = filepath.ToSlash(path)
+		s.indexes = append(s.indexes, IndexFileItem{path, info})
+		return nil
+	})
+}
+
+func (s *HTTPStaticServer) findIndex(text string) []IndexFileItem {
+	ret := make([]IndexFileItem, 0)
+	for _, item := range s.indexes {
+		ok := true
+		// search algorithm, space for AND
+		for _, keyword := range strings.Fields(text) {
+			if !strings.Contains(strings.ToLower(item.Path), strings.ToLower(keyword)) {
+				ok = false
+			}
+		}
+		if ok {
+			ret = append(ret, item)
+		}
+	}
+	return ret
+}
+
 func deepPath(basedir, name string) string {
 	isDir := true
 	// loop max 5, incase of for loop not finished
@@ -280,7 +328,7 @@ func deepPath(basedir, name string) string {
 			break
 		}
 		if finfos[0].IsDir() {
-			name = filepath.Join(name, finfos[0].Name())
+			name = filepath.ToSlash(filepath.Join(name, finfos[0].Name()))
 		} else {
 			break
 		}
