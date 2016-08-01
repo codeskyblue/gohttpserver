@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <title>gohttp server</title>
     <link rel="shortcut icon" type="image/png" href="/-/res/favicon.png" />
     <link rel="stylesheet" type="text/css" href="/-/res/bootstrap-3.3.5/css/bootstrap.min.css">
@@ -96,14 +96,17 @@
                                 </a>
                             </template>
                             <template v-if="f.type == 'file'">
-                                <a class="btn btn-default btn-xs" href="/-/raw/{{f.path}}?download=true">
+                                <a class="btn btn-default btn-xs hidden-xs" href="/-/raw/{{f.path}}?download=true">
                                     <span class="hidden-xs">Download</span>
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
-                                <a class="btn btn-default btn-xs" v-if="shouldHaveQrcode(f.name)
+                                <a class="btn btn-default btn-xs hidden-xs" v-if="shouldHaveQrcode(f.name)
 " v-on:click="genQrcode(f.name)" href="#">
-                                    <span class="hidden-xs">QRCode</span>
+                                    QRCode
                                     <span class="glyphicon glyphicon-qrcode"></span>
+                                </a>
+                                <a class="btn btn-default btn-xs .visible-xs-*" v-if="shouldHaveQrcode(f.name)" href="{{genInstallURL(f.name)}}">
+                                    Install
                                 </a>
                             </template>
                         </td>
