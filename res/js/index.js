@@ -195,16 +195,23 @@ function loadDirectory(reqPath) {
 function loadFileList(pathname) {
     var pathname = pathname || location.pathname;
     // console.log("load filelist:", pathname)
-    $.getJSON("/-/json" + pathname, function(res) {
-        // console.log(res)
-        res.sort(function(a, b) {
-            var obj2n = function(v) {
-                return v.type == "dir" ? 0 : 1;
-            }
-            return obj2n(a) - obj2n(b);
-        })
-        vm.files = res;
-    })
+    $.ajax({
+        url: pathJoin(["/-/json", pathname]),
+        dataType: "json",
+        cache: false,
+        success: function(res) {
+            res.sort(function(a, b) {
+                var obj2n = function(v) {
+                    return v.type == "dir" ? 0 : 1;
+                }
+                return obj2n(a) - obj2n(b);
+            })
+            vm.files = res;
+        },
+        error: function(err) {
+            console.error(err)
+        },
+    });
     vm.updateBreadcrumb();
 }
 
@@ -226,6 +233,7 @@ Dropzone.options.myDropzone = {
             console.log("File progress", progress);
         });
         this.on("complete", function(file) {
+            console.log("reload file list")
             loadFileList()
         })
     }
