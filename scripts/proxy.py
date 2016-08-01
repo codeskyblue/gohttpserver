@@ -2,6 +2,7 @@
 # coding: utf-8
 
 import time
+import hashlib
 
 import tornado
 import tornado.ioloop
@@ -39,11 +40,34 @@ class ProxyHandler(tornado.web.RequestHandler):
                 self.write(response.body)
         self.finish()
 
+class PlistStoreHandler(tornado.web.RequestHandler):
+    db = {}
+
+    def post(self):
+        body = self.request.body
+        if len(body) > 5000:
+            self.set_status(500)
+            self.finish("request body too long")
+        m = hashlib.md5()
+        m.update(body)
+        key = m.hexdigest()[8:16]
+        self.db[key] = body
+        self.write({'key': key})
+
+    def get(self):
+        key = self.get_argument('key')
+        value = self.db.get(key)
+        if value is None:
+            raise tornado.web.HTTPError(404)
+        self.set_header('Content-Type', 'text/xml')
+        self.finish(value)
+
 
 def make_app(debug=True):
     return tornado.web.Application([
         (r"/", MainHandler),
         (r"/proxy/(.*)", ProxyHandler),
+        (r"/plist", PlistStoreHandler),
     ], debug=debug)
 
 
