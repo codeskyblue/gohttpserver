@@ -36,6 +36,10 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	if root == "" {
 		root = "."
 	}
+	root = filepath.ToSlash(root)
+	if !strings.HasSuffix(root, "/") {
+		root = root + "/"
+	}
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
