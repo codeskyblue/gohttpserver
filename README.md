@@ -84,6 +84,12 @@ $ curl -F file=@foo.txt localhost:8000/somedir
 ## FAQ
 - [How to generate self signed certificate with openssl](http://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl)
 
+### How the search works
+The search algorithm follow the search engine google. keywords are seperated with space, words with prefix `-` will be excluded.
+
+1. `hello world` means must contains `hello` and `world`
+1. `hello -world` means must contains `hello` but not contains `world`
+
 ## Developer Guide
 Depdencies are managed by godep
 

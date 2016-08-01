@@ -315,8 +315,17 @@ func (s *HTTPStaticServer) findIndex(text string) []IndexFileItem {
 		ok := true
 		// search algorithm, space for AND
 		for _, keyword := range strings.Fields(text) {
-			if !strings.Contains(strings.ToLower(item.Path), strings.ToLower(keyword)) {
-				ok = false
+			needContains := true
+			if strings.HasPrefix(keyword, "-") {
+				needContains = false
+				keyword = keyword[1:]
+			}
+			if keyword == "" {
+				continue
+			}
+			ok = (needContains == strings.Contains(strings.ToLower(item.Path), strings.ToLower(keyword)))
+			if !ok {
+				break
 			}
 		}
 		if ok {
