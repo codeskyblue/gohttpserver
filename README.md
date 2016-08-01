@@ -65,7 +65,7 @@ Listen port 8000 on all interface, and enable upload
 ```
 
 ### ipa plist proxy
-This is used for server which not https enabled. default use <https://plistproxy.herokuapp.com/>
+This is used for server which not https enabled. default use <https://plistproxy.herokuapp.com/plist>
 
 ```
 ./gohttpserver --plistproxy=https://someproxyhost.com/
