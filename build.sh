@@ -14,11 +14,17 @@ echo "VER: $VERSION"
 GITCOMMIT=$(git rev-parse HEAD)
 BUILDTIME=$(date -u +%Y/%m/%d-%H:%M:%S)
 
+LDFLAGS="-X main.VERSION=$VERSION -X main.BUILDTIME=$BUILDTIME -X main.GITCOMMIT=$GITCOMMIT"
+if test -n "$EX_LDFLAGS"
+then
+	LDFLAGS="$LDFLAGS $EX_LDFLAGS"
+fi
+
 build() {
 	echo "$1 $2 ..."
 	GOOS=$1 GOARCH=$2 go build \
 		-tags bindata \
-		-ldflags "-X main.VERSION=$VERSION -X main.BUILDTIME=$BUILDTIME -X main.GITCOMMIT=$GITCOMMIT" \
+		-ldflags "$LDFLAGS" \
 		-o dist/gohttpserver-${3:-""}
 }
 
