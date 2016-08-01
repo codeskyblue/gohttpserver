@@ -8,6 +8,8 @@ Make the best HTTP File Server. Better UI, upload support, apple&android install
 - 目标: 做最好的HTTP文件服务器
 - 功能: 人性化的UI体验，文件的上传支持，安卓和苹果安装包的二维码直接生成。
 
+**Binary** can be download from [github releases](https://github.com/codeskyblue/gohttpserver/releases/)
+
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 
