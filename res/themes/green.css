@@ -13,12 +13,12 @@ a:hover {
     font-weight: bold;
 }
 
-.navbar-inverse {
+.navbar {
     background-color: #1b926c;
     border-color: #1fa67a;
 }
 
-.navbar-inverse .navbar-brand {
+.navbar .navbar-brand {
     color: white;
 }
 
