@@ -107,7 +107,7 @@ var vm = new Vue({
             $("#qrcode-modal").modal("show");
         },
         shouldHaveQrcode: function(name) {
-            return ['apk', 'ipa', 'htm', 'html'].indexOf(getExtention(name)) !== -1;
+            return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
         },
         genFileClass: function(f) {
             if (f.type == "dir") {

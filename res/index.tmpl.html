@@ -100,9 +100,8 @@
                                     <span class="hidden-xs">Download</span>
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
-                                <a class="btn btn-default btn-xs hidden-xs" v-if="shouldHaveQrcode(f.name)
-" v-on:click="genQrcode(f.name)" href="javascript:void(0)">
-                                    QRCode
+                                <a class="btn btn-default btn-xs hidden-xs" v-on:click="genQrcode(f.name)" href="javascript:void(0)">
+                                    <span v-if="shouldHaveQrcode(f.name)">QRCode</span>
                                     <span class="glyphicon glyphicon-qrcode"></span>
                                 </a>
                                 <a class="btn btn-default btn-xs visible-xs" v-if="shouldHaveQrcode(f.name)" href="{{genInstallURL(f.name)}}">
