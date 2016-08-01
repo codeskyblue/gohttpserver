@@ -25,7 +25,7 @@ type Configure struct {
 	Key        string
 	Cors       bool
 	Theme      string
-	XProxy     bool
+	XHeaders   bool
 	Upload     bool
 	PlistProxy *url.URL
 	Title      string
@@ -78,7 +78,7 @@ func parseFlags() {
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
 	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
-	kingpin.Flag("xproxy", "Used when behide proxy like nginx").BoolVar(&gcfg.XProxy)
+	kingpin.Flag("xheaders", "Used when behide nginx").BoolVar(&gcfg.XHeaders)
 	kingpin.Flag("upload", "Enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("plistproxy", "IPA Plist file proxy, https needed").Short('p').URLVar(&gcfg.PlistProxy)
 	kingpin.Flag("title", "Server title").Default("Go HTTP File Server").StringVar(&gcfg.Title)
@@ -115,7 +115,7 @@ func main() {
 	if gcfg.Cors {
 		hdlr = handlers.CORS()(hdlr)
 	}
-	if gcfg.XProxy {
+	if gcfg.XHeaders {
 		hdlr = handlers.ProxyHeaders(hdlr)
 	}
 
