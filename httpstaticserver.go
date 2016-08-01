@@ -35,12 +35,13 @@ type HTTPStaticServer struct {
 
 func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	if root == "" {
-		root = "."
+		root = "./"
 	}
 	root = filepath.ToSlash(root)
 	if !strings.HasSuffix(root, "/") {
 		root = root + "/"
 	}
+	log.Printf("Root path: %s\n", root)
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
@@ -281,14 +282,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else {
-		fd, err := os.Open(localPath)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
-		}
-		defer fd.Close()
-
-		infos, err := fd.Readdir(-1)
+		infos, err := ioutil.ReadDir(localPath)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
 			return
