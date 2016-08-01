@@ -39,8 +39,9 @@ func (l logger) Log(record accesslog.LogRecord) {
 }
 
 var (
-	gcfg = Configure{}
-	l    = logger{}
+	defaultPlistProxy = "https://plistproxy.herokuapp.com/plist"
+	gcfg              = Configure{}
+	l                 = logger{}
 
 	VERSION   = "unknown"
 	BUILDTIME = "unknown time"
@@ -78,10 +79,10 @@ func parseFlags() {
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
 	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
-	kingpin.Flag("xheaders", "Used when behide nginx").BoolVar(&gcfg.XHeaders)
-	kingpin.Flag("upload", "Enable upload support").BoolVar(&gcfg.Upload)
-	kingpin.Flag("plistproxy", "IPA Plist file proxy, https needed").Short('p').URLVar(&gcfg.PlistProxy)
-	kingpin.Flag("title", "Server title").Default("Go HTTP File Server").StringVar(&gcfg.Title)
+	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
+	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
+	kingpin.Flag("plistproxy", "plist file proxy, if you donot have https").Short('p').URLVar(&gcfg.PlistProxy)
+	kingpin.Flag("title", "server title").Default("Go HTTP File Server").StringVar(&gcfg.Title)
 
 	kingpin.Parse()
 }

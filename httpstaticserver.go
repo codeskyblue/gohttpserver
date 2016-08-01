@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -199,8 +200,16 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	plistUrl := genURLStr(r, "/-/ipa/plist/"+path).String()
-	if s.PlistProxy != "" {
-		plistUrl = strings.TrimSuffix(s.PlistProxy, "/") + "/" + r.Host + "/-/ipa/plist/" + path
+	if r.TLS == nil {
+		// send plist to plistproxy and get a https link
+		httpPlistLink := "http://" + r.Host + "/-/ipa/plist/" + path
+		url, err := s.genPlistLink(httpPlistLink)
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		plistUrl = url
+		//plistUrl = strings.TrimSuffix(s.PlistProxy, "/") + "/" + r.Host + "/-/ipa/plist/" + path
 	}
 
 	w.Header().Set("Content-Type", "text/html")
@@ -211,6 +220,34 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	// w.Write([]byte(fmt.Sprintf(
 	// 	`<a href='itms-services://?action=download-manifest&url=%s'>Click this link to install</a>`,
 	// 	plistUrl)))
+}
+
+func (s *HTTPStaticServer) genPlistLink(httpPlistLink string) (plistUrl string, err error) {
+	// Maybe need a proxy, a little slowly now.
+	pp := s.PlistProxy
+	if pp == "" {
+		pp = defaultPlistProxy
+	}
+	resp, err := http.Get(httpPlistLink)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	data, _ := ioutil.ReadAll(resp.Body)
+	retData, err := http.Post(pp, "text/xml", bytes.NewBuffer(data))
+	if err != nil {
+		return
+	}
+	defer retData.Body.Close()
+
+	jsonData, _ := ioutil.ReadAll(retData.Body)
+	var ret map[string]string
+	if err = json.Unmarshal(jsonData, &ret); err != nil {
+		return
+	}
+	plistUrl = pp + "/" + ret["key"]
+	return
 }
 
 func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Request) {

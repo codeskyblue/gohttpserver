@@ -65,14 +65,22 @@ Listen port 8000 on all interface, and enable upload
 ```
 
 ### ipa plist proxy
-This is used for server which not https enabled.
+This is used for server which not https enabled. default use <https://plistproxy.herokuapp.com/>
 
 ```
 ./gohttpserver --plistproxy=https://someproxyhost.com/
 ```
 
-Proxy web site should have ability, when request `https://proxyhost.com/www.github.com`
-return the same page as request from `http://www.github.com`
+Proxy web site should have ability
+
+```sh
+$ http POST https://proxyhost.com/plist < app.plist
+{
+	"key": "18f99211"
+}
+$ http GET https://proxyhost.com/plist/18f99211
+# show the app.plist content
+```
 
 ### Upload with CURL
 For example, upload a file named `foo.txt` to directory `somedir`
