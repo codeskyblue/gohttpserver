@@ -98,7 +98,7 @@ var vm = new Vue({
             return location.protocol + "//" + pathJoin([location.host, location.pathname, name]);
         },
         genQrcode: function(text) {
-            var urlPath = genInstallURL(text);
+            var urlPath = this.genInstallURL(text);
             $("#qrcode-title").html(text);
             $("#qrcode-link").attr("href", urlPath);
             $('#qrcodeCanvas').empty().qrcode({
