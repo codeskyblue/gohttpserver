@@ -29,6 +29,10 @@
 			"Rev": "de82dee623d9207f906d327172149cba50427a88"
 		},
 		{
+			"ImportPath": "github.com/go-yaml/yaml",
+			"Rev": "e4d366fc3c7938e2958e662b4258c7a89e1f0e3e"
+		},
+		{
 			"ImportPath": "github.com/goji/httpauth",
 			"Rev": "2da839ab0f4df05a6db5eb277995589dadbd4fb9"
 		},
