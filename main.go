@@ -3,33 +3,39 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/alecthomas/kingpin"
+	"github.com/go-yaml/yaml"
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
 	accesslog "github.com/mash/go-accesslog"
 )
 
 type Configure struct {
-	Addr            string
-	Root            string
-	HttpAuth        string
-	Cert            string
-	Key             string
-	Cors            bool
-	Theme           string
-	XHeaders        bool
-	Upload          bool
-	PlistProxy      *url.URL
-	Title           string
-	GoogleTrackerId string
+	Conf            *os.File `yaml:"-"`
+	Addr            string   `yaml:"addr"`
+	Root            string   `yaml:"root"`
+	HttpAuth        string   `yaml:"httpauth"`
+	Cert            string   `yaml:"cert"`
+	Key             string   `yaml:"key"`
+	Cors            bool     `yaml:"cors"`
+	Theme           string   `yaml:"theme"`
+	XHeaders        bool     `yaml:"xheaders"`
+	Upload          bool     `yaml:"upload"`
+	PlistProxy      string   `yaml:"plistproxy"`
+	Title           string   `yaml:"title"`
+	Debug           bool     `yaml:"debug"`
+	GoogleTrackerId string   `yaml:"google-tracker-id"`
 }
 
 type logger struct {
@@ -70,27 +76,53 @@ func versionMessage() string {
 	return buf.String()
 }
 
-func parseFlags() {
+func parseFlags() error {
+	// initial default conf
+	gcfg.Theme = "black"
+	gcfg.PlistProxy = defaultPlistProxy
+	gcfg.GoogleTrackerId = "UA-81205425-2"
+	gcfg.Title = "Go HTTP File Server"
+
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
+	kingpin.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
 	kingpin.Flag("root", "root directory").Short('r').Default("./").StringVar(&gcfg.Root)
 	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
-	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").Default("").StringVar(&gcfg.HttpAuth)
-	kingpin.Flag("theme", "web theme, one of <black|green>").Default("black").StringVar(&gcfg.Theme)
+	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.HttpAuth)
+	kingpin.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
 	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
-	kingpin.Flag("plistproxy", "plist proxy when server is not https").Default(defaultPlistProxy).Short('p').URLVar(&gcfg.PlistProxy)
-	kingpin.Flag("title", "server title").Default("Go HTTP File Server").StringVar(&gcfg.Title)
-	kingpin.Flag("google-tracker-id", "set to empty to disable it").Default("UA-81205425-2").StringVar(&gcfg.GoogleTrackerId)
+	kingpin.Flag("debug", "enable debug mode").BoolVar(&gcfg.Debug)
+	kingpin.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
+	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
+	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerId)
 
-	kingpin.Parse()
+	kingpin.Parse() // first parse conf
+
+	if gcfg.Conf != nil {
+		defer func() {
+			kingpin.Parse() // command line priority high than conf
+		}()
+		ymlData, err := ioutil.ReadAll(gcfg.Conf)
+		if err != nil {
+			return err
+		}
+		return yaml.Unmarshal(ymlData, &gcfg)
+	}
+	return nil
 }
 
 func main() {
-	parseFlags()
+	if err := parseFlags(); err != nil {
+		log.Fatal(err)
+	}
+	if gcfg.Debug {
+		data, _ := yaml.Marshal(gcfg)
+		fmt.Printf("--- config ---\n%s\n", string(data))
+	}
 
 	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme
@@ -98,9 +130,13 @@ func main() {
 	ss.GoogleTrackerId = gcfg.GoogleTrackerId
 	ss.Upload = gcfg.Upload
 
-	if gcfg.PlistProxy != nil {
-		gcfg.PlistProxy.Scheme = "https"
-		ss.PlistProxy = gcfg.PlistProxy.String()
+	if gcfg.PlistProxy != "" {
+		u, err := url.Parse(gcfg.PlistProxy)
+		if err != nil {
+			log.Fatal(err)
+		}
+		u.Scheme = "https"
+		ss.PlistProxy = u.String()
 	}
 
 	var hdlr http.Handler = ss

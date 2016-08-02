@@ -49,6 +49,7 @@ Upload size now limited to 1G
 1. [ ] Add api `/-/info/some.(apk|ipa)` to get detail info
 1. [x] Auto tag version
 1. [x] Custom title support
+1. [x] Support setting from conf file
 
 ## Installation
 ```
@@ -72,7 +73,7 @@ Support update access rule if there is a file named `.ghs.yml` under directory. 
 upload: false
 ```
 
-For example, if there is such file under directory `foo`, directory `foo` can not be uploaded, while `bar` can't.
+For example, if there is such file under directory `foo`, directory `foo` can not be uploaded, while `bar` can.
 
 ```
 root -
@@ -82,6 +83,8 @@ root -
   `-- bar
        `-- hello.txt
 ```
+
+Use config file. specfied with `--conf`, see [example config.yml](testdata/config.yml). Note that command line option can overwrite conf in `config.yml`
 
 ### ipa plist proxy
 This is used for server which not https enabled. default use <https://plistproxy.herokuapp.com/plist>
