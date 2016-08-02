@@ -78,6 +78,8 @@ func versionMessage() string {
 
 func parseFlags() error {
 	// initial default conf
+	gcfg.Root = "./"
+	gcfg.Addr = ":8000"
 	gcfg.Theme = "black"
 	gcfg.PlistProxy = defaultPlistProxy
 	gcfg.GoogleTrackerId = "UA-81205425-2"
@@ -86,8 +88,8 @@ func parseFlags() error {
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
 	kingpin.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
-	kingpin.Flag("root", "root directory").Short('r').Default("./").StringVar(&gcfg.Root)
-	kingpin.Flag("addr", "listen address").Short('a').Default(":8000").StringVar(&gcfg.Addr)
+	kingpin.Flag("root", "root directory, default ./").Short('r').StringVar(&gcfg.Root)
+	kingpin.Flag("addr", "listen address, default :8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
 	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.HttpAuth)
