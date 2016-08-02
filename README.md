@@ -41,7 +41,7 @@ Upload size now limited to 1G
 1. [x] Hidden work `download` and `qrcode` in small screen
 1. [x] Theme select support
 1. [x] OK to working behide Nginx
-1. [ ] \.htaccess support
+1. [ ] \.ghs.yml support (like \.htaccess)
 1. [ ] Calculate md5sum and sha
 1. [ ] Folder upload
 1. [ ] Support sort by size or modified time
@@ -62,6 +62,25 @@ Listen port 8000 on all interface, and enable upload
 
 ```
 ./gohttpserver -r ./ --addr :8000 --upload
+```
+
+## Advanced usage
+Support update access rule if there is a file named `.ghs.yml` under directory. `.ghs.yml` example
+
+```yaml
+---
+upload: false
+```
+
+For example, if there is such file under directory `foo`, directory `foo` can not be uploaded, while `bar` can't.
+
+```
+root -
+  |-- foo
+  |    |-- .ghs.yml
+  |    `-- world.txt 
+  `-- bar
+       `-- hello.txt
 ```
 
 ### ipa plist proxy

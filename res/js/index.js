@@ -27,6 +27,7 @@ var vm = new Vue({
         showHidden: false,
         previewFile: null,
         version: "loading",
+        auth: {},
         search: getQueryString("search"),
         files: [{
             name: "loading ...",
@@ -200,13 +201,14 @@ function loadFileList(pathname) {
         dataType: "json",
         cache: false,
         success: function(res) {
-            res.sort(function(a, b) {
+            res.files.sort(function(a, b) {
                 var obj2n = function(v) {
                     return v.type == "dir" ? 0 : 1;
                 }
                 return obj2n(a) - obj2n(b);
             })
-            vm.files = res;
+            vm.files = res.files;
+            vm.auth = res.auth;
         },
         error: function(err) {
             console.error(err)

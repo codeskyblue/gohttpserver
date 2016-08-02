@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
 )
 
@@ -23,11 +24,12 @@ type IndexFileItem struct {
 }
 
 type HTTPStaticServer struct {
-	Root       string
-	Theme      string
-	Upload     bool
-	Title      string
-	PlistProxy string
+	Root            string
+	Theme           string
+	Upload          bool
+	Title           string
+	PlistProxy      string
+	GoogleTrackerId string
 
 	indexes []IndexFileItem
 	m       *mux.Router
@@ -41,7 +43,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	if !strings.HasSuffix(root, "/") {
 		root = root + "/"
 	}
-	log.Printf("Root path: %s\n", root)
+	log.Printf("root path: %s\n", root)
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
@@ -50,10 +52,12 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	}
 
 	go func() {
+		time.Sleep(1 * time.Second)
 		for {
-			log.Println("making fs index ...")
+			startTime := time.Now()
+			log.Println("Started making search index")
 			s.makeIndex()
-			log.Println("indexing finished, next index after 10 minutes")
+			log.Printf("Completed search index in %v", time.Since(startTime))
 			//time.Sleep(time.Second * 1)
 			time.Sleep(time.Minute * 10)
 		}
@@ -101,6 +105,15 @@ func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
+	path := mux.Vars(req)["path"]
+
+	// check auth
+	auth := s.readAccessConf(path)
+	if !auth.Upload {
+		http.Error(w, "Upload forbidden", http.StatusForbidden)
+		return
+	}
+
 	err := req.ParseMultipartForm(1 << 30) // max memory 1G
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -111,7 +124,6 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	path := mux.Vars(req)["path"]
 	dirpath := filepath.Join(s.Root, path)
 
 	for _, mfile := range req.MultipartForm.File["file"] {
@@ -263,6 +275,10 @@ type ListResponse struct {
 	Size string `json:"size"`
 }
 
+type AccessConf struct {
+	Upload bool `yaml:"upload" json:"upload"`
+}
+
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	requestPath := mux.Vars(r)["path"]
 	localPath := filepath.Join(s.Root, requestPath)
@@ -292,6 +308,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// turn file list -> json
 	lrs := make([]ListResponse, 0)
 	for path, info := range fileInfoMap {
 		lr := ListResponse{
@@ -318,7 +335,10 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 		lrs = append(lrs, lr)
 	}
 
-	data, _ := json.Marshal(lrs)
+	data, _ := json.Marshal(map[string]interface{}{
+		"files": lrs,
+		"auth":  s.readAccessConf(requestPath),
+	})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 }
@@ -364,6 +384,29 @@ func (s *HTTPStaticServer) findIndex(text string) []IndexFileItem {
 		}
 	}
 	return ret
+}
+
+func (s *HTTPStaticServer) defaultAccessConf() AccessConf {
+	return AccessConf{
+		Upload: s.Upload,
+	}
+}
+
+func (s *HTTPStaticServer) readAccessConf(requestPath string) (ac AccessConf) {
+	ac = s.defaultAccessConf()
+	cfgFile := filepath.Join(s.Root, requestPath, ".ghs.yml")
+	data, err := ioutil.ReadFile(cfgFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		log.Printf("Err read .ghs.yml: %v", err)
+	}
+	err = yaml.Unmarshal(data, &ac)
+	if err != nil {
+		log.Printf("Err format .ghs.yml: %v", err)
+	}
+	return
 }
 
 func deepPath(basedir, name string) string {

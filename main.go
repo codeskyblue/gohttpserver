@@ -18,24 +18,25 @@ import (
 )
 
 type Configure struct {
-	Addr       string
-	Root       string
-	HttpAuth   string
-	Cert       string
-	Key        string
-	Cors       bool
-	Theme      string
-	XHeaders   bool
-	Upload     bool
-	PlistProxy *url.URL
-	Title      string
+	Addr            string
+	Root            string
+	HttpAuth        string
+	Cert            string
+	Key             string
+	Cors            bool
+	Theme           string
+	XHeaders        bool
+	Upload          bool
+	PlistProxy      *url.URL
+	Title           string
+	GoogleTrackerId string
 }
 
 type logger struct {
 }
 
 func (l logger) Log(record accesslog.LogRecord) {
-	log.Printf("%s [code %d] %s", record.Method, record.Status, record.Uri)
+	log.Printf("%s - %s %d %s", record.Ip, record.Method, record.Status, record.Uri)
 }
 
 var (
@@ -83,6 +84,7 @@ func parseFlags() {
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("plistproxy", "plist proxy when server is not https").Default(defaultPlistProxy).Short('p').URLVar(&gcfg.PlistProxy)
 	kingpin.Flag("title", "server title").Default("Go HTTP File Server").StringVar(&gcfg.Title)
+	kingpin.Flag("google-tracker-id", "set to empty to disable it").Default("UA-81205425-2").StringVar(&gcfg.GoogleTrackerId)
 
 	kingpin.Parse()
 }
@@ -93,6 +95,7 @@ func main() {
 	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
+	ss.GoogleTrackerId = gcfg.GoogleTrackerId
 
 	if gcfg.Upload {
 		ss.EnableUpload()
@@ -129,7 +132,10 @@ func main() {
 		w.Write(data)
 	})
 
-	log.Printf("Listening on addr: %s\n", strconv.Quote(gcfg.Addr))
+	if !strings.Contains(gcfg.Addr, ":") {
+		gcfg.Addr = ":" + gcfg.Addr
+	}
+	log.Printf("listening on %s\n", strconv.Quote(gcfg.Addr))
 
 	var err error
 	if gcfg.Key != "" && gcfg.Cert != "" {
