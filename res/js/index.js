@@ -27,6 +27,7 @@ var vm = new Vue({
         showHidden: false,
         previewFile: null,
         version: "loading",
+        mtimeTypeFromNow: false, // or fromNow
         auth: {},
         search: getQueryString("search"),
         files: [{
@@ -88,6 +89,13 @@ var vm = new Vue({
         },
     },
     methods: {
+        formatTime: function(timestamp) {
+            var m = moment(timestamp);
+            if (this.mtimeTypeFromNow) {
+                return m.fromNow();
+            }
+            return m.format('YYYY-MM-DD HH:mm:ss');
+        },
         toggleHidden: function() {
             this.showHidden = !this.showHidden;
         },
@@ -226,7 +234,6 @@ $.getJSON("/-/sysinfo", function(res) {
 })
 
 Dropzone.options.myDropzone = {
-    // url: location.pathname,
     paramName: "file",
     maxFilesize: 1024,
     addRemoveLinks: true,

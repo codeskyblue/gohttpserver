@@ -75,7 +75,9 @@
                     <tr>
                         <th>Name</th>
                         <th>Size</th>
-                        <th class="hidden-xs">ModTime</th>
+                        <th class="hidden-xs">
+                            <span style="cursor: pointer" v-on:click='mtimeTypeFromNow = !mtimeTypeFromNow'>ModTime</span>
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -87,7 +89,7 @@
                             </a>
                         </td>
                         <td>{{f.size}}</td>
-                        <td class="hidden-xs">{{f.mtime | fromNow}}</td>
+                        <td class="hidden-xs">{{formatTime(f.mtime)}}</td>
                         <td style="text-align: left">
                             <template v-if="f.type == 'dir'">
                                 <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">

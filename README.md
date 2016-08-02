@@ -16,7 +16,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 Upload size now limited to 1G
 
 ## Screenshots
-![screen](screenshot.png)
+![screen](testdata/filetypes/gohttpserver.gif)
 
 ## Features
 1. [x] Support QRCode code generate
