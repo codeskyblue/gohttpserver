@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -64,7 +65,6 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	}()
 
 	m.HandleFunc("/-/status", s.hStatus)
-	m.HandleFunc("/-/raw/{path:.*}", s.hFileOrDirectory)
 	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
 	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
 	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
@@ -74,12 +74,8 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	// TODO: /ipa/info
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
+	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
 	return s
-}
-
-func (s *HTTPStaticServer) EnableUpload() {
-	s.Upload = true
-	s.m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
 }
 
 func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -94,6 +90,9 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	if err == nil && finfo.IsDir() {
 		tmpl.ExecuteTemplate(w, "index", s)
 	} else {
+		if r.FormValue("download") == "true" {
+			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
+		}
 		http.ServeFile(w, r, relPath)
 	}
 }
@@ -269,10 +268,11 @@ func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Reque
 }
 
 type ListResponse struct {
-	Name string `json:"name"`
-	Path string `json:"path"`
-	Type string `json:"type"`
-	Size string `json:"size"`
+	Name    string `json:"name"`
+	Path    string `json:"path"`
+	Type    string `json:"type"`
+	Size    string `json:"size"`
+	ModTime int64  `json:"mtime"`
 }
 
 type AccessConf struct {
@@ -312,8 +312,9 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	lrs := make([]ListResponse, 0)
 	for path, info := range fileInfoMap {
 		lr := ListResponse{
-			Name: info.Name(),
-			Path: path,
+			Name:    info.Name(),
+			Path:    path,
+			ModTime: info.ModTime().UnixNano() / 1e6,
 		}
 		if search != "" {
 			name, err := filepath.Rel(requestPath, path)

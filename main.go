@@ -96,10 +96,8 @@ func main() {
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
 	ss.GoogleTrackerId = gcfg.GoogleTrackerId
+	ss.Upload = gcfg.Upload
 
-	if gcfg.Upload {
-		ss.EnableUpload()
-	}
 	if gcfg.PlistProxy != nil {
 		gcfg.PlistProxy.Scheme = "https"
 		ss.PlistProxy = gcfg.PlistProxy.String()

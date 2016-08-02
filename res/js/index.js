@@ -204,8 +204,8 @@ function loadFileList(pathname) {
             res.files.sort(function(a, b) {
                 var obj2n = function(v) {
                     return v.type == "dir" ? 0 : 1;
-                }
-                return obj2n(a) - obj2n(b);
+                };
+                return (obj2n(a) - obj2n(b)) || (a.name > b.name);
             })
             vm.files = res.files;
             vm.auth = res.auth;
@@ -240,3 +240,7 @@ Dropzone.options.myDropzone = {
         })
     }
 }
+
+Vue.filter('fromNow', function(value) {
+    return moment(value).fromNow();
+})

@@ -63,7 +63,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <td colspan=3>
+                        <td colspan=4>
                             <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
                                 Show hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
                             </button>
@@ -75,6 +75,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Size</th>
+                        <th class="hidden-xs">ModTime</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -86,6 +87,7 @@
                             </a>
                         </td>
                         <td>{{f.size}}</td>
+                        <td class="hidden-xs">{{f.mtime | fromNow}}</td>
                         <td style="text-align: left">
                             <template v-if="f.type == 'dir'">
                                 <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">
@@ -94,7 +96,7 @@
                                 </a>
                             </template>
                             <template v-if="f.type == 'file'">
-                                <a class="btn btn-default btn-xs hidden-xs" href="/-/raw/{{f.path}}?download=true">
+                                <a class="btn btn-default btn-xs hidden-xs" href="/{{f.path}}?download=true">
                                     <span class="hidden-xs">Download</span>
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
@@ -174,6 +176,7 @@
     <script src="/-/res/js/qrcode.js"></script>
     <script src="/-/res/js/vue-1.0.min.js"></script>
     <script src="/-/res/js/showdown-1.4.2.min.js"></script>
+    <script src="/-/res/js/moment.min.js"></script>
     <script src="/-/res/js/dropzone.js"></script>
     <script src="/-/res/bootstrap-3.3.5/js/bootstrap.min.js"></script>
     <script src="/-/res/js/index.js"></script>
