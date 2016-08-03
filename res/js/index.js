@@ -248,6 +248,11 @@ Dropzone.options.myDropzone = {
     }
 }
 
+$(function() {
+    $.scrollUp({
+        scrollText: '', // text are defined in css
+    });
+});
 Vue.filter('fromNow', function(value) {
     return moment(value).fromNow();
 })

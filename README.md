@@ -41,7 +41,7 @@ Upload size now limited to 1G
 1. [x] Hidden work `download` and `qrcode` in small screen
 1. [x] Theme select support
 1. [x] OK to working behide Nginx
-1. [ ] \.ghs.yml support (like \.htaccess)
+1. [x] \.ghs.yml support (like \.htaccess)
 1. [ ] Calculate md5sum and sha
 1. [ ] Folder upload
 1. [ ] Support sort by size or modified time
@@ -143,14 +143,18 @@ That's all. ^_^
 
 ## Reference Web sites
 
-* <https://vuejs.org.cn/>
+* Core lib Vue <https://vuejs.org.cn/>
 * Icon from <http://www.easyicon.net/558394-file_explorer_icon.html>
-* <https://github.com/elazarl/go-bindata-assetfs>
 * Code Highlight <https://craig.is/making/rainbows>
-* Markdown-JS <https://github.com/showdownjs/showdown>
-* <https://github.com/sindresorhus/github-markdown-css>
+* Markdown Parser <https://github.com/showdownjs/showdown>
+* Markdown CSS <https://github.com/sindresorhus/github-markdown-css>
+* Upload support <http://www.dropzonejs.com/>
+* ScrollUp <https://markgoodyear.com/2013/01/scrollup-jquery-plugin/>
+
+**Go Libraries**
+
+* <https://github.com/elazarl/go-bindata-assetfs>
 * <http://www.gorillatoolkit.org/pkg/handlers>
-* <http://www.dropzonejs.com/>
 
 ## History
 The first version is <https://github.com/codeskyblue/gohttp>
