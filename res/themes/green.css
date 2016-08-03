@@ -25,3 +25,7 @@ a:hover {
 .navbar {
     border-radius: 0px;
 }
+
+.navbar-default ul.navbar-nav>li>a {
+    color: white;
+}
