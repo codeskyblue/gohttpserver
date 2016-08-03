@@ -198,8 +198,12 @@
         m.parentNode.insertBefore(a, m)
     })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
-    ga('create', '[[.GoogleTrackerId]]', 'auto');
+    ga('create', '[[.GoogleTrackerId]]', 'auto', {
+        'allowLinker': true
+    });
     ga('send', 'pageview');
+    ga('require', 'linker');
+    ga('linker:autoLink', [/^.*$/]);
     </script>
     [[ end ]]
 </body>
