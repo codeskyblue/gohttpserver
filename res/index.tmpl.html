@@ -115,9 +115,17 @@
                                 <a class="btn btn-default btn-xs visible-xs" v-if="shouldHaveQrcode(f.name)" href="{{genInstallURL(f.name)}}">
                                     Install
                                 </a>
-                                <a class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePath(f, $event)" href="javascript:void(0)">
-                                    <span style="color:#CC3300" class="glyphicon glyphicon-remove"></span>
+                                <a class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)" href="javascript:void(0)">
+                                    <span style="color:#CC3300" class="glyphicon glyphicon-trash"></span>
                                 </a>
+								<template v-if="f.showConfirm">
+								<button class="btn btn-default btn-xs">
+                                    <span class="glyphicon glyphicon-ok"></span>
+								</button>
+								<button class="btn btn-default btn-xs">
+                                    <span class="glyphicon glyphicon-remove"></span>
+								</button>
+								</template>
                             </template>
                         </td>
                     </tr>
