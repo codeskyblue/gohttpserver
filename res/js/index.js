@@ -170,6 +170,20 @@ var vm = new Vue({
             loadDirectory(reqPath);
             e.preventDefault()
         },
+        deletePath: function(f, e) {
+            // confirm
+            e.preventDefault();
+            $.ajax({
+                url: pathJoin([location.pathname, f.name]),
+                method: 'DELETE',
+                success: function(res) {
+                    loadFileList()
+                },
+                error: function(err) {
+                    alert(err.responseText);
+                }
+            });
+        },
         updateBreadcrumb: function() {
             var pathname = decodeURI(location.pathname || "/");
             var parts = pathname.split('/');

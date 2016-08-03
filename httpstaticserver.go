@@ -26,9 +26,10 @@ type IndexFileItem struct {
 
 type HTTPStaticServer struct {
 	Root            string
-	Theme           string
 	Upload          bool
+	Delete          bool
 	Title           string
+	Theme           string
 	PlistProxy      string
 	GoogleTrackerId string
 
@@ -75,6 +76,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
 	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
+	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
 	return s
 }
 
@@ -101,6 +103,23 @@ func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.MarshalIndent(s, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
+}
+
+func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
+	// only can delete file now
+	path := mux.Vars(req)["path"]
+	auth := s.readAccessConf(path)
+	log.Printf("%#v", auth)
+	if !auth.Delete {
+		http.Error(w, "Delete forbidden", http.StatusForbidden)
+		return
+	}
+	err := os.Remove(filepath.Join(s.Root, path))
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Write([]byte("Success"))
 }
 
 func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
@@ -277,6 +296,7 @@ type ListResponse struct {
 
 type AccessConf struct {
 	Upload bool `yaml:"upload" json:"upload"`
+	Delete bool `yaml:"delete" json:"delete"`
 }
 
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
@@ -395,7 +415,11 @@ func (s *HTTPStaticServer) defaultAccessConf() AccessConf {
 
 func (s *HTTPStaticServer) readAccessConf(requestPath string) (ac AccessConf) {
 	ac = s.defaultAccessConf()
-	cfgFile := filepath.Join(s.Root, requestPath, ".ghs.yml")
+	relPath := filepath.Join(s.Root, requestPath)
+	if isFile(relPath) {
+		relPath = filepath.Dir(relPath)
+	}
+	cfgFile := filepath.Join(relPath, ".ghs.yml")
 	data, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -426,4 +450,9 @@ func deepPath(basedir, name string) string {
 		}
 	}
 	return name
+}
+
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsRegular()
 }

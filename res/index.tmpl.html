@@ -110,6 +110,9 @@
                                 <a class="btn btn-default btn-xs visible-xs" v-if="shouldHaveQrcode(f.name)" href="{{genInstallURL(f.name)}}">
                                     Install
                                 </a>
+                                <a class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePath(f, $event)" href="javascript:void(0)">
+                                    <span style="color:#CC3300" class="glyphicon glyphicon-remove"></span>
+                                </a>
                             </template>
                         </td>
                     </tr>
