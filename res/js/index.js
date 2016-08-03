@@ -223,12 +223,10 @@ function loadFileList(pathname) {
         dataType: "json",
         cache: false,
         success: function(res) {
-            res.files.sort(function(a, b) {
-                var obj2n = function(v) {
-                    return v.type == "dir" ? 0 : 1;
-                };
-                return (obj2n(a) - obj2n(b)) || (a.name > b.name);
+            res.files = _.sortBy(res.files, function(f) {
+                return [f.type, f.name];
             })
+
             vm.files = res.files;
             vm.auth = res.auth;
         },
