@@ -30,7 +30,12 @@
                 </div>
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
                     <ul class="nav navbar-nav">
-                        <!-- <li><a href="{{.dir}}">{{.dir}}</a></li> -->
+                        <li class="hidden-xs">
+                            <a href="javascript:void(0)" v-on:click='genQrcode("/", location.origin)'>
+                                View in Phone
+                                <span class="glyphicon glyphicon-qrcode"></span>
+                            </a>
+                        </li>
                     </ul>
                     <form class="navbar-form navbar-right">
                         <div class="input-group">

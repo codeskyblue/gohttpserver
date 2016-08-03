@@ -6,7 +6,9 @@ body {
     margin-bottom: 1em;
 }
 
+
 /* Not used */
+
 div.dropzone {
     display: block;
     /*text-align: center;*/
@@ -17,4 +19,8 @@ div.dropzone {
     line-height: 70px;
     font-size: 20px;
     position: relative;
+}
+
+.qrcode-title {
+    font-size: 0.8em;
 }

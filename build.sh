@@ -15,7 +15,7 @@ GITCOMMIT=$(git rev-parse HEAD)
 BUILDTIME=$(date -u +%Y/%m/%d-%H:%M:%S)
 
 LDFLAGS="-X main.VERSION=$VERSION -X main.BUILDTIME=$BUILDTIME -X main.GITCOMMIT=$GITCOMMIT"
-if test -n "$EX_LDFLAGS"
+if test -n ${EX_LDFLAGS:-""}
 then
 	LDFLAGS="$LDFLAGS $EX_LDFLAGS"
 fi
@@ -30,6 +30,7 @@ build() {
 
 go-bindata-assetfs -tags bindata res/...
 
+build linux arm linux-arm
 build darwin amd64 mac-amd64
 build linux amd64 linux-amd64
 build linux 386 linux-386

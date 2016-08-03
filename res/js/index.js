@@ -23,6 +23,7 @@ var vm = new Vue({
     el: "#app",
     data: {
         message: "Hello vue.js",
+        location: window.location,
         breadcrumb: [],
         showHidden: false,
         previewFile: null,
@@ -106,9 +107,9 @@ var vm = new Vue({
             }
             return location.protocol + "//" + pathJoin([location.host, location.pathname, name]);
         },
-        genQrcode: function(text) {
+        genQrcode: function(text, title) {
             var urlPath = this.genInstallURL(text);
-            $("#qrcode-title").html(text);
+            $("#qrcode-title").html(title || text);
             $("#qrcode-link").attr("href", urlPath);
             $('#qrcodeCanvas').empty().qrcode({
                 text: urlPath

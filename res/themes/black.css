@@ -17,3 +17,7 @@ td>a {
 .navbar .navbar-brand:hover {
     color: #fff;
 }
+
+.navbar-default ul.navbar-nav>li>a:hover {
+    color: #fff;
+}
