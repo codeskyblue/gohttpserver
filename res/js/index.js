@@ -174,10 +174,6 @@ var vm = new Vue({
         deletePathConfirm: function(f, e) {
             // confirm
             e.preventDefault();
-			f.showConfirm = true;
-			f.name = "JJ"
-			console.log(f)
-			return;
             $.ajax({
                 url: pathJoin([location.pathname, f.name]),
                 method: 'DELETE',

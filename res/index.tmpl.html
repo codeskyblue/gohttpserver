@@ -70,11 +70,14 @@
                 <thead>
                     <tr>
                         <td colspan=4>
+                            <!-- <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
+                                Back <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
+                            </button> -->
                             <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
-                                Show hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
+                                Hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
                             </button>
                             <button class="btn btn-xs btn-default" v-if="auth.upload" data-toggle="modal" data-target="#upload-modal">
-                                Upload file <i class="fa fa-upload"></i>
+                                Upload <i class="fa fa-upload"></i>
                             </button>
                         </td>
                     </tr>
@@ -113,19 +116,11 @@
                                     <span class="glyphicon glyphicon-qrcode"></span>
                                 </a>
                                 <a class="btn btn-default btn-xs visible-xs" v-if="shouldHaveQrcode(f.name)" href="{{genInstallURL(f.name)}}">
-                                    Install
+                                    Install <i class="fa fa-cube"></i>
                                 </a>
                                 <a class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)" href="javascript:void(0)">
                                     <span style="color:#CC3300" class="glyphicon glyphicon-trash"></span>
                                 </a>
-								<template v-if="f.showConfirm">
-								<button class="btn btn-default btn-xs">
-                                    <span class="glyphicon glyphicon-ok"></span>
-								</button>
-								<button class="btn btn-default btn-xs">
-                                    <span class="glyphicon glyphicon-remove"></span>
-								</button>
-								</template>
                             </template>
                         </td>
                     </tr>
