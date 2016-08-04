@@ -73,6 +73,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 	// TODO: /ipa/info
+	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
 	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
@@ -88,8 +89,7 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
 
-	finfo, err := os.Stat(relPath)
-	if err == nil && finfo.IsDir() {
+	if r.FormValue("raw") == "false" || isDir(relPath) {
 		tmpl.ExecuteTemplate(w, "index", s)
 	} else {
 		if r.FormValue("download") == "true" {
@@ -164,6 +164,42 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 	w.Write([]byte("Upload success"))
+}
+
+type FileJSONInfo struct {
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Size    int64  `json:"size"`
+	Path    string `json:"path"`
+	ModTime int64  `json:"mtime"`
+}
+
+func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	relPath := filepath.Join(s.Root, path)
+	if !isFile(relPath) {
+		http.Error(w, "Not a file", 403)
+		return
+	}
+	fi, err := os.Stat(relPath)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	fji := &FileJSONInfo{
+		Name:    fi.Name(),
+		Size:    fi.Size(),
+		Path:    path,
+		ModTime: fi.ModTime().UnixNano() / 1e6,
+	}
+	if filepath.Ext(path) == ".md" {
+		fji.Type = "markdown"
+	} else {
+		fji.Type = "text"
+	}
+	data, _ := json.Marshal(fji)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
 }
 
 func (s *HTTPStaticServer) hZip(w http.ResponseWriter, r *http.Request) {
@@ -455,4 +491,9 @@ func deepPath(basedir, name string) string {
 func isFile(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.Mode().IsRegular()
+}
+
+func isDir(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsDir()
 }

@@ -66,7 +66,7 @@
                     {{breadcrumb.slice(-1)[0].name}}
                 </li>
             </ol>
-            <table class="table table-hover">
+            <table class="table table-hover" v-if="!previewMode">
                 <thead>
                     <tr>
                         <td colspan=4>
@@ -93,7 +93,7 @@
                 <tbody>
                     <tr v-for="f in computedFiles">
                         <td>
-                            <a v-on:click='clickFileOrDir(f, $event)' href="/{{f.path}}">
+                            <a v-on:click='clickFileOrDir(f, $event)' href="/{{f.path + (f.type == 'dir' ? '' : '?raw=false')}}">
                                 <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
                             </a>
                         </td>
@@ -111,32 +111,32 @@
                                     <span class="hidden-xs">Download</span>
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
-                                <a class="btn btn-default btn-xs hidden-xs" v-on:click="genQrcode(f.name)" href="javascript:void(0)">
+                                <button class="btn btn-default btn-xs hidden-xs" v-on:click="genQrcode(f.name)">
                                     <span v-if="shouldHaveQrcode(f.name)">QRCode</span>
                                     <span class="glyphicon glyphicon-qrcode"></span>
-                                </a>
+                                </button>
                                 <a class="btn btn-default btn-xs visible-xs" v-if="shouldHaveQrcode(f.name)" href="{{genInstallURL(f.name)}}">
                                     Install <i class="fa fa-cube"></i>
                                 </a>
-                                <a class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)" href="javascript:void(0)">
+                                <button class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)">
                                     <span style="color:#CC3300" class="glyphicon glyphicon-trash"></span>
-                                </a>
+                                </button>
                             </template>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
-        <div class="col-md-12" id="preview" v-if="previewFile">
+        <div class="col-md-12" id="preview" v-if="preview.filename">
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h3 class="panel-title" style="font-weight: normal">
                         <i class="fa" v-bind:class='genFileClass(previewFile)'></i>
-                        {{previewFile.name}}
+                        {{preview.filename}}
                     </h3>
                 </div>
                 <div class="panel-body">
-                    <article class="markdown-body">{{{previewFile.contentHTML }}}
+                    <article class="markdown-body">{{{preview.contentHTML }}}
                     </article>
                 </div>
             </div>

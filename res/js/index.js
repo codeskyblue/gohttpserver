@@ -26,7 +26,13 @@ var vm = new Vue({
         location: window.location,
         breadcrumb: [],
         showHidden: false,
-        previewFile: null,
+        previewMode: false,
+        preview: {
+            filename: '',
+            filetype: '',
+            filesize: 0,
+            contentHTML: '',
+        },
         version: "loading",
         mtimeTypeFromNow: false, // or fromNow
         auth: {},
@@ -41,17 +47,10 @@ var vm = new Vue({
     computed: {
         computedFiles: function() {
             var that = this;
-            this.previewFile = null;
 
             var files = this.files.filter(function(f) {
                 if (f.name == 'README.md') {
-                    that.previewFile = {
-                        name: f.name,
-                        path: f.path,
-                        size: f.size,
-                        type: 'markdown',
-                        contentHTML: '',
-                    }
+                    that.preview.filename = f.name;
                 }
                 if (!that.showHidden && f.name.slice(0, 1) === '.') {
                     return false;
@@ -59,8 +58,8 @@ var vm = new Vue({
                 return true;
             });
             // console.log(this.previewFile)
-            if (this.previewFile) {
-                var name = this.previewFile.name; // For now only README.md
+            if (this.preview.filename) {
+                var name = this.preview.filename; // For now only README.md
                 console.log(pathJoin([location.pathname, 'README.md']))
                 $.ajax({
                     url: pathJoin([location.pathname, 'README.md']),
@@ -78,7 +77,7 @@ var vm = new Vue({
                         });
 
                         var html = converter.makeHtml(res);
-                        that.previewFile.contentHTML = html;
+                        that.preview.contentHTML = html;
                     },
                     error: function(err) {
                         console.log(err)
@@ -160,15 +159,16 @@ var vm = new Vue({
             return "fa-file-text-o"
         },
         clickFileOrDir: function(f, e) {
+            // TODO: fix here tomorrow
             if (f.type == "file") {
                 return true;
             }
             var reqPath = pathJoin([location.pathname, f.name]);
-            loadDirectory(reqPath);
+            loadFileOrDir(reqPath);
             e.preventDefault()
         },
         changePath: function(reqPath, e) {
-            loadDirectory(reqPath);
+            loadFileOrDir(reqPath);
             e.preventDefault()
         },
         deletePathConfirm: function(f, e) {
@@ -202,6 +202,30 @@ var vm = new Vue({
                 })
             }
             return this.breadcrumb;
+        },
+        loadPreviewFile: function(filepath, e) {
+            if (e) {
+                e.preventDefault() // may be need a switch
+            }
+            var that = this;
+            $.getJSON(pathJoin(['/-/info', location.pathname]))
+                .then(function(res) {
+                    console.log(res);
+                    that.preview.filename = res.name;
+                    that.preview.filesize = res.size;
+                    return $.ajax({
+                        url: '/' + res.path,
+                        dataType: 'text',
+                    });
+                })
+                .then(function(res) {
+                    console.log(res)
+                    that.preview.contentHTML = '<pre>' + res + '</pre>';
+                    console.log("Finally")
+                })
+                .done(function(res) {
+                    console.log("done", res)
+                });
         }
     }
 })
@@ -211,7 +235,7 @@ window.onpopstate = function(event) {
     loadFileList()
 }
 
-function loadDirectory(reqPath) {
+function loadFileOrDir(reqPath) {
     window.history.pushState({}, "", reqPath);
     loadFileList(reqPath)
 }
@@ -219,23 +243,31 @@ function loadDirectory(reqPath) {
 function loadFileList(pathname) {
     var pathname = pathname || location.pathname;
     // console.log("load filelist:", pathname)
-    $.ajax({
-        url: pathJoin(["/-/json", pathname]),
-        dataType: "json",
-        cache: false,
-        success: function(res) {
-            res.files = _.sortBy(res.files, function(f) {
-                return [f.type, f.name];
-            })
+    if (getQueryString("raw") !== "false") { // not a file preview
+        $.ajax({
+            url: pathJoin(["/-/json", pathname]),
+            dataType: "json",
+            cache: false,
+            success: function(res) {
+                res.files = _.sortBy(res.files, function(f) {
+                    return [f.type, f.name];
+                })
 
-            vm.files = res.files;
-            vm.auth = res.auth;
-        },
-        error: function(err) {
-            console.error(err)
-        },
-    });
+                vm.files = res.files;
+                vm.auth = res.auth;
+            },
+            error: function(err) {
+                console.error(err)
+            },
+        });
+
+    }
+
     vm.updateBreadcrumb();
+    vm.previewMode = getQueryString("raw") == "false";
+    if (vm.previewMode) {
+        vm.loadPreviewFile();
+    }
 }
 
 // For page first loading
