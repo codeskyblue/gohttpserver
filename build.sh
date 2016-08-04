@@ -15,7 +15,7 @@ GITCOMMIT=$(git rev-parse HEAD)
 BUILDTIME=$(date -u +%Y/%m/%d-%H:%M:%S)
 
 LDFLAGS="-X main.VERSION=$VERSION -X main.BUILDTIME=$BUILDTIME -X main.GITCOMMIT=$GITCOMMIT"
-if test -n ${EX_LDFLAGS:-""}
+if [[ -n "${EX_LDFLAGS:-""}" ]]
 then
 	LDFLAGS="$LDFLAGS $EX_LDFLAGS"
 fi
