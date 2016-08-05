@@ -115,8 +115,8 @@
                                     <span class="hidden-xs">Download</span>
                                     <span class="glyphicon glyphicon-download-alt"></span>
                                 </a>
-                                <button class="btn btn-default btn-xs bstooltip" data-trigger="manual" title="Copied!" data-clipboard-text="{{genDownloadURL(f)}}">
-                                    <img class="clippy" width="12" src="/-/res/imgs/clippy.svg" alt="Copy to clipboard">
+                                <button class="btn btn-default btn-xs bstooltip" data-trigger="manual" data-title="Copied!" data-clipboard-text="{{genDownloadURL(f)}}">
+                                    <i class="fa fa-copy"></i>
                                 </button>
                                 <button class="btn btn-default btn-xs hidden-xs" v-on:click="genQrcode(f.name)">
                                     <span v-if="shouldHaveQrcode(f.name)">QRCode</span>
