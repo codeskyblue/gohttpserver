@@ -271,13 +271,10 @@ function loadFileList(pathname) {
     }
 }
 
-// For page first loading
-loadFileList(location.pathname + location.search)
-
-// update version
-$.getJSON("/-/sysinfo", function(res) {
-    vm.version = res.version;
+Vue.filter('fromNow', function(value) {
+    return moment(value).fromNow();
 })
+
 
 Dropzone.options.myDropzone = {
     paramName: "file",
@@ -298,7 +295,12 @@ $(function() {
     $.scrollUp({
         scrollText: '', // text are defined in css
     });
+
+    // For page first loading
+    loadFileList(location.pathname + location.search)
+
+    // update version
+    $.getJSON("/-/sysinfo", function(res) {
+        vm.version = res.version;
+    })
 });
-Vue.filter('fromNow', function(value) {
-    return moment(value).fromNow();
-})
