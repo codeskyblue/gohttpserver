@@ -326,7 +326,7 @@ type ListResponse struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
 	Type    string `json:"type"`
-	Size    string `json:"size"`
+	Size    int64  `json:"size"`
 	ModTime int64  `json:"mtime"`
 }
 
@@ -384,10 +384,10 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 			lr.Name = name
 			lr.Path = filepath.Join(filepath.Dir(path), name)
 			lr.Type = "dir"
-			lr.Size = "-"
+			lr.Size = -1 //"-"
 		} else {
 			lr.Type = "file"
-			lr.Size = formatSize(info)
+			lr.Size = info.Size() // formatSize(info)
 		}
 		lrs = append(lrs, lr)
 	}

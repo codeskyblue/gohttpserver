@@ -31,7 +31,7 @@
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
                     <ul class="nav navbar-nav">
                         <li class="hidden-xs">
-                            <a href="javascript:void(0)" v-on:click='genQrcode("/", location.origin)'>
+                            <a href="javascript:void(0)" v-on:click='genQrcode(location.origin+location.pathname)'>
                                 View in Phone
                                 <span class="glyphicon glyphicon-qrcode"></span>
                             </a>
@@ -101,7 +101,7 @@
                                 <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
                             </a>
                         </td>
-                        <td>{{f.size}}</td>
+                        <td>{{f.size | formatBytes}}</td>
                         <td class="hidden-xs">{{formatTime(f.mtime)}}</td>
                         <td style="text-align: left">
                             <template v-if="f.type == 'dir'">
