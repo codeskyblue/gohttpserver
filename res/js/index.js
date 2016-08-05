@@ -116,6 +116,9 @@ var vm = new Vue({
             });
             $("#qrcode-modal").modal("show");
         },
+        genDownloadURL: function(f) {
+            return location.origin + "/" + f.path;
+        },
         shouldHaveQrcode: function(name) {
             return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
         },
@@ -303,4 +306,18 @@ $(function() {
     $.getJSON("/-/sysinfo", function(res) {
         vm.version = res.version;
     })
+
+    var clipboard = new Clipboard('.btn');
+    clipboard.on('success', function(e) {
+        console.info('Action:', e.action);
+        console.info('Text:', e.text);
+        console.info('Trigger:', e.trigger);
+        $(e.trigger)
+            .tooltip('show')
+            .mouseleave(function() {
+                $(this).tooltip('hide');
+            })
+
+        e.clearSelection();
+    });
 });

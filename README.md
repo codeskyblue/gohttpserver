@@ -50,6 +50,7 @@ Upload size now limited to 1G
 1. [x] Auto tag version
 1. [x] Custom title support
 1. [x] Support setting from conf file
+1. [x] Quick copy download link
 
 ## Installation
 ```
