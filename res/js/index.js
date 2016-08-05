@@ -47,6 +47,7 @@ var vm = new Vue({
     computed: {
         computedFiles: function() {
             var that = this;
+            that.preview.filename = null;
 
             var files = this.files.filter(function(f) {
                 if (f.name == 'README.md') {
