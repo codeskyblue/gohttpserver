@@ -151,6 +151,8 @@ That's all. ^_^
 * Markdown CSS <https://github.com/sindresorhus/github-markdown-css>
 * Upload support <http://www.dropzonejs.com/>
 * ScrollUp <https://markgoodyear.com/2013/01/scrollup-jquery-plugin/>
+* Clipboard <https://clipboardjs.com/>
+* Underscore <http://underscorejs.org/>
 
 **Go Libraries**
 
