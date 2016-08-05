@@ -257,8 +257,8 @@ function loadFileList(pathname) {
             cache: false,
             success: function(res) {
                 res.files = _.sortBy(res.files, function(f) {
-                    // Canot use -f.mtime, have to use Number.MAX_SAFE_INTEGER-f.mtime
-                    return [f.type, Number.MAX_SAFE_INTEGER - f.mtime];
+                    var weight = f.type == 'dir' ? 1000 : 1;
+                    return -weight * f.mtime;
                 })
 
                 vm.files = res.files;
