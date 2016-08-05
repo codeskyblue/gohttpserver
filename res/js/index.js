@@ -230,7 +230,10 @@ var vm = new Vue({
                 .done(function(res) {
                     console.log("done", res)
                 });
-        }
+        },
+        loadAll: function() {
+            // TODO: move loadFileList here
+        },
     }
 })
 
@@ -254,7 +257,8 @@ function loadFileList(pathname) {
             cache: false,
             success: function(res) {
                 res.files = _.sortBy(res.files, function(f) {
-                    return [f.type, f.name];
+                    // Canot use -f.mtime, have to use Number.MAX_SAFE_INTEGER-f.mtime
+                    return [f.type, Number.MAX_SAFE_INTEGER - f.mtime];
                 })
 
                 vm.files = res.files;
