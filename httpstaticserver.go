@@ -322,7 +322,7 @@ func (s *HTTPStaticServer) hFileOrDirectory(w http.ResponseWriter, r *http.Reque
 	http.ServeFile(w, r, filepath.Join(s.Root, path))
 }
 
-type ListResponse struct {
+type HTTPFileInfo struct {
 	Name    string `json:"name"`
 	Path    string `json:"path"`
 	Type    string `json:"type"`
@@ -365,9 +365,9 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// turn file list -> json
-	lrs := make([]ListResponse, 0)
+	lrs := make([]HTTPFileInfo, 0)
 	for path, info := range fileInfoMap {
-		lr := ListResponse{
+		lr := HTTPFileInfo{
 			Name:    info.Name(),
 			Path:    path,
 			ModTime: info.ModTime().UnixNano() / 1e6,
