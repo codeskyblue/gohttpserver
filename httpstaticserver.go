@@ -406,9 +406,8 @@ func (s *HTTPStaticServer) makeIndex() error {
 		if info.IsDir() {
 			return nil
 		}
-		if filepath.IsAbs(path) {
-			path, _ = filepath.Rel(s.Root, path)
-		}
+
+		path, _ = filepath.Rel(s.Root, path)
 		path = filepath.ToSlash(path)
 		indexes = append(indexes, IndexFileItem{path, info})
 		return nil
