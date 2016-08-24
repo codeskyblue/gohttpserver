@@ -403,6 +403,10 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPStaticServer) makeIndex() error {
 	var indexes = make([]IndexFileItem, 0)
 	var err = filepath.Walk(s.Root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			log.Printf("WARN: Visit path: %s error: %v", strconv.Quote(path), err)
+			return err
+		}
 		if info.IsDir() {
 			return nil
 		}
