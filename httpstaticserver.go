@@ -405,7 +405,8 @@ func (s *HTTPStaticServer) makeIndex() error {
 	var err = filepath.Walk(s.Root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			log.Printf("WARN: Visit path: %s error: %v", strconv.Quote(path), err)
-			return err
+			return filepath.SkipDir
+			// return err
 		}
 		if info.IsDir() {
 			return nil

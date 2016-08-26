@@ -199,6 +199,9 @@ var vm = new Vue({
             var i = 2;
             for (; i <= parts.length; i += 1) {
                 var name = parts[i - 1];
+                if (!name) {
+                    continue;
+                }
                 var path = parts.slice(0, i).join('/');
                 this.breadcrumb.push({
                     name: name + (i == parts.length ? ' /' : ''),
