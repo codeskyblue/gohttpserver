@@ -75,7 +75,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	// TODO: /ipa/info
 	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
 
-	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET")
+	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
 	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
 	return s
@@ -90,6 +90,9 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	relPath := filepath.Join(s.Root, path)
 
 	if r.FormValue("raw") == "false" || isDir(relPath) {
+		if r.Method == "HEAD" {
+			return
+		}
 		tmpl.ExecuteTemplate(w, "index", s)
 	} else {
 		if r.FormValue("download") == "true" {
