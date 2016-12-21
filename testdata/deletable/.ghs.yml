@@ -1,2 +1,7 @@
 upload: true
 delete: true
+accessTables:
+- regex: block.file
+  allow: false
+- regex: visual.file
+  allow: true

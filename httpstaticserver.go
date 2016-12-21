@@ -15,6 +15,8 @@ import (
 	"strings"
 	"time"
 
+	"regexp"
+
 	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
 )
@@ -333,15 +335,42 @@ type HTTPFileInfo struct {
 	ModTime int64  `json:"mtime"`
 }
 
+type AccessTable struct {
+	Regex string `yaml:"regex"`
+	Allow bool   `yaml:"allow"`
+}
+
 type AccessConf struct {
-	Upload bool `yaml:"upload" json:"upload"`
-	Delete bool `yaml:"delete" json:"delete"`
+	Upload       bool          `yaml:"upload" json:"upload"`
+	Delete       bool          `yaml:"delete" json:"delete"`
+	AccessTables []AccessTable `yaml:"accessTables"`
+}
+
+var reCache = make(map[string]*regexp.Regexp)
+
+func (c *AccessConf) checkAccess(fileName string) bool {
+	for _, table := range c.AccessTables {
+		pattern, ok := reCache[table.Regex]
+		if !ok {
+			pattern, _ = regexp.Compile(table.Regex)
+			reCache[table.Regex] = pattern
+		}
+		// skip wrong format regex
+		if pattern == nil {
+			continue
+		}
+		if pattern.MatchString(fileName) {
+			return table.Allow
+		}
+	}
+	return true
 }
 
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	requestPath := mux.Vars(r)["path"]
 	localPath := filepath.Join(s.Root, requestPath)
 	search := r.FormValue("search")
+	auth := s.readAccessConf(requestPath)
 
 	// path string -> info os.FileInfo
 	fileInfoMap := make(map[string]os.FileInfo, 0)
@@ -370,6 +399,9 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	// turn file list -> json
 	lrs := make([]HTTPFileInfo, 0)
 	for path, info := range fileInfoMap {
+		if !auth.checkAccess(info.Name()) {
+			continue
+		}
 		lr := HTTPFileInfo{
 			Name:    info.Name(),
 			Path:    path,
@@ -397,7 +429,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 
 	data, _ := json.Marshal(map[string]interface{}{
 		"files": lrs,
-		"auth":  s.readAccessConf(requestPath),
+		"auth":  auth,
 	})
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)

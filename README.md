@@ -87,6 +87,16 @@ root -
 
 Use config file. specfied with `--conf`, see [example config.yml](testdata/config.yml). Note that command line option can overwrite conf in `config.yml`
 
+block visual some files, just add the following code to `.ghs.yml`
+
+```yaml
+accessTables:
+- regex: block.file
+  allow: false
+- regex: visual.file
+  allow: true
+```
+
 ### ipa plist proxy
 This is used for server which not https enabled. default use <https://plistproxy.herokuapp.com/plist>
 

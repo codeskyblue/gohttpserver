@@ -25,7 +25,7 @@ type Configure struct {
 	Conf            *os.File `yaml:"-"`
 	Addr            string   `yaml:"addr"`
 	Root            string   `yaml:"root"`
-	HttpAuth        string   `yaml:"httpauth"`
+	HTTPAuth        string   `yaml:"httpauth"`
 	Cert            string   `yaml:"cert"`
 	Key             string   `yaml:"key"`
 	Cors            bool     `yaml:"cors"`
@@ -38,8 +38,7 @@ type Configure struct {
 	GoogleTrackerId string   `yaml:"google-tracker-id"`
 }
 
-type logger struct {
-}
+type logger struct{}
 
 func (l logger) Log(record accesslog.LogRecord) {
 	log.Printf("%s - %s %d %s", record.Ip, record.Method, record.Status, record.Uri)
@@ -92,7 +91,7 @@ func parseFlags() error {
 	kingpin.Flag("addr", "listen address, default :8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
-	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.HttpAuth)
+	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.HTTPAuth)
 	kingpin.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
 	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
@@ -146,7 +145,7 @@ func main() {
 	hdlr = accesslog.NewLoggingHandler(hdlr, l)
 
 	// HTTP Basic Authentication
-	userpass := strings.SplitN(gcfg.HttpAuth, ":", 2)
+	userpass := strings.SplitN(gcfg.HTTPAuth, ":", 2)
 	if len(userpass) == 2 {
 		user, pass := userpass[0], userpass[1]
 		hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
