@@ -34,6 +34,7 @@ type HTTPStaticServer struct {
 	Theme           string
 	PlistProxy      string
 	GoogleTrackerId string
+	AuthType        string
 
 	indexes []IndexFileItem
 	m       *mux.Router

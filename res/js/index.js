@@ -98,7 +98,7 @@ var vm = new Vue({
       method: "get",
       dataType: "json",
       success: function(ret) {
-        if (this.user) {
+        if (ret) {
           this.user.email = ret.email;
           this.user.name = ret.name;
         }

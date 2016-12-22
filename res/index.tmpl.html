@@ -36,6 +36,7 @@
                 <span class="glyphicon glyphicon-qrcode"></span>
               </a>
             </li>
+            [[if eq .AuthType "openid"]]
             <li class="hidden-xs">
               <a href="/-/logout" v-if="user.email">
                 <span v-text="user.name"></span>
@@ -46,6 +47,7 @@
                 <span class="glyphicon glyphicon-user"></span>
               </a>
             </li>
+            [[end]]
           </ul>
           <form class="navbar-form navbar-right">
             <div class="input-group">

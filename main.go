@@ -139,6 +139,7 @@ func main() {
 	ss.Title = gcfg.Title
 	ss.GoogleTrackerId = gcfg.GoogleTrackerId
 	ss.Upload = gcfg.Upload
+	ss.AuthType = gcfg.Auth.Type
 
 	if gcfg.PlistProxy != "" {
 		u, err := url.Parse(gcfg.PlistProxy)
