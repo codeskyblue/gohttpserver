@@ -36,6 +36,11 @@ type Configure struct {
 	Title           string   `yaml:"title"`
 	Debug           bool     `yaml:"debug"`
 	GoogleTrackerId string   `yaml:"google-tracker-id"`
+	Auth            struct {
+		Type   string `yaml:"type"`
+		OpenID string `yaml:"openid"`
+		HTTP   string `yaml:"http"`
+	} `yaml:"auth"`
 }
 
 type logger struct{}
@@ -46,6 +51,7 @@ func (l logger) Log(record accesslog.LogRecord) {
 
 var (
 	defaultPlistProxy = "https://plistproxy.herokuapp.com/plist"
+	defaultOpenID     = "https://some-hostname.com/openid/"
 	gcfg              = Configure{}
 	l                 = logger{}
 
@@ -81,6 +87,7 @@ func parseFlags() error {
 	gcfg.Addr = ":8000"
 	gcfg.Theme = "black"
 	gcfg.PlistProxy = defaultPlistProxy
+	gcfg.Auth.OpenID = defaultOpenID
 	gcfg.GoogleTrackerId = "UA-81205425-2"
 	gcfg.Title = "Go HTTP File Server"
 
@@ -91,7 +98,9 @@ func parseFlags() error {
 	kingpin.Flag("addr", "listen address, default :8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
-	kingpin.Flag("httpauth", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.HTTPAuth)
+	kingpin.Flag("auth-type", "Auth type <http|openid>").StringVar(&gcfg.Auth.Type)
+	kingpin.Flag("auth-http", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.Auth.HTTP)
+	kingpin.Flag("auth-openid", "OpenID auth identity url").StringVar(&gcfg.Auth.OpenID)
 	kingpin.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
 	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
@@ -145,10 +154,15 @@ func main() {
 	hdlr = accesslog.NewLoggingHandler(hdlr, l)
 
 	// HTTP Basic Authentication
-	userpass := strings.SplitN(gcfg.HTTPAuth, ":", 2)
-	if len(userpass) == 2 {
-		user, pass := userpass[0], userpass[1]
-		hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
+	userpass := strings.SplitN(gcfg.Auth.HTTP, ":", 2)
+	switch gcfg.Auth.Type {
+	case "http":
+		if len(userpass) == 2 {
+			user, pass := userpass[0], userpass[1]
+			hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
+		}
+	case "openid":
+		handleOpenID(false) // FIXME(ssx): set secure default to false
 	}
 	// CORS
 	if gcfg.Cors {

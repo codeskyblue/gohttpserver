@@ -32,17 +32,27 @@
           <ul class="nav navbar-nav">
             <li class="hidden-xs">
               <a href="javascript:void(0)" v-on:click='genQrcode(location.origin+location.pathname)'>
-                                View in Phone
-                                <span class="glyphicon glyphicon-qrcode"></span>
-                            </a>
+                View in Phone
+                <span class="glyphicon glyphicon-qrcode"></span>
+              </a>
+            </li>
+            <li class="hidden-xs">
+              <a href="/-/logout" v-if="user.email">
+                <span v-text="user.name"></span>
+                <span class="glyphicon glyphicon-indent-left"></span>
+              </a>
+              <a href="/-/login" v-else>
+                Login
+                <span class="glyphicon glyphicon-user"></span>
+              </a>
             </li>
           </ul>
           <form class="navbar-form navbar-right">
             <div class="input-group">
               <input type="text" name="search" class="form-control" placeholder="Search text" v-bind:value="search" autofocus>
               <span class="input-group-btn">
-                                <button class="btn btn-default" type="button">   
-                                <span class="glyphicon glyphicon-search"></span>
+                <button class="btn btn-default" type="button">   
+                <span class="glyphicon glyphicon-search"></span>
               </button>
               </span>
             </div>
@@ -138,9 +148,8 @@
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title" style="font-weight: normal">
-                        <i class="fa" v-bind:class='genFileClass(previewFile)'></i>
-                        {{preview.filename}}
-                    </h3>
+            <i class="fa" v-bind:class='genFileClass(previewFile)'></i> {{preview.filename}}
+          </h3>
         </div>
         <div class="panel-body">
           <article class="markdown-body">{{{preview.contentHTML }}}
@@ -156,9 +165,9 @@
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
               <h4 class="modal-title">
-                                <span id="qrcode-title"></span>
-                                <a style="font-size: 0.6em" href="#" id="qrcode-link">[view]</a>
-                            </h4>
+                <span id="qrcode-title"></span>
+                <a style="font-size: 0.6em" href="#" id="qrcode-link">[view]</a>
+              </h4>
             </div>
             <div class="modal-body">
               <div id="qrcodeCanvas"></div>
@@ -173,8 +182,8 @@
             <div class="modal-header">
               <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
               <h4 class="modal-title">
-                                <i class="fa fa-upload"></i> File upload
-                            </h4>
+                <i class="fa fa-upload"></i> File upload
+              </h4>
             </div>
             <div class="modal-body">
               <form action="#" class="dropzone" id="my-dropzone"></form>
@@ -206,20 +215,20 @@
   <script src="/-/res/js/index.js"></script>
   [[if .GoogleTrackerId ]]
   <script>
-  (function(i, s, o, g, r, a, m) {
-    i['GoogleAnalyticsObject'] = r;
-    i[r] = i[r] || function() {
-      (i[r].q = i[r].q || []).push(arguments)
-    }, i[r].l = 1 * new Date();
-    a = s.createElement(o),
-      m = s.getElementsByTagName(o)[0];
-    a.async = 1;
-    a.src = g;
-    m.parentNode.insertBefore(a, m)
-  })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
+    (function(i, s, o, g, r, a, m) {
+      i['GoogleAnalyticsObject'] = r;
+      i[r] = i[r] || function() {
+        (i[r].q = i[r].q || []).push(arguments)
+      }, i[r].l = 1 * new Date();
+      a = s.createElement(o),
+        m = s.getElementsByTagName(o)[0];
+      a.async = 1;
+      a.src = g;
+      m.parentNode.insertBefore(a, m)
+    })(window, document, 'script', 'https://www.google-analytics.com/analytics.js', 'ga');
 
-  ga('create', '[[.GoogleTrackerId]]', 'auto');
-  ga('send', 'pageview');
+    ga('create', '[[.GoogleTrackerId]]', 'auto');
+    ga('send', 'pageview');
   </script>
   [[ end ]]
 </body>

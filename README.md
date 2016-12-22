@@ -66,13 +66,35 @@ Listen port 8000 on all interface, and enable upload
 ./gohttpserver -r ./ --addr :8000 --upload
 ```
 
+## Authentication
+- basic http auth
+
+  ```sh
+  $ gohttpserver --auth-type http --auth-http username:password
+  ```
+
+- openid auth
+
+  ```sh
+  $ gohttpserver --auth-type openid --auth-openid https://login.example-hostname.com/openid/
+  ```
+
+  The openid return url use "http" not "https", But I'm not going to fix it.
+
 ## Advanced usage
 Support update access rule if there is a file named `.ghs.yml` under directory. `.ghs.yml` example
 
 ```yaml
 ---
 upload: false
+delete: false
+users:
+- email: "codeskyblue@codeskyblue.com"
+  delete: true
+  upload: true
 ```
+
+If openid auth enabled and user "codeskyblue@codeskyblue.com" is logged, then he can delete and upload files.
 
 For example, if there is such file under directory `foo`, directory `foo` can not be uploaded, while `bar` can.
 

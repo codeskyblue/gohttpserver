@@ -115,7 +115,7 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	path := mux.Vars(req)["path"]
 	auth := s.readAccessConf(path)
 	log.Printf("%#v", auth)
-	if !auth.Delete {
+	if !auth.canDelete(req) {
 		http.Error(w, "Delete forbidden", http.StatusForbidden)
 		return
 	}
@@ -132,7 +132,7 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 
 	// check auth
 	auth := s.readAccessConf(path)
-	if !auth.Upload {
+	if !auth.canUpload(req) {
 		http.Error(w, "Upload forbidden", http.StatusForbidden)
 		return
 	}
@@ -340,15 +340,23 @@ type AccessTable struct {
 	Allow bool   `yaml:"allow"`
 }
 
+type UserControl struct {
+	Email string
+	// Access bool
+	Upload bool
+	Delete bool
+}
+
 type AccessConf struct {
 	Upload       bool          `yaml:"upload" json:"upload"`
 	Delete       bool          `yaml:"delete" json:"delete"`
+	Users        []UserControl `yaml:"users" json:"users"`
 	AccessTables []AccessTable `yaml:"accessTables"`
 }
 
 var reCache = make(map[string]*regexp.Regexp)
 
-func (c *AccessConf) checkAccess(fileName string) bool {
+func (c *AccessConf) canAccess(fileName string) bool {
 	for _, table := range c.AccessTables {
 		pattern, ok := reCache[table.Regex]
 		if !ok {
@@ -366,11 +374,50 @@ func (c *AccessConf) checkAccess(fileName string) bool {
 	return true
 }
 
+func (c *AccessConf) canDelete(r *http.Request) bool {
+	session, err := store.Get(r, defaultSessionName)
+	if err != nil {
+		return c.Delete
+	}
+	val := session.Values["user"]
+	if val == nil {
+		return c.Delete
+	}
+	userInfo := val.(*UserInfo)
+	for _, rule := range c.Users {
+		if rule.Email == userInfo.Email {
+			return rule.Delete
+		}
+	}
+	return c.Delete
+}
+
+func (c *AccessConf) canUpload(r *http.Request) bool {
+	session, err := store.Get(r, defaultSessionName)
+	if err != nil {
+		return c.Upload
+	}
+	val := session.Values["user"]
+	if val == nil {
+		return c.Upload
+	}
+	userInfo := val.(*UserInfo)
+	log.Println(userInfo)
+	for _, rule := range c.Users {
+		if rule.Email == userInfo.Email {
+			return rule.Upload
+		}
+	}
+	return c.Upload
+}
+
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	requestPath := mux.Vars(r)["path"]
 	localPath := filepath.Join(s.Root, requestPath)
 	search := r.FormValue("search")
 	auth := s.readAccessConf(requestPath)
+	auth.Upload = auth.canUpload(r)
+	auth.Delete = auth.canDelete(r)
 
 	// path string -> info os.FileInfo
 	fileInfoMap := make(map[string]os.FileInfo, 0)
@@ -399,7 +446,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	// turn file list -> json
 	lrs := make([]HTTPFileInfo, 0)
 	for path, info := range fileInfoMap {
-		if !auth.checkAccess(info.Name()) {
+		if !auth.canAccess(info.Name()) {
 			continue
 		}
 		lr := HTTPFileInfo{

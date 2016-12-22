@@ -1,2 +1,6 @@
 ---
 upload: true
+users:
+- email: "user@example.com"
+  upload: true
+  delete: true
