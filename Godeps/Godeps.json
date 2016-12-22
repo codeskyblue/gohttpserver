@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/codeskyblue/gohttpserver",
-	"GoVersion": "go1.6",
+	"GoVersion": "go1.7",
 	"GodepVersion": "v74",
 	"Deps": [
 		{
@@ -29,6 +29,10 @@
 			"Rev": "de82dee623d9207f906d327172149cba50427a88"
 		},
 		{
+			"ImportPath": "github.com/codeskyblue/openid-go",
+			"Rev": "0d30842b2fb4704849cd07f6fba862a7a9f4b403"
+		},
+		{
 			"ImportPath": "github.com/go-yaml/yaml",
 			"Rev": "e4d366fc3c7938e2958e662b4258c7a89e1f0e3e"
 		},
@@ -52,8 +56,26 @@
 			"Rev": "d391bea3118c9fc17a88d62c9189bb791255e0ef"
 		},
 		{
+			"ImportPath": "github.com/gorilla/securecookie",
+			"Comment": "v1.1-5-gfa5329f",
+			"Rev": "fa5329f913702981df43dcb2a380bac429c810b5"
+		},
+		{
+			"ImportPath": "github.com/gorilla/sessions",
+			"Comment": "v1.1",
+			"Rev": "ca9ada44574153444b00d3fd9c8559e4cc95f896"
+		},
+		{
 			"ImportPath": "github.com/mash/go-accesslog",
 			"Rev": "9ba8e13f36087d6cb83d9a9f17f9e8da137d5ee9"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html",
+			"Rev": "a625e3953219464fdd5611bb48bf87c927717295"
+		},
+		{
+			"ImportPath": "golang.org/x/net/html/atom",
+			"Rev": "a625e3953219464fdd5611bb48bf87c927717295"
 		}
 	]
 }

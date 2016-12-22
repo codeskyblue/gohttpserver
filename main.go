@@ -133,6 +133,7 @@ func main() {
 		data, _ := yaml.Marshal(gcfg)
 		fmt.Printf("--- config ---\n%s\n", string(data))
 	}
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
 	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme

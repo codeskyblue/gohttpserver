@@ -403,7 +403,6 @@ func (c *AccessConf) canUpload(r *http.Request) bool {
 		return c.Upload
 	}
 	userInfo := val.(*UserInfo)
-	log.Println(userInfo)
 	for _, rule := range c.Users {
 		if rule.Email == userInfo.Email {
 			return rule.Upload
@@ -537,7 +536,13 @@ func (s *HTTPStaticServer) defaultAccessConf() AccessConf {
 }
 
 func (s *HTTPStaticServer) readAccessConf(requestPath string) (ac AccessConf) {
-	ac = s.defaultAccessConf()
+	requestPath = filepath.Clean(requestPath)
+	if requestPath == "/" || requestPath == "" || requestPath == "." {
+		ac = s.defaultAccessConf()
+	} else {
+		parentPath := filepath.Dir(requestPath)
+		ac = s.readAccessConf(parentPath)
+	}
 	relPath := filepath.Join(s.Root, requestPath)
 	if isFile(relPath) {
 		relPath = filepath.Dir(relPath)
