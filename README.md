@@ -47,6 +47,7 @@ Upload size now limited to 1G
 1. [ ] Support sort by size or modified time
 1. [x] Add version info into index page
 1. [ ] Add api `/-/info/some.(apk|ipa)` to get detail info
+1. [x] Add api `/-/apk/info/some.apk` to get android package info
 1. [x] Auto tag version
 1. [x] Custom title support
 1. [x] Support setting from conf file

@@ -70,6 +70,15 @@
 			"Rev": "9ba8e13f36087d6cb83d9a9f17f9e8da137d5ee9"
 		},
 		{
+			"ImportPath": "github.com/pkg/errors",
+			"Comment": "v0.8.0-1-g839d9e9",
+			"Rev": "839d9e913e063e28dfd0e6c7b7512793e0a48be9"
+		},
+		{
+			"ImportPath": "github.com/shogo82148/androidbinary",
+			"Rev": "eb4fe244aa607cf45019a08b0034255594d00962"
+		},
+		{
 			"ImportPath": "golang.org/x/net/html",
 			"Rev": "a625e3953219464fdd5611bb48bf87c927717295"
 		},

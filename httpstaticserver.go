@@ -75,6 +75,8 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
+
+	m.HandleFunc("/-/apk/info/{path:.*}", s.hInfoApk)
 	// TODO: /ipa/info
 	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
 
@@ -204,6 +206,26 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 		fji.Type = "text"
 	}
 	data, _ := json.Marshal(fji)
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(data)
+}
+
+func (s *HTTPStaticServer) hInfoApk(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	relPath := filepath.Join(s.Root, path)
+	if !isFile(relPath) {
+		http.Error(w, "Not a file", 403)
+		return
+	}
+	apk, err := NewApk(relPath)
+	if err != nil {
+		http.Error(w, err.Error(), 403)
+		return
+	}
+	ai := ApkInfo{}
+	ai.MainActivity, _ = apk.MainAcitivty()
+	ai.PackageName = apk.PackageName()
+	data, _ := json.Marshal(ai)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 }
