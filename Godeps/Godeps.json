@@ -25,6 +25,10 @@
 			"Rev": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 		},
 		{
+			"ImportPath": "github.com/codeskyblue/androidbinary",
+			"Rev": "0bda65d9fce8f2fc20eef404a9231882894db9c6"
+		},
+		{
 			"ImportPath": "github.com/codeskyblue/dockerignore",
 			"Rev": "de82dee623d9207f906d327172149cba50427a88"
 		},
@@ -73,10 +77,6 @@
 			"ImportPath": "github.com/pkg/errors",
 			"Comment": "v0.8.0-1-g839d9e9",
 			"Rev": "839d9e913e063e28dfd0e6c7b7512793e0a48be9"
-		},
-		{
-			"ImportPath": "github.com/shogo82148/androidbinary",
-			"Rev": "eb4fe244aa607cf45019a08b0034255594d00962"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",

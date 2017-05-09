@@ -13,8 +13,8 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
+	"github.com/codeskyblue/androidbinary"
 	"github.com/pkg/errors"
-	"github.com/shogo82148/androidbinary"
 )
 
 type ApkInfo struct {
