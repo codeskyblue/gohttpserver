@@ -2,6 +2,8 @@ jQuery('#qrcodeCanvas').qrcode({
   text: "http://jetienne.com/"
 });
 
+Dropzone.autoDiscover = false;
+
 function getExtention(fname) {
   return fname.slice((fname.lastIndexOf(".") - 1 >>> 0) + 2);
 }
@@ -105,7 +107,7 @@ var vm = new Vue({
         }
       }.bind(this)
     })
-    this.myDropzone = new Dropzone("#my-dropzone", {
+    this.myDropzone = new Dropzone("#upload-form", {
       paramName: "file",
       maxFilesize: 1024,
       addRemoveLinks: true,
@@ -119,7 +121,6 @@ var vm = new Vue({
         })
       }
     });
-
   },
   methods: {
     formatTime: function(timestamp) {
