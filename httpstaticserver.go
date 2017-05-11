@@ -132,6 +132,7 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 
 func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 	path := mux.Vars(req)["path"]
+	dirpath := filepath.Join(s.Root, path)
 
 	// check auth
 	auth := s.readAccessConf(path)
@@ -140,37 +141,24 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err := req.ParseMultipartForm(1 << 30) // max memory 1G
+	file, header, err := req.FormFile("file")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if len(req.MultipartForm.File["file"]) == 0 {
-		http.Error(w, "Need multipart file", http.StatusInternalServerError)
+	defer file.Close()
+	dst, err := os.Create(filepath.Join(dirpath, header.Filename)) // BUG(ssx): There is a leak here
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	dirpath := filepath.Join(s.Root, path)
-
-	for _, mfile := range req.MultipartForm.File["file"] {
-		file, err := mfile.Open()
-		defer file.Close()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		dst, err := os.Create(filepath.Join(dirpath, mfile.Filename)) // BUG(ssx): There is a leak here
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer dst.Close()
-		if _, err := io.Copy(dst, file); err != nil {
-			log.Println("Handle upload file:", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+	defer dst.Close()
+	if _, err := io.Copy(dst, file); err != nil {
+		log.Println("Handle upload file:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+	// runtime.GC()
 	w.Write([]byte("Upload success"))
 }
 
