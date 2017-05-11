@@ -143,13 +143,15 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 
 	file, header, err := req.FormFile("file")
 	if err != nil {
+		log.Println("Parse form file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer file.Close()
-	dst, err := os.Create(filepath.Join(dirpath, header.Filename)) // BUG(ssx): There is a leak here
+	dst, err := os.Create(filepath.Join(dirpath, header.Filename))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Create file:", err)
+		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer dst.Close()
@@ -158,7 +160,6 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	// runtime.GC()
 	w.Write([]byte("Upload success"))
 }
 
