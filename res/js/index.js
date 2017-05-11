@@ -45,7 +45,8 @@ var vm = new Vue({
       path: "",
       size: "...",
       type: "dir",
-    }]
+    }],
+    myDropzone: null,
   },
   computed: {
     computedFiles: function() {
@@ -104,6 +105,21 @@ var vm = new Vue({
         }
       }.bind(this)
     })
+    this.myDropzone = new Dropzone("#my-dropzone", {
+      paramName: "file",
+      maxFilesize: 1024,
+      addRemoveLinks: true,
+      init: function() {
+        this.on("uploadprogress", function(file, progress) {
+          // console.log("File progress", progress);
+        });
+        this.on("complete", function(file) {
+          console.log("reload file list")
+          loadFileList()
+        })
+      }
+    });
+
   },
   methods: {
     formatTime: function(timestamp) {
@@ -115,6 +131,9 @@ var vm = new Vue({
     },
     toggleHidden: function() {
       this.showHidden = !this.showHidden;
+    },
+    removeAllUploads: function() {
+      this.myDropzone.removeAllFiles();
     },
     genInstallURL: function(name) {
       if (getExtention(name) == "ipa") {
@@ -309,21 +328,6 @@ Vue.filter('formatBytes', function(value) {
   else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + " MB";
   else return (bytes / 1073741824).toFixed(1) + " GB";
 })
-
-Dropzone.options.myDropzone = {
-  paramName: "file",
-  maxFilesize: 1024,
-  addRemoveLinks: true,
-  init: function() {
-    this.on("uploadprogress", function(file, progress) {
-      console.log("File progress", progress);
-    });
-    this.on("complete", function(file) {
-      console.log("reload file list")
-      loadFileList()
-    })
-  }
-}
 
 $(function() {
   $.scrollUp({
