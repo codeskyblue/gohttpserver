@@ -82,7 +82,6 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 
-	m.HandleFunc("/-/apk/info/{path:.*}", s.hInfoApk)
 	// TODO: /ipa/info
 	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
 
@@ -170,11 +169,12 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 }
 
 type FileJSONInfo struct {
-	Name    string `json:"name"`
-	Type    string `json:"type"`
-	Size    int64  `json:"size"`
-	Path    string `json:"path"`
-	ModTime int64  `json:"mtime"`
+	Name    string      `json:"name"`
+	Type    string      `json:"type"`
+	Size    int64       `json:"size"`
+	Path    string      `json:"path"`
+	ModTime int64       `json:"mtime"`
+	Extra   interface{} `json:"extra,omitempty"`
 }
 
 func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
@@ -195,32 +195,23 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 		Path:    path,
 		ModTime: fi.ModTime().UnixNano() / 1e6,
 	}
-	if filepath.Ext(path) == ".md" {
+	ext := filepath.Ext(path)
+	switch ext {
+	case ".md":
 		fji.Type = "markdown"
-	} else {
+	case ".apk":
+		fji.Type = "apk"
+		apkf, err := apk.OpenFile(relPath)
+		if err == nil {
+			ai := ApkInfo{}
+			ai.MainActivity, _ = apkf.MainAcitivty()
+			ai.PackageName = apkf.PackageName()
+			fji.Extra = ai
+		}
+	default:
 		fji.Type = "text"
 	}
 	data, _ := json.Marshal(fji)
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
-}
-
-func (s *HTTPStaticServer) hInfoApk(w http.ResponseWriter, r *http.Request) {
-	path := mux.Vars(r)["path"]
-	relPath := filepath.Join(s.Root, path)
-	if !isFile(relPath) {
-		http.Error(w, "Not a file", 403)
-		return
-	}
-	apkf, err := apk.OpenFile(relPath)
-	if err != nil {
-		http.Error(w, err.Error(), 403)
-		return
-	}
-	ai := ApkInfo{}
-	ai.MainActivity, _ = apkf.MainAcitivty()
-	ai.PackageName = apkf.PackageName()
-	data, _ := json.Marshal(ai)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 }
