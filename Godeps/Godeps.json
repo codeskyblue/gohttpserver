@@ -5,28 +5,24 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/DHowett/go-plist",
-			"Rev": "f4bf55d2395500aacc17eedcebc5f139336b4312"
+			"Rev": "fd61394c0abc85ba629ff8471fa35d4309cd6609"
 		},
 		{
 			"ImportPath": "github.com/alecthomas/kingpin",
-			"Comment": "v2.1.3",
-			"Rev": "aef28d186e59d39ed537473dfce4472108ea1045"
+			"Comment": "v2.2.0",
+			"Rev": "92b2733684bc5f1971162349ce098fe0d070e2a9"
 		},
 		{
 			"ImportPath": "github.com/alecthomas/template",
-			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
+			"Rev": "a0175ee3bccc567396460bf5acd36800cb10c49c"
 		},
 		{
 			"ImportPath": "github.com/alecthomas/template/parse",
-			"Rev": "b867cc6ab45cece8143cfcc6fc9c77cf3f2c23c0"
+			"Rev": "a0175ee3bccc567396460bf5acd36800cb10c49c"
 		},
 		{
 			"ImportPath": "github.com/alecthomas/units",
 			"Rev": "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
-		},
-		{
-			"ImportPath": "github.com/codeskyblue/androidbinary",
-			"Rev": "0bda65d9fce8f2fc20eef404a9231882894db9c6"
 		},
 		{
 			"ImportPath": "github.com/codeskyblue/dockerignore",
@@ -46,18 +42,18 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
-			"Comment": "v1.1-4-gaed02d1",
-			"Rev": "aed02d124ae4a0e94fea4541c8effd05bf0c8296"
+			"Comment": "v1.1-8-g0b6087c",
+			"Rev": "0b6087c0035ecc2ecddef2451329bca7f36192ab"
 		},
 		{
 			"ImportPath": "github.com/gorilla/handlers",
-			"Comment": "v1.1-10-g801d6e3",
-			"Rev": "801d6e3b008914ee888c9ab9b1b379b9a56fbf44"
+			"Comment": "v1.1-14-g3a5767c",
+			"Rev": "3a5767ca75ece5f7f1440b1d16975247f8d8b221"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
-			"Comment": "v1.1-15-gd391bea",
-			"Rev": "d391bea3118c9fc17a88d62c9189bb791255e0ef"
+			"Comment": "v1.1-27-g757bef9",
+			"Rev": "757bef944d0f21880861c2dd9c871ca543023cba"
 		},
 		{
 			"ImportPath": "github.com/gorilla/securecookie",
@@ -77,6 +73,14 @@
 			"ImportPath": "github.com/pkg/errors",
 			"Comment": "v0.8.0-1-g839d9e9",
 			"Rev": "839d9e913e063e28dfd0e6c7b7512793e0a48be9"
+		},
+		{
+			"ImportPath": "github.com/shogo82148/androidbinary",
+			"Rev": "b443b936780e4218d554b88b94b7e5638f4fdc20"
+		},
+		{
+			"ImportPath": "github.com/shogo82148/androidbinary/apk",
+			"Rev": "b443b936780e4218d554b88b94b7e5638f4fdc20"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",

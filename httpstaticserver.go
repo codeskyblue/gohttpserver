@@ -19,7 +19,13 @@ import (
 
 	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
+	"github.com/shogo82148/androidbinary/apk"
 )
+
+type ApkInfo struct {
+	PackageName  string `json:"packageName"`
+	MainActivity string `json:"mainActivity"`
+}
 
 type IndexFileItem struct {
 	Path string
@@ -206,14 +212,14 @@ func (s *HTTPStaticServer) hInfoApk(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Not a file", 403)
 		return
 	}
-	apk, err := NewApk(relPath)
+	apkf, err := apk.OpenFile(relPath)
 	if err != nil {
 		http.Error(w, err.Error(), 403)
 		return
 	}
 	ai := ApkInfo{}
-	ai.MainActivity, _ = apk.MainAcitivty()
-	ai.PackageName = apk.PackageName()
+	ai.MainActivity, _ = apkf.MainAcitivty()
+	ai.PackageName = apkf.PackageName()
 	data, _ := json.Marshal(ai)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
