@@ -81,6 +81,8 @@ var vm = new Vue({
               tasklists: true,
               ghCodeBlocks: true,
               smoothLivePreview: true,
+              simplifiedAutoLink: true,
+              strikethrough: true,
             });
 
             var html = converter.makeHtml(res);
@@ -210,6 +212,19 @@ var vm = new Vue({
     changePath: function(reqPath, e) {
       loadFileOrDir(reqPath);
       e.preventDefault()
+    },
+    showInfo: function(f) {
+      console.log(f);
+      $.ajax({
+        url: pathJoin(["-/info", location.pathname, f.name]),
+        method: "GET",
+        success: function(res) {
+          $("#file-info-title").text(f.name);
+          $("#file-info-content").text(JSON.stringify(res, null, 4));
+          $("#file-info-modal").modal("show");
+          // console.log(JSON.stringify(res, null, 4));
+        }
+      })
     },
     deletePathConfirm: function(f, e) {
       // confirm

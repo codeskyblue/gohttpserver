@@ -25,6 +25,10 @@ import (
 type ApkInfo struct {
 	PackageName  string `json:"packageName"`
 	MainActivity string `json:"mainActivity"`
+	Version      struct {
+		Code int    `json:"code"`
+		Name string `json:"name"`
+	} `json:"version"`
 }
 
 type IndexFileItem struct {
@@ -206,6 +210,8 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 			ai := ApkInfo{}
 			ai.MainActivity, _ = apkf.MainAcitivty()
 			ai.PackageName = apkf.PackageName()
+			ai.Version.Code = apkf.Manifest().VersionCode
+			ai.Version.Name = apkf.Manifest().VersionName
 			fji.Extra = ai
 		}
 	default:
@@ -474,7 +480,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 			lr.Name = name
 			lr.Path = filepath.Join(filepath.Dir(path), name)
 			lr.Type = "dir"
-			lr.Size = -1 //"-"
+			lr.Size = s.historyDirSize(lr.Path)
 		} else {
 			lr.Type = "file"
 			lr.Size = info.Size() // formatSize(info)
@@ -489,6 +495,8 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
 }
+
+var dirSizeMap = make(map[string]int64)
 
 func (s *HTTPStaticServer) makeIndex() error {
 	var indexes = make([]IndexFileItem, 0)
@@ -508,7 +516,22 @@ func (s *HTTPStaticServer) makeIndex() error {
 		return nil
 	})
 	s.indexes = indexes
+	dirSizeMap = make(map[string]int64)
 	return err
+}
+
+func (s *HTTPStaticServer) historyDirSize(dir string) int64 {
+	var size int64
+	if size, ok := dirSizeMap[dir]; ok {
+		return size
+	}
+	for _, fitem := range s.indexes {
+		if filepath.HasPrefix(fitem.Path, dir) {
+			size += fitem.Info.Size()
+		}
+	}
+	dirSizeMap[dir] = size
+	return size
 }
 
 func (s *HTTPStaticServer) findIndex(text string) []IndexFileItem {
