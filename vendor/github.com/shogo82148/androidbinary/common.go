@@ -3,6 +3,7 @@ package androidbinary
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"os"
 	"unicode/utf16"
@@ -149,6 +150,9 @@ func readUTF16(sr *io.SectionReader) (string, error) {
 	size, err := readUTF16length(sr)
 	if err != nil {
 		return "", nil
+	}
+	if size > 2000 {
+		return "", fmt.Errorf("invalid string length: %d", size)
 	}
 
 	// read string value

@@ -181,6 +181,25 @@ type FileJSONInfo struct {
 	Extra   interface{} `json:"extra,omitempty"`
 }
 
+// path should be absolute
+func parseApkInfo(path string) (ai *ApkInfo) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("parse-apk-info panic:", err)
+		}
+	}()
+	apkf, err := apk.OpenFile(path)
+	if err != nil {
+		return
+	}
+	ai = &ApkInfo{}
+	ai.MainActivity, _ = apkf.MainAcitivty()
+	ai.PackageName = apkf.PackageName()
+	ai.Version.Code = apkf.Manifest().VersionCode
+	ai.Version.Name = apkf.Manifest().VersionName
+	return
+}
+
 func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
@@ -205,15 +224,7 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 		fji.Type = "markdown"
 	case ".apk":
 		fji.Type = "apk"
-		apkf, err := apk.OpenFile(relPath)
-		if err == nil {
-			ai := ApkInfo{}
-			ai.MainActivity, _ = apkf.MainAcitivty()
-			ai.PackageName = apkf.PackageName()
-			ai.Version.Code = apkf.Manifest().VersionCode
-			ai.Version.Name = apkf.Manifest().VersionName
-			fji.Extra = ai
-		}
+		fji.Extra = parseApkInfo(relPath)
 	default:
 		fji.Type = "text"
 	}
@@ -563,6 +574,7 @@ func (s *HTTPStaticServer) findIndex(text string) []IndexFileItem {
 func (s *HTTPStaticServer) defaultAccessConf() AccessConf {
 	return AccessConf{
 		Upload: s.Upload,
+		Delete: s.Delete,
 	}
 }
 
