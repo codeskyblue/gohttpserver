@@ -216,7 +216,7 @@ var vm = new Vue({
     showInfo: function(f) {
       console.log(f);
       $.ajax({
-        url: pathJoin(["-/info", location.pathname, f.name]),
+        url: pathJoin(["/-/info", location.pathname, f.name]),
         method: "GET",
         success: function(res) {
           $("#file-info-title").text(f.name);
