@@ -17,9 +17,9 @@ import (
 
 	"regexp"
 
-	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
+	"gopkg.in/yaml.v2"
 )
 
 type ApkInfo struct {
@@ -157,6 +157,7 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer file.Close()
+	defer req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
 	dst, err := os.Create(filepath.Join(dirpath, header.Filename))
 	if err != nil {
 		log.Println("Create file:", err)
