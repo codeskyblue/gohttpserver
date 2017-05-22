@@ -24,3 +24,11 @@ div.dropzone {
 .qrcode-title {
     font-size: 0.8em;
 }
+
+.clearfix::after {
+    clear: both;
+}
+
+#qrcodeCanvas {
+    padding-right: 20px;
+}

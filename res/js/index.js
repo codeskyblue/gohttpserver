@@ -147,13 +147,15 @@ var vm = new Vue({
       }
       return encodeURI(urlPath);
     },
-    genQrcode: function(text, title) {
-      var urlPath = this.genInstallURL(text);
-      $("#qrcode-title").html(title || text);
-      $("#qrcode-link").attr("href", urlPath);
+    genQrcode: function(name, title) {
+      var installURL = this.genInstallURL(name);
+      $("#qrcode-title").html(title || name);
+      $("#qrcode-link").attr("href", installURL);
       $('#qrcodeCanvas').empty().qrcode({
-        text: urlPath
+        text: installURL
       });
+      console.log(name, location.origin, this.genDownloadURL(name));
+      $("#qrcodeRight a").attr("href", location.origin + encodeURI(pathJoin([location.pathname, name])));
       $("#qrcode-modal").modal("show");
     },
     genDownloadURL: function(f) {
