@@ -17,9 +17,9 @@ import (
 
 	"regexp"
 
+	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
-	"gopkg.in/yaml.v2"
 )
 
 type ApkInfo struct {

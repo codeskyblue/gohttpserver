@@ -139,11 +139,13 @@ var vm = new Vue({
       this.myDropzone.removeAllFiles();
     },
     genInstallURL: function(name) {
+      var urlPath;
       if (getExtention(name) == "ipa") {
         urlPath = location.protocol + "//" + pathJoin([location.host, "/-/ipa/link", location.pathname, name]);
-        return urlPath;
+      } else {
+        urlPath = location.protocol + "//" + pathJoin([location.host, location.pathname, name]);
       }
-      return location.protocol + "//" + pathJoin([location.host, location.pathname, name]);
+      return encodeURI(urlPath);
     },
     genQrcode: function(text, title) {
       var urlPath = this.genInstallURL(text);
