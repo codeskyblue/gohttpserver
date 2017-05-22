@@ -154,8 +154,7 @@ var vm = new Vue({
       $('#qrcodeCanvas').empty().qrcode({
         text: installURL
       });
-      console.log(name, location.origin, this.genDownloadURL(name));
-      $("#qrcodeRight a").attr("href", location.origin + encodeURI(pathJoin([location.pathname, name])));
+      $("#qrcodeRight a").attr("href", encodeURI(location.origin + encodeURI(pathJoin([location.pathname, name])));
       $("#qrcode-modal").modal("show");
     },
     genDownloadURL: function(f) {
