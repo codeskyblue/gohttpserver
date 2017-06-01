@@ -76,11 +76,11 @@
 		},
 		{
 			"ImportPath": "github.com/shogo82148/androidbinary",
-			"Rev": "b443b936780e4218d554b88b94b7e5638f4fdc20"
+			"Rev": "2fb750de4ec6a45853fcc5f85694eab47e1007f9"
 		},
 		{
 			"ImportPath": "github.com/shogo82148/androidbinary/apk",
-			"Rev": "b443b936780e4218d554b88b94b7e5638f4fdc20"
+			"Rev": "2fb750de4ec6a45853fcc5f85694eab47e1007f9"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",

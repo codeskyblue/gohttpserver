@@ -1,5 +1,6 @@
 package apk
 
+// Instrumentation is an application instrumentation code.
 type Instrumentation struct {
 	Name            string `xml:"name,attr"`
 	Target          string `xml:"targetPackage,attr"`
@@ -7,19 +8,23 @@ type Instrumentation struct {
 	FunctionalTest  bool   `xml:"functionalTest,attr"`
 }
 
+// ActivityAction is an action of an activity.
 type ActivityAction struct {
 	Name string `xml:"name,attr"`
 }
 
+// ActivityCategory is a category of an activity.
 type ActivityCategory struct {
 	Name string `xml:"name,attr"`
 }
 
+// ActivityIntentFilter is an intent filter of an activity.
 type ActivityIntentFilter struct {
 	Action   ActivityAction   `xml:"action"`
 	Category ActivityCategory `xml:"category"`
 }
 
+// AppActivity is an activity in an application.
 type AppActivity struct {
 	Theme        string                 `xml:"theme,attr"`
 	Name         string                 `xml:"name,attr"`
@@ -27,6 +32,7 @@ type AppActivity struct {
 	IntentFilter []ActivityIntentFilter `xml:"intent-filter"`
 }
 
+// Application is an application in an APK.
 type Application struct {
 	AllowTaskReparenting  bool          `xml:"allowTaskReparenting,attr"`
 	AllowBackup           bool          `xml:"allowBackup,attr"`
@@ -53,22 +59,24 @@ type Application struct {
 	TaskAffinity          string        `xml:"taskAffinity,attr"`
 	TestOnly              bool          `xml:"testOnly,attr"`
 	Theme                 string        `xml:"theme,attr"`
-	UiOptions             string        `xml:"uiOptions,attr"`
-	VmSafeMode            bool          `xml:"vmSafeMode,attr"`
+	UIOptions             string        `xml:"uiOptions,attr"`
+	VMSafeMode            bool          `xml:"vmSafeMode,attr"`
 	Activity              []AppActivity `xml:"activity"`
 }
 
-type UsesSdk struct {
+// UsesSDK is target SDK version.
+type UsesSDK struct {
 	Min    int `xml:"minSdkVersion,attr"`
 	Target int `xml:"targetSdkVersion,attr"`
 	Max    int `xml:"maxSdkVersion,attr"`
 }
 
+// Manifest is a manifest of an APK.
 type Manifest struct {
 	Package     string          `xml:"package,attr"`
 	VersionCode int             `xml:"versionCode,attr"`
 	VersionName string          `xml:"versionName,attr"`
 	App         Application     `xml:"application"`
 	Instrument  Instrumentation `xml:"instrumentation"`
-	Sdk         UsesSdk         `xml:"uses-sdk"`
+	SDK         UsesSDK         `xml:"uses-sdk"`
 }
