@@ -1,19 +1,20 @@
 # gohttpserver
 [![Build Status](https://travis-ci.org/codeskyblue/gohttpserver.svg?branch=master)](https://travis-ci.org/codeskyblue/gohttpserver)
 
-Make the best HTTP File Server. Better UI, upload support, apple&android install package qrcode generate.
+- Goal: Make the best HTTP File Server.
+- Features: Human-friendly UI, file uploading support, direct QR-code generation for Apple & Android install package.
 
 [Demo site](https://gohttpserver.herokuapp.com/)
 
 - 目标: 做最好的HTTP文件服务器
 - 功能: 人性化的UI体验，文件的上传支持，安卓和苹果安装包的二维码直接生成。
 
-**Binary** can be download from [github releases](https://github.com/codeskyblue/gohttpserver/releases/)
+**Binaries** can be downloaded from [this repo releases](https://github.com/codeskyblue/gohttpserver/releases/)
 
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 
-Upload size now limited to 1G
+Upload size now is limited to 1G.
 
 ## Screenshots
 ![screen](testdata/filetypes/gohttpserver.gif)
@@ -62,29 +63,29 @@ go build && ./gohttpserver
 ```
 
 ## Usage
-Listen port 8000 on all interface, and enable upload
+Listen on port 8000 of all interfaces, and enable file uploading.
 
 ```
 ./gohttpserver -r ./ --addr :8000 --upload
 ```
 
-## Authentication
-- basic http auth
+## Authentication options
+- Enable basic http authentication
 
   ```sh
   $ gohttpserver --auth-type http --auth-http username:password
   ```
 
-- openid auth
+- Use openid auth
 
   ```sh
   $ gohttpserver --auth-type openid --auth-openid https://login.example-hostname.com/openid/
   ```
 
-  The openid return url use "http" not "https", But I'm not going to fix it.
+  The openid returns url using "http" instead of "https", but I am not planing to fix this currently.
 
 ## Advanced usage
-Support update access rule if there is a file named `.ghs.yml` under directory. `.ghs.yml` example
+Add access rule by creating a `.ghs.yml` file under a sub-directory. An example:
 
 ```yaml
 ---
@@ -96,9 +97,9 @@ users:
   upload: true
 ```
 
-If openid auth enabled and user "codeskyblue@codeskyblue.com" is logged, then he can delete and upload files.
+In this case, if openid auth is enabled and user "codeskyblue@codeskyblue.com" has logged in, he/she can delete/upload files under the directory where the `.ghs.yml` file exits.
 
-For example, if there is such file under directory `foo`, directory `foo` can not be uploaded, while `bar` can.
+For example, in the following directory hierarchy, users can delete/uploade files in directory `foo`, but he/she cannot do this in directory `bar`.
 
 ```
 root -
@@ -109,9 +110,9 @@ root -
        `-- hello.txt
 ```
 
-Use config file. specfied with `--conf`, see [example config.yml](testdata/config.yml). Note that command line option can overwrite conf in `config.yml`
+User can specify config file name with `--conf`, see [example config.yml](testdata/config.yml).
 
-block visual some files, just add the following code to `.ghs.yml`
+To specify which files is hidden and which file is visible, add the following lines to `.ghs.yml`
 
 ```yaml
 accessTables:
@@ -122,13 +123,13 @@ accessTables:
 ```
 
 ### ipa plist proxy
-This is used for server which not https enabled. default use <https://plistproxy.herokuapp.com/plist>
+This is used for server on which https is enabled. default use <https://plistproxy.herokuapp.com/plist>
 
 ```
 ./gohttpserver --plistproxy=https://someproxyhost.com/
 ```
 
-Proxy web site should have ability
+Test if proxy works:
 
 ```sh
 $ http POST https://proxyhost.com/plist < app.plist
@@ -141,8 +142,7 @@ $ http GET https://proxyhost.com/plist/18f99211
 
 ### Upload with CURL
 For example, upload a file named `foo.txt` to directory `somedir`
-
-PS: max upload size limited to 1G (hard coded)
+(the maximum upload file size is hard coded and limited to 1 GB)
 
 ```sh
 $ curl -F file=@foo.txt localhost:8000/somedir
@@ -151,8 +151,8 @@ $ curl -F file=@foo.txt localhost:8000/somedir
 ## FAQ
 - [How to generate self signed certificate with openssl](http://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl)
 
-### How the search works
-The search algorithm follow the search engine google. keywords are seperated with space, words with prefix `-` will be excluded.
+### How the query is formated
+The search query follows common format rules just like Google. Keywords are seperated with space(s), keywords with prefix `-` will be excluded in search results.
 
 1. `hello world` means must contains `hello` and `world`
 1. `hello -world` means must contains `hello` but not contains `world`
@@ -166,15 +166,13 @@ go get github.com/jteeuwen/go-bindata/...
 go get github.com/elazarl/go-bindata-assetfs/...
 ```
 
-Theme are all defined in [res/themes](res/themes) directory. Now only two, black and green.
+Theme are all defined in [res/themes](res/themes) directory. Now only two themes are available, "black" and "green".
 
 ## How to build single binary release
 ```sh
 go-bindata-assetfs -tags bindata res/...
 go build -tags bindata
 ```
-
-That's all. ^_^
 
 ## Reference Web sites
 
@@ -194,7 +192,7 @@ That's all. ^_^
 * <http://www.gorillatoolkit.org/pkg/handlers>
 
 ## History
-The first version is <https://github.com/codeskyblue/gohttp>
+The old version is hosted at <https://github.com/codeskyblue/gohttp>
 
 ## LICENSE
-This project is under license [MIT](LICENSE)
+This project is licensed under [MIT](LICENSE).
