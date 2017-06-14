@@ -156,9 +156,12 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer file.Close()
-	defer req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
-	dst, err := os.Create(filepath.Join(dirpath, header.Filename))
+	defer func() {
+		file.Close()
+		req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
+	}()
+	dstPath := filepath.Join(dirpath, header.Filename)
+	dst, err := os.Create(dstPath)
 	if err != nil {
 		log.Println("Create file:", err)
 		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
@@ -170,7 +173,11 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	w.Write([]byte("Upload success"))
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":     true,
+		"destination": dstPath,
+	})
 }
 
 type FileJSONInfo struct {
