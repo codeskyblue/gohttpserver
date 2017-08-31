@@ -14,8 +14,6 @@
 ## Notes
 If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 
-Upload size now is limited to 1G.
-
 ## Screenshots
 ![screen](testdata/filetypes/gohttpserver.gif)
 
@@ -142,7 +140,6 @@ $ http GET https://proxyhost.com/plist/18f99211
 
 ### Upload with CURL
 For example, upload a file named `foo.txt` to directory `somedir`
-(the maximum upload file size is hard coded and limited to 1 GB)
 
 ```sh
 $ curl -F file=@foo.txt localhost:8000/somedir
