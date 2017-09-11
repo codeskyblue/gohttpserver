@@ -1,9 +1,14 @@
 language: go
 go:
-  - 1.6
   - 1.7
 env:
   global:
     - GO15VENDOREXPERIMENT=1
 script:
   - go test -v
+# .travis.yml
+after_success:
+  - go get github.com/jteeuwen/go-bindata/...
+  - go get github.com/elazarl/go-bindata-assetfs/...
+  - test -n "$TRAVIS_TAG" && go-bindata-assetfs -tags bindata res/...
+  - test -n "$TRAVIS_TAG" && curl -sL https://git.io/goreleaser | bash

@@ -9,6 +9,7 @@ builds:
 - goos:
   - linux
   - darwin
+  - windows
   goarch:
   - amd64
   - "386"
@@ -16,6 +17,7 @@ builds:
   - "6"
   main: .
   ldflags: -s -w -X main.VERSION={{.Version}}
+  flags: -tags bindata
   binary: gohttpserver
 archive:
   format: tar.gz
