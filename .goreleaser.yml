@@ -32,6 +32,7 @@ archive:
   - README*
   - changelog*
   - CHANGELOG*
+  - .ghs.yml
 snapshot:
   name_template: SNAPSHOT-{{ .Commit }}
 checksum:
