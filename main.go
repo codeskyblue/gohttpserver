@@ -15,10 +15,10 @@ import (
 	"text/template"
 
 	"github.com/alecthomas/kingpin"
+	accesslog "github.com/codeskyblue/go-accesslog"
 	"github.com/go-yaml/yaml"
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
-	accesslog "github.com/mash/go-accesslog"
 )
 
 type Configure struct {
@@ -44,9 +44,9 @@ type Configure struct {
 	} `yaml:"auth"`
 }
 
-type logger struct{}
+type httpLogger struct{}
 
-func (l logger) Log(record accesslog.LogRecord) {
+func (l httpLogger) Log(record accesslog.LogRecord) {
 	log.Printf("%s - %s %d %s", record.Ip, record.Method, record.Status, record.Uri)
 }
 
@@ -54,7 +54,7 @@ var (
 	defaultPlistProxy = "https://plistproxy.herokuapp.com/plist"
 	defaultOpenID     = "https://some-hostname.com/openid/"
 	gcfg              = Configure{}
-	l                 = logger{}
+	logger            = httpLogger{}
 
 	VERSION   = "unknown"
 	BUILDTIME = "unknown time"
@@ -156,7 +156,7 @@ func main() {
 
 	var hdlr http.Handler = ss
 
-	hdlr = accesslog.NewLoggingHandler(hdlr, l)
+	hdlr = accesslog.NewLoggingHandler(hdlr, logger)
 
 	// HTTP Basic Authentication
 	userpass := strings.SplitN(gcfg.Auth.HTTP, ":", 2)
