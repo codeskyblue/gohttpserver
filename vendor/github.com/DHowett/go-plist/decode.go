@@ -8,7 +8,7 @@ import (
 )
 
 type parser interface {
-	parseDocument() (*plistValue, error)
+	parseDocument() (cfValue, error)
 }
 
 // A Decoder reads a property list from an input stream.
@@ -38,7 +38,7 @@ func (p *Decoder) Decode(v interface{}) (err error) {
 	p.reader.Seek(0, 0)
 
 	var parser parser
-	var pval *plistValue
+	var pval cfValue
 	if bytes.Equal(header, []byte("bplist")) {
 		parser = newBplistParser(p.reader)
 		pval, err = parser.parseDocument()
@@ -93,6 +93,7 @@ func NewDecoder(r io.ReadSeeker) *Decoder {
 // in the interface value. If the interface value is nil, Unmarshal stores one of the following in the interface value:
 //
 //     string, bool, uint64, float64
+//     plist.UID for "CoreFoundation Keyed Archiver UIDs" (convertible to uint64)
 //     []byte, for plist data
 //     []interface{}, for plist arrays
 //     map[string]interface{}, for plist dictionaries

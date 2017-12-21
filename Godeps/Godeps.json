@@ -1,11 +1,11 @@
 {
 	"ImportPath": "github.com/codeskyblue/gohttpserver",
-	"GoVersion": "go1.7",
-	"GodepVersion": "v74",
+	"GoVersion": "go1.9",
+	"GodepVersion": "v79",
 	"Deps": [
 		{
 			"ImportPath": "github.com/DHowett/go-plist",
-			"Rev": "fd61394c0abc85ba629ff8471fa35d4309cd6609"
+			"Rev": "233df3c4f07b0c562da0e8a6fb850681ac49bb90"
 		},
 		{
 			"ImportPath": "github.com/alecthomas/kingpin",
@@ -29,6 +29,10 @@
 			"Rev": "de82dee623d9207f906d327172149cba50427a88"
 		},
 		{
+			"ImportPath": "github.com/codeskyblue/go-accesslog",
+			"Rev": "6188d3bd9371c3caba018648c6acd9cdf805787e"
+		},
+		{
 			"ImportPath": "github.com/codeskyblue/openid-go",
 			"Rev": "0d30842b2fb4704849cd07f6fba862a7a9f4b403"
 		},
@@ -42,12 +46,12 @@
 		},
 		{
 			"ImportPath": "github.com/gorilla/context",
-			"Comment": "v1.1-8-g0b6087c",
-			"Rev": "0b6087c0035ecc2ecddef2451329bca7f36192ab"
+			"Comment": "v1.1-7-g08b5f42",
+			"Rev": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
 		},
 		{
 			"ImportPath": "github.com/gorilla/handlers",
-			"Comment": "v1.1-14-g3a5767c",
+			"Comment": "v1.2",
 			"Rev": "3a5767ca75ece5f7f1440b1d16975247f8d8b221"
 		},
 		{
@@ -64,10 +68,6 @@
 			"ImportPath": "github.com/gorilla/sessions",
 			"Comment": "v1.1",
 			"Rev": "ca9ada44574153444b00d3fd9c8559e4cc95f896"
-		},
-		{
-			"ImportPath": "github.com/mash/go-accesslog",
-			"Rev": "9ba8e13f36087d6cb83d9a9f17f9e8da137d5ee9"
 		},
 		{
 			"ImportPath": "github.com/pkg/errors",

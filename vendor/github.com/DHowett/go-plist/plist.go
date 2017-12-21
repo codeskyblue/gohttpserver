@@ -2,7 +2,6 @@ package plist
 
 import (
 	"reflect"
-	"sort"
 )
 
 // Property list format constants
@@ -25,85 +24,6 @@ var FormatNames = map[int]string{
 	BinaryFormat:   "Binary",
 	OpenStepFormat: "OpenStep",
 	GNUStepFormat:  "GNUStep",
-}
-
-type plistKind uint
-
-const (
-	Invalid plistKind = iota
-	Dictionary
-	Array
-	String
-	Integer
-	Real
-	Boolean
-	Data
-	Date
-)
-
-var plistKindNames map[plistKind]string = map[plistKind]string{
-	Invalid:    "invalid",
-	Dictionary: "dictionary",
-	Array:      "array",
-	String:     "string",
-	Integer:    "integer",
-	Real:       "real",
-	Boolean:    "boolean",
-	Data:       "data",
-	Date:       "date",
-}
-
-type plistValue struct {
-	kind  plistKind
-	value interface{}
-}
-
-type signedInt struct {
-	value  uint64
-	signed bool
-}
-
-type sizedFloat struct {
-	value float64
-	bits  int
-}
-
-type dictionary struct {
-	count  int
-	m      map[string]*plistValue
-	keys   sort.StringSlice
-	values []*plistValue
-}
-
-func (d *dictionary) Len() int {
-	return d.count
-}
-
-func (d *dictionary) Less(i, j int) bool {
-	return d.keys.Less(i, j)
-}
-
-func (d *dictionary) Swap(i, j int) {
-	d.keys.Swap(i, j)
-	d.values[i], d.values[j] = d.values[j], d.values[i]
-}
-
-func (d *dictionary) populateArrays() {
-	if d.count > 0 {
-		return
-	}
-
-	l := len(d.m)
-	d.count = l
-	d.keys = make([]string, l)
-	d.values = make([]*plistValue, l)
-	i := 0
-	for k, v := range d.m {
-		d.keys[i] = k
-		d.values[i] = v
-		i++
-	}
-	sort.Sort(d)
 }
 
 type unknownTypeError struct {
@@ -138,4 +58,28 @@ func (e plistParseError) Error() string {
 		s += ": " + e.err.Error()
 	}
 	return s
+}
+
+// A UID represents a unique object identifier. UIDs are serialized in a manner distinct from
+// that of integers.
+//
+// UIDs cannot be serialized in OpenStepFormat or GNUStepFormat property lists.
+type UID uint64
+
+// Marshaler is the interface implemented by types that can marshal themselves into valid
+// property list objects. The returned value is marshaled in place of the original value
+// implementing Marshaler
+//
+// If an error is returned by MarshalPlist, marshaling stops and the error is returned.
+type Marshaler interface {
+	MarshalPlist() (interface{}, error)
+}
+
+// Unmarshaler is the interface implemented by types that can unmarshal themselves from
+// property list objects. The UnmarshalPlist method receives a function that may
+// be called to unmarshal the original property list value into a field or variable.
+//
+// It is safe to call the unmarshal function more than once.
+type Unmarshaler interface {
+	UnmarshalPlist(unmarshal func(interface{}) error) error
 }
