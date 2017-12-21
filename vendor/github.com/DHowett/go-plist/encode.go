@@ -9,7 +9,7 @@ import (
 )
 
 type generator interface {
-	generateDocument(*plistValue)
+	generateDocument(cfValue)
 	Indent(string)
 }
 

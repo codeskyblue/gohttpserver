@@ -1,0 +1,8 @@
+language: go
+go_import_path: "howett.net/plist"
+go:
+  - 1.2
+  - master
+script:
+  - go test -v
+  - go test -tags appengine

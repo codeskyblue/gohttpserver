@@ -4,35 +4,57 @@ import (
 	"encoding"
 	"fmt"
 	"reflect"
+	"runtime"
 	"time"
 )
 
 type incompatibleDecodeTypeError struct {
-	typ   reflect.Type
-	pKind plistKind
+	dest reflect.Type
+	src  string // type name (from cfValue)
 }
 
 func (u *incompatibleDecodeTypeError) Error() string {
-	return fmt.Sprintf("plist: type mismatch: tried to decode %v into value of type %v", plistKindNames[u.pKind], u.typ)
+	return fmt.Sprintf("plist: type mismatch: tried to decode plist type `%v' into value of type `%v'", u.src, u.dest)
 }
 
 var (
-	textUnmarshalerType = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+	plistUnmarshalerType = reflect.TypeOf((*Unmarshaler)(nil)).Elem()
+	textUnmarshalerType  = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
+	uidType              = reflect.TypeOf(UID(0))
 )
 
 func isEmptyInterface(v reflect.Value) bool {
 	return v.Kind() == reflect.Interface && v.NumMethod() == 0
 }
 
-func (p *Decoder) unmarshalTextInterface(pval *plistValue, unmarshalable encoding.TextUnmarshaler) {
-	err := unmarshalable.UnmarshalText([]byte(pval.value.(string)))
+func (p *Decoder) unmarshalPlistInterface(pval cfValue, unmarshalable Unmarshaler) {
+	err := unmarshalable.UnmarshalPlist(func(i interface{}) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				if _, ok := r.(runtime.Error); ok {
+					panic(r)
+				}
+				err = r.(error)
+			}
+		}()
+		p.unmarshal(pval, reflect.ValueOf(i))
+		return
+	})
+
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (p *Decoder) unmarshalTime(pval *plistValue, val reflect.Value) {
-	val.Set(reflect.ValueOf(pval.value.(time.Time)))
+func (p *Decoder) unmarshalTextInterface(pval cfString, unmarshalable encoding.TextUnmarshaler) {
+	err := unmarshalable.UnmarshalText([]byte(pval))
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (p *Decoder) unmarshalTime(pval cfDate, val reflect.Value) {
+	val.Set(reflect.ValueOf(time.Time(pval)))
 }
 
 func (p *Decoder) unmarshalLaxString(s string, val reflect.Value) {
@@ -64,11 +86,11 @@ func (p *Decoder) unmarshalLaxString(s string, val reflect.Value) {
 		}
 		fallthrough
 	default:
-		panic(&incompatibleDecodeTypeError{val.Type(), String})
+		panic(&incompatibleDecodeTypeError{val.Type(), "string"})
 	}
 }
 
-func (p *Decoder) unmarshal(pval *plistValue, val reflect.Value) {
+func (p *Decoder) unmarshal(pval cfValue, val reflect.Value) {
 	if pval == nil {
 		return
 	}
@@ -86,86 +108,101 @@ func (p *Decoder) unmarshal(pval *plistValue, val reflect.Value) {
 		return
 	}
 
-	incompatibleTypeError := &incompatibleDecodeTypeError{val.Type(), pval.kind}
+	incompatibleTypeError := &incompatibleDecodeTypeError{val.Type(), pval.typeName()}
 
 	// time.Time implements TextMarshaler, but we need to parse it as RFC3339
-	if pval.kind == Date {
+	if date, ok := pval.(cfDate); ok {
 		if val.Type() == timeType {
-			p.unmarshalTime(pval, val)
+			p.unmarshalTime(date, val)
 			return
 		}
 		panic(incompatibleTypeError)
 	}
 
-	if val.CanInterface() && val.Type().Implements(textUnmarshalerType) && val.Type() != timeType {
-		p.unmarshalTextInterface(pval, val.Interface().(encoding.TextUnmarshaler))
+	if receiver, can := implementsInterface(val, plistUnmarshalerType); can {
+		p.unmarshalPlistInterface(pval, receiver.(Unmarshaler))
 		return
 	}
 
-	if val.CanAddr() {
-		pv := val.Addr()
-		if pv.CanInterface() && pv.Type().Implements(textUnmarshalerType) && val.Type() != timeType {
-			p.unmarshalTextInterface(pval, pv.Interface().(encoding.TextUnmarshaler))
+	if val.Type() != timeType {
+		if receiver, can := implementsInterface(val, textUnmarshalerType); can {
+			if str, ok := pval.(cfString); ok {
+				p.unmarshalTextInterface(str, receiver.(encoding.TextUnmarshaler))
+			} else {
+				panic(incompatibleTypeError)
+			}
 			return
 		}
 	}
 
 	typ := val.Type()
 
-	switch pval.kind {
-	case String:
+	switch pval := pval.(type) {
+	case cfString:
 		if val.Kind() == reflect.String {
-			val.SetString(pval.value.(string))
+			val.SetString(string(pval))
 			return
 		}
 		if p.lax {
-			p.unmarshalLaxString(pval.value.(string), val)
+			p.unmarshalLaxString(string(pval), val)
 			return
 		}
 
 		panic(incompatibleTypeError)
-	case Integer:
+	case *cfNumber:
 		switch val.Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			val.SetInt(int64(pval.value.(signedInt).value))
+			val.SetInt(int64(pval.value))
 		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-			val.SetUint(pval.value.(signedInt).value)
+			val.SetUint(pval.value)
 		default:
 			panic(incompatibleTypeError)
 		}
-	case Real:
+	case *cfReal:
 		if val.Kind() == reflect.Float32 || val.Kind() == reflect.Float64 {
-			val.SetFloat(pval.value.(sizedFloat).value)
+			// TODO: Consider warning on a downcast (storing a 64-bit value in a 32-bit reflect)
+			val.SetFloat(pval.value)
 		} else {
 			panic(incompatibleTypeError)
 		}
-	case Boolean:
+	case cfBoolean:
 		if val.Kind() == reflect.Bool {
-			val.SetBool(pval.value.(bool))
+			val.SetBool(bool(pval))
 		} else {
 			panic(incompatibleTypeError)
 		}
-	case Data:
+	case cfData:
 		if val.Kind() == reflect.Slice && typ.Elem().Kind() == reflect.Uint8 {
-			val.SetBytes(pval.value.([]byte))
+			val.SetBytes([]byte(pval))
 		} else {
 			panic(incompatibleTypeError)
 		}
-	case Array:
+	case cfUID:
+		if val.Type() == uidType {
+			val.SetUint(uint64(pval))
+		} else {
+			switch val.Kind() {
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				val.SetInt(int64(pval))
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+				val.SetUint(uint64(pval))
+			default:
+				panic(incompatibleTypeError)
+			}
+		}
+	case *cfArray:
 		p.unmarshalArray(pval, val)
-	case Dictionary:
+	case *cfDictionary:
 		p.unmarshalDictionary(pval, val)
 	}
 }
 
-func (p *Decoder) unmarshalArray(pval *plistValue, val reflect.Value) {
-	subvalues := pval.value.([]*plistValue)
-
+func (p *Decoder) unmarshalArray(a *cfArray, val reflect.Value) {
 	var n int
 	if val.Kind() == reflect.Slice {
 		// Slice of element values.
 		// Grow slice.
-		cnt := len(subvalues) + val.Len()
+		cnt := len(a.values) + val.Len()
 		if cnt >= val.Cap() {
 			ncap := 2 * cnt
 			if ncap < 4 {
@@ -178,22 +215,22 @@ func (p *Decoder) unmarshalArray(pval *plistValue, val reflect.Value) {
 		n = val.Len()
 		val.SetLen(cnt)
 	} else if val.Kind() == reflect.Array {
-		if len(subvalues) > val.Cap() {
-			panic(fmt.Errorf("plist: attempted to unmarshal %d values into an array of size %d", len(subvalues), val.Cap()))
+		if len(a.values) > val.Cap() {
+			panic(fmt.Errorf("plist: attempted to unmarshal %d values into an array of size %d", len(a.values), val.Cap()))
 		}
 	} else {
-		panic(&incompatibleDecodeTypeError{val.Type(), pval.kind})
+		panic(&incompatibleDecodeTypeError{val.Type(), a.typeName()})
 	}
 
 	// Recur to read element into slice.
-	for _, sval := range subvalues {
+	for _, sval := range a.values {
 		p.unmarshal(sval, val.Index(n))
 		n++
 	}
 	return
 }
 
-func (p *Decoder) unmarshalDictionary(pval *plistValue, val reflect.Value) {
+func (p *Decoder) unmarshalDictionary(dict *cfDictionary, val reflect.Value) {
 	typ := val.Type()
 	switch val.Kind() {
 	case reflect.Struct:
@@ -202,17 +239,23 @@ func (p *Decoder) unmarshalDictionary(pval *plistValue, val reflect.Value) {
 			panic(err)
 		}
 
-		subvalues := pval.value.(*dictionary).m
+		entries := make(map[string]cfValue, len(dict.keys))
+		for i, k := range dict.keys {
+			sval := dict.values[i]
+			entries[k] = sval
+		}
+
 		for _, finfo := range tinfo.fields {
-			p.unmarshal(subvalues[finfo.name], finfo.value(val))
+			p.unmarshal(entries[finfo.name], finfo.value(val))
 		}
 	case reflect.Map:
 		if val.IsNil() {
 			val.Set(reflect.MakeMap(typ))
 		}
 
-		subvalues := pval.value.(*dictionary).m
-		for k, sval := range subvalues {
+		for i, k := range dict.keys {
+			sval := dict.values[i]
+
 			keyv := reflect.ValueOf(k).Convert(typ.Key())
 			mapElem := val.MapIndex(keyv)
 			if !mapElem.IsValid() {
@@ -223,53 +266,54 @@ func (p *Decoder) unmarshalDictionary(pval *plistValue, val reflect.Value) {
 			val.SetMapIndex(keyv, mapElem)
 		}
 	default:
-		panic(&incompatibleDecodeTypeError{typ, pval.kind})
+		panic(&incompatibleDecodeTypeError{typ, dict.typeName()})
 	}
 }
 
 /* *Interface is modelled after encoding/json */
-func (p *Decoder) valueInterface(pval *plistValue) interface{} {
-	switch pval.kind {
-	case String:
-		return pval.value.(string)
-	case Integer:
-		if pval.value.(signedInt).signed {
-			return int64(pval.value.(signedInt).value)
+func (p *Decoder) valueInterface(pval cfValue) interface{} {
+	switch pval := pval.(type) {
+	case cfString:
+		return string(pval)
+	case *cfNumber:
+		if pval.signed {
+			return int64(pval.value)
 		}
-		return pval.value.(signedInt).value
-	case Real:
-		bits := pval.value.(sizedFloat).bits
-		switch bits {
-		case 32:
-			return float32(pval.value.(sizedFloat).value)
-		case 64:
-			return pval.value.(sizedFloat).value
+		return pval.value
+	case *cfReal:
+		if pval.wide {
+			return pval.value
+		} else {
+			return float32(pval.value)
 		}
-	case Boolean:
-		return pval.value.(bool)
-	case Array:
-		return p.arrayInterface(pval.value.([]*plistValue))
-	case Dictionary:
-		return p.dictionaryInterface(pval.value.(*dictionary))
-	case Data:
-		return pval.value.([]byte)
-	case Date:
-		return pval.value.(time.Time)
+	case cfBoolean:
+		return bool(pval)
+	case *cfArray:
+		return p.arrayInterface(pval)
+	case *cfDictionary:
+		return p.dictionaryInterface(pval)
+	case cfData:
+		return []byte(pval)
+	case cfDate:
+		return time.Time(pval)
+	case cfUID:
+		return UID(pval)
 	}
 	return nil
 }
 
-func (p *Decoder) arrayInterface(subvalues []*plistValue) []interface{} {
-	out := make([]interface{}, len(subvalues))
-	for i, subv := range subvalues {
+func (p *Decoder) arrayInterface(a *cfArray) []interface{} {
+	out := make([]interface{}, len(a.values))
+	for i, subv := range a.values {
 		out[i] = p.valueInterface(subv)
 	}
 	return out
 }
 
-func (p *Decoder) dictionaryInterface(dict *dictionary) map[string]interface{} {
+func (p *Decoder) dictionaryInterface(dict *cfDictionary) map[string]interface{} {
 	out := make(map[string]interface{})
-	for k, subv := range dict.m {
+	for i, k := range dict.keys {
+		subv := dict.values[i]
 		out[k] = p.valueInterface(subv)
 	}
 	return out

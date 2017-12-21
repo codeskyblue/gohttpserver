@@ -25,43 +25,74 @@ func isEmptyValue(v reflect.Value) bool {
 }
 
 var (
-	textMarshalerType = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
-	timeType          = reflect.TypeOf((*time.Time)(nil)).Elem()
+	plistMarshalerType = reflect.TypeOf((*Marshaler)(nil)).Elem()
+	textMarshalerType  = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
+	timeType           = reflect.TypeOf((*time.Time)(nil)).Elem()
 )
 
-func (p *Encoder) marshalTextInterface(marshalable encoding.TextMarshaler) *plistValue {
+func implementsInterface(val reflect.Value, interfaceType reflect.Type) (interface{}, bool) {
+	if val.CanInterface() && val.Type().Implements(interfaceType) {
+		return val.Interface(), true
+	}
+
+	if val.CanAddr() {
+		pv := val.Addr()
+		if pv.CanInterface() && pv.Type().Implements(interfaceType) {
+			return pv.Interface(), true
+		}
+	}
+	return nil, false
+}
+
+func (p *Encoder) marshalPlistInterface(marshalable Marshaler) cfValue {
+	value, err := marshalable.MarshalPlist()
+	if err != nil {
+		panic(err)
+	}
+	return p.marshal(reflect.ValueOf(value))
+}
+
+// marshalTextInterface marshals a TextMarshaler to a plist string.
+func (p *Encoder) marshalTextInterface(marshalable encoding.TextMarshaler) cfValue {
 	s, err := marshalable.MarshalText()
 	if err != nil {
 		panic(err)
 	}
-	return &plistValue{String, string(s)}
+	return cfString(s)
 }
 
-func (p *Encoder) marshalStruct(typ reflect.Type, val reflect.Value) *plistValue {
+// marshalStruct marshals a reflected struct value to a plist dictionary
+func (p *Encoder) marshalStruct(typ reflect.Type, val reflect.Value) cfValue {
 	tinfo, _ := getTypeInfo(typ)
 
-	dict := &dictionary{
-		m: make(map[string]*plistValue, len(tinfo.fields)),
+	dict := &cfDictionary{
+		keys:   make([]string, 0, len(tinfo.fields)),
+		values: make([]cfValue, 0, len(tinfo.fields)),
 	}
 	for _, finfo := range tinfo.fields {
 		value := finfo.value(val)
 		if !value.IsValid() || finfo.omitEmpty && isEmptyValue(value) {
 			continue
 		}
-		dict.m[finfo.name] = p.marshal(value)
+		dict.keys = append(dict.keys, finfo.name)
+		dict.values = append(dict.values, p.marshal(value))
 	}
 
-	return &plistValue{Dictionary, dict}
+	return dict
 }
 
-func (p *Encoder) marshalTime(val reflect.Value) *plistValue {
+func (p *Encoder) marshalTime(val reflect.Value) cfValue {
 	time := val.Interface().(time.Time)
-	return &plistValue{Date, time}
+	return cfDate(time)
 }
 
-func (p *Encoder) marshal(val reflect.Value) *plistValue {
+func (p *Encoder) marshal(val reflect.Value) cfValue {
 	if !val.IsValid() {
 		return nil
+	}
+
+	if receiver, can := implementsInterface(val, plistMarshalerType); can {
+		return p.marshalPlistInterface(receiver.(Marshaler))
 	}
 
 	// time.Time implements TextMarshaler, but we need to store it in RFC3339
@@ -76,14 +107,8 @@ func (p *Encoder) marshal(val reflect.Value) *plistValue {
 	}
 
 	// Check for text marshaler.
-	if val.CanInterface() && val.Type().Implements(textMarshalerType) {
-		return p.marshalTextInterface(val.Interface().(encoding.TextMarshaler))
-	}
-	if val.CanAddr() {
-		pv := val.Addr()
-		if pv.CanInterface() && pv.Type().Implements(textMarshalerType) {
-			return p.marshalTextInterface(pv.Interface().(encoding.TextMarshaler))
-		}
+	if receiver, can := implementsInterface(val, textMarshalerType); can {
+		return p.marshalTextInterface(receiver.(encoding.TextMarshaler))
 	}
 
 	// Descend into pointers or interfaces
@@ -98,21 +123,27 @@ func (p *Encoder) marshal(val reflect.Value) *plistValue {
 
 	typ := val.Type()
 
+	if typ == uidType {
+		return cfUID(val.Uint())
+	}
+
 	if val.Kind() == reflect.Struct {
 		return p.marshalStruct(typ, val)
 	}
 
 	switch val.Kind() {
 	case reflect.String:
-		return &plistValue{String, val.String()}
+		return cfString(val.String())
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return &plistValue{Integer, signedInt{uint64(val.Int()), true}}
+		return &cfNumber{signed: true, value: uint64(val.Int())}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return &plistValue{Integer, signedInt{uint64(val.Uint()), false}}
-	case reflect.Float32, reflect.Float64:
-		return &plistValue{Real, sizedFloat{val.Float(), val.Type().Bits()}}
+		return &cfNumber{signed: false, value: val.Uint()}
+	case reflect.Float32:
+		return &cfReal{wide: false, value: val.Float()}
+	case reflect.Float64:
+		return &cfReal{wide: true, value: val.Float()}
 	case reflect.Bool:
-		return &plistValue{Boolean, val.Bool()}
+		return cfBoolean(val.Bool())
 	case reflect.Slice, reflect.Array:
 		if typ.Elem().Kind() == reflect.Uint8 {
 			bytes := []byte(nil)
@@ -122,15 +153,15 @@ func (p *Encoder) marshal(val reflect.Value) *plistValue {
 				bytes = make([]byte, val.Len())
 				reflect.Copy(reflect.ValueOf(bytes), val)
 			}
-			return &plistValue{Data, bytes}
+			return cfData(bytes)
 		} else {
-			subvalues := make([]*plistValue, val.Len())
-			for idx, length := 0, val.Len(); idx < length; idx++ {
-				if subpval := p.marshal(val.Index(idx)); subpval != nil {
-					subvalues[idx] = subpval
+			values := make([]cfValue, val.Len())
+			for i, length := 0, val.Len(); i < length; i++ {
+				if subpval := p.marshal(val.Index(i)); subpval != nil {
+					values[i] = subpval
 				}
 			}
-			return &plistValue{Array, subvalues}
+			return &cfArray{values}
 		}
 	case reflect.Map:
 		if typ.Key().Kind() != reflect.String {
@@ -138,17 +169,18 @@ func (p *Encoder) marshal(val reflect.Value) *plistValue {
 		}
 
 		l := val.Len()
-		dict := &dictionary{
-			m: make(map[string]*plistValue, l),
+		dict := &cfDictionary{
+			keys:   make([]string, 0, l),
+			values: make([]cfValue, 0, l),
 		}
 		for _, keyv := range val.MapKeys() {
 			if subpval := p.marshal(val.MapIndex(keyv)); subpval != nil {
-				dict.m[keyv.String()] = subpval
+				dict.keys = append(dict.keys, keyv.String())
+				dict.values = append(dict.values, subpval)
 			}
 		}
-		return &plistValue{Dictionary, dict}
+		return dict
 	default:
 		panic(&unknownTypeError{typ})
 	}
-	return nil
 }

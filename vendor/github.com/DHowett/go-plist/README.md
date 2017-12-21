@@ -1,6 +1,8 @@
-# plist - A pure Go property list transcoder
+# plist - A pure Go property list transcoder [![coverage report](https://gitlab.howett.net/DHowett/plist/badges/master/coverage.svg)](https://gitlab.howett.net/DHowett/plist/commits/master)
 ## INSTALL
-	$ go get howett.net/plist
+```
+$ go get howett.net/plist
+```
 
 ## FEATURES
 * Supports encoding/decoding property lists (Apple XML, Apple Binary, OpenStep and GNUStep) from/to arbitrary Go types
