@@ -60,6 +60,13 @@ cd $GOPATH/src/github.com/codeskyblue/gohttpserver
 go build && ./gohttpserver
 ```
 
+## Docker
+```bash
+docker build -t gohttpserver ./
+# share pwd 
+docker run -it -p 8000:8000 -v $PWD:/app/public --name gohttpserver gohttpserver
+```
+
 ## Usage
 Listen on port 8000 of all interfaces, and enable file uploading.
 
