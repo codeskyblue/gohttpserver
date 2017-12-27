@@ -60,11 +60,14 @@ cd $GOPATH/src/github.com/codeskyblue/gohttpserver
 go build && ./gohttpserver
 ```
 
-## Docker
+## Docker Usage
+share current directory
 ```bash
-docker build -t gohttpserver ./
-# share pwd 
-docker run -it -p 8000:8000 -v $PWD:/app/public --name gohttpserver gohttpserver
+docker run -it -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
+```
+share current directory with http oauth
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver ./gohttpserver --root /app/public --auth-type http --auth-http username:password
 ```
 
 ## Usage
