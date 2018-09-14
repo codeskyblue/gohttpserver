@@ -1,0 +1,34 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+#footer {
+    margin-bottom: 1em;
+}
+
+
+/* Not used */
+
+div.dropzone {
+    display: block;
+    /*text-align: center;*/
+    border: 2px dashed #666;
+    border-radius: 5px;
+    cursor: pointer;
+    height: 74x;
+    line-height: 70px;
+    font-size: 20px;
+    position: relative;
+}
+
+.qrcode-title {
+    font-size: 0.8em;
+}
+
+.clearfix::after {
+    clear: both;
+}
+
+#qrcodeCanvas {
+    padding-right: 20px;
+}

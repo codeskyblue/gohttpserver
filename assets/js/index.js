@@ -230,7 +230,7 @@ var vm = new Vue({
       })
     },
     makeDirectory: function () {
-      var name = window.prompt("Directory name ?")
+      var name = window.prompt("Directory name?")
       console.log(name)
       if (!name) {
         return

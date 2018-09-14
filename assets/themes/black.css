@@ -1,0 +1,23 @@
+body {}
+
+td>a {
+    color: black;
+}
+
+.navbar {
+    border-radius: 0px;
+    background-color: #101010;
+    border-color: #101010;
+}
+
+.navbar .navbar-brand {
+    color: #9d9d9d;
+}
+
+.navbar .navbar-brand:hover {
+    color: #fff;
+}
+
+.navbar-default ul.navbar-nav>li>a:hover {
+    color: #fff;
+}

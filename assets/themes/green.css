@@ -1,0 +1,31 @@
+body {}
+
+td>a:hover {
+    color: #1fa67a;
+    font-weight: normal;
+}
+
+td>a {
+    color: rgb(51, 51, 51);
+}
+
+a:hover {
+    font-weight: bold;
+}
+
+.navbar {
+    background-color: #1b926c;
+    border-color: #1fa67a;
+}
+
+.navbar .navbar-brand {
+    color: white;
+}
+
+.navbar {
+    border-radius: 0px;
+}
+
+.navbar-default ul.navbar-nav>li>a {
+    color: white;
+}

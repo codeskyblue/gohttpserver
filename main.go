@@ -19,6 +19,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
+	_ "github.com/shurcooL/vfsgen"
 )
 
 type Configure struct {
@@ -178,6 +179,7 @@ func main() {
 	}
 
 	http.Handle("/", hdlr)
+	http.Handle("/-/res/", http.StripPrefix("/-/res/", http.FileServer(Assets)))
 	http.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		data, _ := json.Marshal(map[string]interface{}{

@@ -1,0 +1,15 @@
+/* Image style */
+
+#scrollUp {
+    /*background-image: url("../imgs/top.png");*/
+    bottom: 5px;
+    right: 20px;
+    width: 38px;
+    /* Width of image */
+    height: 38px;
+    /* Height of image */
+}
+
+#scrollUp:after {
+    content: "Scroll to top";
+}

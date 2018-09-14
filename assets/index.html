@@ -83,20 +83,22 @@
           <tr>
             <td colspan=4>
               <!-- <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
-                                Back <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
-                            </button> -->
-              <button class="btn btn-xs btn-default" onclick="history.back()">
-                Back <i class="fa fa-arrow-left"></i>
-              </button>
-              <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
-                Hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
-              </button>
-              <button class="btn btn-xs btn-default" v-if="auth.upload" data-toggle="modal" data-target="#upload-modal">
-                Upload <i class="fa fa-upload"></i>
-              </button>
-              <button class="btn btn-xs btn-default" v-if="auth.delete">
-                <i class="fa fa-folder"></i>
-              </button>
+                Back <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
+              </button> -->
+              <div>
+                <button class="btn btn-xs btn-default" onclick="history.back()">
+                  Back <i class="fa fa-arrow-left"></i>
+                </button>
+                <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
+                  Hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
+                </button>
+                <button class="btn btn-xs btn-default" v-show="auth.upload" data-toggle="modal" data-target="#upload-modal">
+                  Upload <i class="fa fa-upload"></i>
+                </button>
+                <button class="btn btn-xs btn-default" v-show="auth.delete" @click="makeDirectory">
+                  New Folder <i class="fa fa-folder"></i>
+                </button>
+              </div>
             </td>
           </tr>
           <tr>

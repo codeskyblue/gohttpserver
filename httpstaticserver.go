@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -88,6 +89,7 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 
 	// TODO: /ipa/info
 	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
+	m.HandleFunc("/-/mkdir/{path:.*}", s.hMkdir)
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
@@ -102,12 +104,12 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
-
+	log.Println("Get", path, relPath)
 	if r.FormValue("raw") == "false" || isDir(relPath) {
 		if r.Method == "HEAD" {
 			return
 		}
-		tmpl.ExecuteTemplate(w, "index", s)
+		renderHTML(w, "index.html", s)
 	} else {
 		if r.FormValue("download") == "true" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
@@ -120,6 +122,22 @@ func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.MarshalIndent(s, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
+}
+
+func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
+	path := mux.Vars(req)["path"]
+	auth := s.readAccessConf(path)
+	if !auth.canDelete(req) {
+		http.Error(w, "Mkdir forbidden", http.StatusForbidden)
+		return
+	}
+	name := req.FormValue("name")
+	err := os.Mkdir(filepath.Join(s.Root, path, name), 0755)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Write([]byte("Success"))
 }
 
 func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
@@ -319,7 +337,7 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	tmpl.ExecuteTemplate(w, "ipa-install", map[string]string{
+	renderHTML(w, "ipa-install.html", map[string]string{
 		"Name":      filepath.Base(path),
 		"PlistLink": plistUrl,
 	})
@@ -639,4 +657,36 @@ func isFile(path string) bool {
 func isDir(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.Mode().IsDir()
+}
+
+func assetsContent(name string) string {
+	fd, err := Assets.Open(name)
+	if err != nil {
+		panic(err)
+	}
+	data, err := ioutil.ReadAll(fd)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
+}
+
+var _tmpl *template.Template
+
+func _parseTemplate(name, content string) {
+	if _tmpl == nil {
+		_tmpl = template.New(name)
+	}
+	var t *template.Template
+	if _tmpl.Name() == name {
+		t = _tmpl
+	} else {
+		t = _tmpl.New(name)
+	}
+	template.Must(t.New(name).Delims("[[", "]]").Parse(content))
+}
+
+func renderHTML(w http.ResponseWriter, name string, v interface{}) {
+	t := template.Must(template.New("index.html").Delims("[[", "]]").Parse(assetsContent("/index.html")))
+	t.Execute(w, v)
 }

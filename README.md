@@ -52,6 +52,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Support setting from conf file
 1. [x] Quick copy download link
 1. [x] Show folder size
+1. [x] Create folder
 
 ## Installation
 ```
@@ -168,9 +169,8 @@ The search query follows common format rules just like Google. Keywords are sepe
 Depdencies are managed by godep
 
 ```sh
-go get -v github.com/tools/godep
-go get github.com/jteeuwen/go-bindata/...
-go get github.com/elazarl/go-bindata-assetfs/...
+go generate .
+go build -tags vfs
 ```
 
 Theme are all defined in [res/themes](res/themes) directory. Now only two themes are available, "black" and "green".
@@ -195,7 +195,8 @@ go build -tags bindata
 
 **Go Libraries**
 
-* <https://github.com/elazarl/go-bindata-assetfs>
+* [vfsgen](https://github.com/shurcooL/vfsgen)
+* [go-bindata-assetfs](https://github.com/elazarl/go-bindata-assetfs) Not using now
 * <http://www.gorillatoolkit.org/pkg/handlers>
 
 ## History
