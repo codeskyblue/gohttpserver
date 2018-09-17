@@ -64,7 +64,7 @@ go build && ./gohttpserver
 ## Docker Usage
 share current directory
 ```bash
-docker run -it -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
 ```
 share current directory with http oauth
 ```bash

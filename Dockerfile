@@ -7,6 +7,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o gohttpserver .
 FROM debian:stretch
 WORKDIR /app
 RUN mkdir -p /app/public
+RUN apt-get update && apt-get install -y ca-certificates
 VOLUME /app/public
 ADD assets ./assets
 COPY --from=0 /go/src/github.com/codeskyblue/gohttpserver/gohttpserver .
