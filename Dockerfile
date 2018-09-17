@@ -8,7 +8,6 @@ FROM debian:stretch
 WORKDIR /app
 RUN mkdir -p /app/public
 VOLUME /app/public
-ADD res ./res
 ADD assets ./assets
 COPY --from=0 /go/src/github.com/codeskyblue/gohttpserver/gohttpserver .
 EXPOSE 8000
