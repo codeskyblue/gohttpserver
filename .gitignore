@@ -23,7 +23,6 @@ _testmain.go
 *.test
 *.prof
 
-dist/
 
 gohttpserver
 bindata_assetfs.go
