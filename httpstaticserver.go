@@ -191,6 +191,8 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		file.Close()
 		req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
 	}()
+
+	// FIXME(ssx): should I check header.Filename here?
 	dstPath := filepath.Join(dirpath, header.Filename)
 	dst, err := os.Create(dstPath)
 	if err != nil {
