@@ -23,6 +23,8 @@ import (
 	"github.com/shogo82148/androidbinary/apk"
 )
 
+const YAMLCONF = ".ghs.yml"
+
 type ApkInfo struct {
 	PackageName  string `json:"packageName"`
 	MainActivity string `json:"mainActivity"`
@@ -104,13 +106,20 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
-	log.Println("Get", path, relPath)
+	log.Println("GET", path, relPath)
 	if r.FormValue("raw") == "false" || isDir(relPath) {
 		if r.Method == "HEAD" {
 			return
 		}
 		renderHTML(w, "index.html", s)
 	} else {
+		if filepath.Base(path) == YAMLCONF {
+			auth := s.readAccessConf(path)
+			if !auth.Delete {
+				http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
+				return
+			}
+		}
 		if r.FormValue("download") == "true" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
 		}
@@ -132,6 +141,10 @@ func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	name := req.FormValue("name")
+	if strings.ContainsAny(name, "\\/:*<>|") {
+		http.Error(w, "Name should not contains \\/:*<>|", http.StatusForbidden)
+		return
+	}
 	err := os.Mkdir(filepath.Join(s.Root, path, name), 0755)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -397,6 +410,7 @@ type UserControl struct {
 	// Access bool
 	Upload bool
 	Delete bool
+	Token  string
 }
 
 type AccessConf struct {
@@ -444,7 +458,20 @@ func (c *AccessConf) canDelete(r *http.Request) bool {
 	return c.Delete
 }
 
+func (c *AccessConf) canUploadByToken(token string) bool {
+	for _, rule := range c.Users {
+		if rule.Token == token {
+			return rule.Upload
+		}
+	}
+	return c.Upload
+}
+
 func (c *AccessConf) canUpload(r *http.Request) bool {
+	token := r.FormValue("token")
+	if token != "" {
+		return c.canUploadByToken(token)
+	}
 	session, err := store.Get(r, defaultSessionName)
 	if err != nil {
 		return c.Upload
@@ -454,6 +481,7 @@ func (c *AccessConf) canUpload(r *http.Request) bool {
 		return c.Upload
 	}
 	userInfo := val.(*UserInfo)
+
 	for _, rule := range c.Users {
 		if rule.Email == userInfo.Email {
 			return rule.Upload
@@ -616,7 +644,7 @@ func (s *HTTPStaticServer) readAccessConf(requestPath string) (ac AccessConf) {
 	if isFile(relPath) {
 		relPath = filepath.Dir(relPath)
 	}
-	cfgFile := filepath.Join(relPath, ".ghs.yml")
+	cfgFile := filepath.Join(relPath, YAMLCONF)
 	data, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -671,7 +699,11 @@ func assetsContent(name string) string {
 	return string(data)
 }
 
-var _tmpl *template.Template
+// TODO: I need to read more abouthtml/template
+var (
+	_tmpl   *template.Template
+	_parsed = make(map[string]bool)
+)
 
 func _parseTemplate(name, content string) {
 	if _tmpl == nil {
@@ -684,9 +716,18 @@ func _parseTemplate(name, content string) {
 		t = _tmpl.New(name)
 	}
 	template.Must(t.New(name).Delims("[[", "]]").Parse(content))
+	_parsed[name] = true
 }
 
 func renderHTML(w http.ResponseWriter, name string, v interface{}) {
-	t := template.Must(template.New("index.html").Delims("[[", "]]").Parse(assetsContent("/index.html")))
-	t.Execute(w, v)
+	if _, ok := Assets.(http.Dir); ok {
+		log.Println("Hot load", name)
+		t := template.Must(template.New(name).Delims("[[", "]]").Parse(assetsContent(name)))
+		t.Execute(w, v)
+	} else {
+		if !_parsed[name] {
+			_parseTemplate(name, assetsContent(name))
+		}
+		_tmpl.ExecuteTemplate(w, name, v)
+	}
 }

@@ -127,6 +127,9 @@
                   <span class="hidden-xs">Archive</span> Zip
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>
+                <button class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)">
+                  <span style="color:#CC3300" class="glyphicon glyphicon-trash"></span>
+                </button>
               </template>
               <template v-if="f.type == 'file'">
                 <a class="btn btn-default btn-xs hidden-xs" href="/{{f.path}}?download=true">
@@ -232,7 +235,7 @@
     <div class="col-md-12">
       <div id="footer" class="pull-right" style="margin: 2em 1em">
         <a href="https://github.com/codeskyblue/gohttpserver">gohttpserver (ver:{{version}})</a>, written by <a href="https://github.com/codeskyblue">codeskyblue</a>.
-        Copyright 2016-2017. go1.7
+        Copyright 2016-2018. go1.10
       </div>
     </div>
   </div>

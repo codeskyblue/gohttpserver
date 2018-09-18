@@ -23,7 +23,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
 1. [x] Support show or hide hidden files
-1. [x] Upload support (for security reason, you need enabled it by option `--upload`)
+1. [x] Upload support (auth by token or session)
 1. [x] README.md preview
 1. [x] HTTP Basic Auth
 1. [x] Partial reload pages when directory change
@@ -93,6 +93,18 @@ Listen on port 8000 of all interfaces, and enable file uploading.
 
   The openid returns url using "http" instead of "https", but I am not planing to fix this currently.
 
+- Enable upload
+
+  ```sh
+  $ gohttpserver --upload
+  ```
+
+- Enable delete and Create folder
+
+  ```sh
+  $ gohttpserver --delete
+  ```
+
 ## Advanced usage
 Add access rule by creating a `.ghs.yml` file under a sub-directory. An example:
 
@@ -104,9 +116,12 @@ users:
 - email: "codeskyblue@codeskyblue.com"
   delete: true
   upload: true
+  token: 4567gf8asydhf293r23r
 ```
 
 In this case, if openid auth is enabled and user "codeskyblue@codeskyblue.com" has logged in, he/she can delete/upload files under the directory where the `.ghs.yml` file exits.
+
+`token` is used for upload. see [upload with curl](#upload-with-curl)
 
 For example, in the following directory hierarchy, users can delete/uploade files in directory `foo`, but he/she cannot do this in directory `bar`.
 
@@ -154,6 +169,10 @@ For example, upload a file named `foo.txt` to directory `somedir`
 
 ```sh
 $ curl -F file=@foo.txt localhost:8000/somedir
+{"destination":"somedir/foo.txt","success":true}
+# upload with token
+$ curl -F file=@foo.txt -F token=12312jlkjafs localhost:8000/somedir
+{"destination":"somedir/foo.txt","success":true}
 ```
 
 ## FAQ

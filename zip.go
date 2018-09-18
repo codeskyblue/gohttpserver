@@ -91,6 +91,9 @@ func CompressToZip(w http.ResponseWriter, rootDir string) {
 
 	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		zipPath := path[len(rootDir):]
+		if info.Name() == YAMLCONF { // ignore .ghs.yml for security
+			return nil
+		}
 		return zw.Add(zipPath, path)
 	})
 }
