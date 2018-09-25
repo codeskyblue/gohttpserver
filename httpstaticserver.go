@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -46,7 +47,7 @@ type HTTPStaticServer struct {
 	Title           string
 	Theme           string
 	PlistProxy      string
-	GoogleTrackerId string
+	GoogleTrackerID string
 	AuthType        string
 
 	indexes []IndexFileItem
@@ -348,17 +349,14 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		plistUrl = url
-		//plistUrl = strings.TrimSuffix(s.PlistProxy, "/") + "/" + r.Host + "/-/ipa/plist/" + path
 	}
 
 	w.Header().Set("Content-Type", "text/html")
+	log.Println("PlistURL:", plistUrl)
 	renderHTML(w, "ipa-install.html", map[string]string{
 		"Name":      filepath.Base(path),
 		"PlistLink": plistUrl,
 	})
-	// w.Write([]byte(fmt.Sprintf(
-	// 	`<a href='itms-services://?action=download-manifest&url=%s'>Click this link to install</a>`,
-	// 	plistUrl)))
 }
 
 func (s *HTTPStaticServer) genPlistLink(httpPlistLink string) (plistUrl string, err error) {
@@ -703,33 +701,46 @@ func assetsContent(name string) string {
 
 // TODO: I need to read more abouthtml/template
 var (
-	_tmpl   *template.Template
-	_parsed = make(map[string]bool)
+	funcMap template.FuncMap
 )
 
-func _parseTemplate(name, content string) {
-	if _tmpl == nil {
-		_tmpl = template.New(name)
+func init() {
+	funcMap = template.FuncMap{
+		"title": strings.Title,
+		"urlhash": func(path string) string {
+			httpFile, err := Assets.Open(path)
+			if err != nil {
+				return path + "#no-such-file"
+			}
+			info, err := httpFile.Stat()
+			if err != nil {
+				return path + "#stat-error"
+			}
+			return fmt.Sprintf("%s?t=%d", path, info.ModTime().Unix())
+		},
 	}
-	var t *template.Template
-	if _tmpl.Name() == name {
-		t = _tmpl
-	} else {
-		t = _tmpl.New(name)
+}
+
+var (
+	_tmpls = make(map[string]*template.Template)
+)
+
+func executeTemplate(w http.ResponseWriter, name string, v interface{}) {
+	if t, ok := _tmpls[name]; ok {
+		t.Execute(w, v)
+		return
 	}
-	template.Must(t.New(name).Delims("[[", "]]").Parse(content))
-	_parsed[name] = true
+	t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
+	_tmpls[name] = t
+	t.Execute(w, v)
 }
 
 func renderHTML(w http.ResponseWriter, name string, v interface{}) {
 	if _, ok := Assets.(http.Dir); ok {
 		log.Println("Hot load", name)
-		t := template.Must(template.New(name).Delims("[[", "]]").Parse(assetsContent(name)))
+		t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
 		t.Execute(w, v)
 	} else {
-		if !_parsed[name] {
-			_parseTemplate(name, assetsContent(name))
-		}
-		_tmpl.ExecuteTemplate(w, name, v)
+		executeTemplate(w, name, v)
 	}
 }

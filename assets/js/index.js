@@ -138,23 +138,27 @@ var vm = new Vue({
     removeAllUploads: function () {
       this.myDropzone.removeAllFiles();
     },
-    genInstallURL: function (name) {
-      var urlPath;
-      if (getExtention(name) == "ipa") {
-        urlPath = location.protocol + "//" + pathJoin([location.host, "/-/ipa/link", location.pathname, name]);
+    genInstallURL: function (name, noEncode) {
+      var parts = [location.host];
+      if (!name) {
+        parts.push(location.pathname);
+      } else if (getExtention(name) == "ipa") {
+        parts.push("/-/ipa/link", location.pathname, name);
       } else {
-        urlPath = location.protocol + "//" + pathJoin([location.host, location.pathname, name]);
+        parts.push(location.pathname, name);
       }
-      return encodeURI(urlPath);
+      var urlPath = location.protocol + "//" + pathJoin(parts);
+      return noEncode ? urlPath : encodeURI(urlPath);
     },
     genQrcode: function (name, title) {
-      var installURL = this.genInstallURL(name);
-      $("#qrcode-title").html(title || name);
-      $("#qrcode-link").attr("href", installURL);
+      var urlPath = this.genInstallURL(name, true);
+      $("#qrcode-title").html(title || name || location.pathname);
+      $("#qrcode-link").attr("href", urlPath);
       $('#qrcodeCanvas').empty().qrcode({
-        text: installURL
+        text: urlPath
       });
-      $("#qrcodeRight a").attr("href", encodeURI(location.origin + pathJoin([location.pathname, name])));
+
+      $("#qrcodeRight a").attr("href", encodeURI(urlPath));
       $("#qrcode-modal").modal("show");
     },
     genDownloadURL: function (f) {
@@ -252,8 +256,10 @@ var vm = new Vue({
     },
     deletePathConfirm: function (f, e) {
       e.preventDefault();
-      if (!window.confirm("Delete " + f.name + " ?")) {
-        return;
+      if (!e.altKey) { // skip confirm when alt pressed
+        if (!window.confirm("Delete " + f.name + " ?")) {
+          return;
+        }
       }
       $.ajax({
         url: pathJoin([location.pathname, f.name]),

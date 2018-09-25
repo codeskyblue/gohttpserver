@@ -147,7 +147,7 @@ func main() {
 	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
-	ss.GoogleTrackerId = gcfg.GoogleTrackerID
+	ss.GoogleTrackerID = gcfg.GoogleTrackerID
 	ss.Upload = gcfg.Upload
 	ss.Delete = gcfg.Delete
 	ss.AuthType = gcfg.Auth.Type
