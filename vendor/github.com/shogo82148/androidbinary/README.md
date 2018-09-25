@@ -21,7 +21,7 @@ func main() {
 	pkg, _ := apk.OpenFile("your-android-app.apk")
 	defer pkg.Close()
 
-	icon, _ := apk.Icon(nil) // returns the icon of APK as image.Image
+	icon, _ := pkg.Icon(nil) // returns the icon of APK as image.Image
 	pkgName := pkg.PackageName() // returns the pakcage name
 }
 ```

@@ -141,7 +141,7 @@ func New(hashKey, blockKey []byte) *SecureCookie {
 		maxLength: 4096,
 		sz:        GobEncoder{},
 	}
-	if hashKey == nil {
+	if len(hashKey) == 0 {
 		s.err = errHashKeyNotSet
 	}
 	if blockKey != nil {
@@ -505,6 +505,10 @@ func decode(value []byte) ([]byte, error) {
 
 // GenerateRandomKey creates a random key with the given length in bytes.
 // On failure, returns nil.
+//
+// Note that keys created using `GenerateRandomKey()` are not automatically
+// persisted. New keys will be created when the application is restarted, and
+// previously issued cookies will not be able to be decoded.
 //
 // Callers should explicitly check for the possibility of a nil return, treat
 // it as a failure of the system random number generator, and not continue.

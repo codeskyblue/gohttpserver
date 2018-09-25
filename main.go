@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,6 +26,7 @@ import (
 type Configure struct {
 	Conf            *os.File `yaml:"-"`
 	Addr            string   `yaml:"addr"`
+	Port            int      `yaml:"port"`
 	Root            string   `yaml:"root"`
 	HTTPAuth        string   `yaml:"httpauth"`
 	Cert            string   `yaml:"cert"`
@@ -37,11 +39,13 @@ type Configure struct {
 	PlistProxy      string   `yaml:"plistproxy"`
 	Title           string   `yaml:"title"`
 	Debug           bool     `yaml:"debug"`
-	GoogleTrackerId string   `yaml:"google-tracker-id"`
+	GoogleTrackerID string   `yaml:"google-tracker-id"`
 	Auth            struct {
-		Type   string `yaml:"type"`
+		Type   string `yaml:"type"` // openid|http|github
 		OpenID string `yaml:"openid"`
 		HTTP   string `yaml:"http"`
+		ID     string `yaml:"id"`     // for oauth2
+		Secret string `yaml:"secret"` // for oauth2
 	} `yaml:"auth"`
 }
 
@@ -53,7 +57,7 @@ func (l httpLogger) Log(record accesslog.LogRecord) {
 
 var (
 	defaultPlistProxy = "https://plistproxy.herokuapp.com/plist"
-	defaultOpenID     = "https://some-hostname.com/openid/"
+	defaultOpenID     = "https://login.netease.com/openid"
 	gcfg              = Configure{}
 	logger            = httpLogger{}
 
@@ -86,18 +90,20 @@ func versionMessage() string {
 func parseFlags() error {
 	// initial default conf
 	gcfg.Root = "./"
-	gcfg.Addr = ":8000"
+	gcfg.Port = 8000
+	gcfg.Addr = ""
 	gcfg.Theme = "black"
 	gcfg.PlistProxy = defaultPlistProxy
 	gcfg.Auth.OpenID = defaultOpenID
-	gcfg.GoogleTrackerId = "UA-81205425-2"
+	gcfg.GoogleTrackerID = "UA-81205425-2"
 	gcfg.Title = "Go HTTP File Server"
 
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
 	kingpin.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
 	kingpin.Flag("root", "root directory, default ./").Short('r').StringVar(&gcfg.Root)
-	kingpin.Flag("addr", "listen address, default :8000").Short('a').StringVar(&gcfg.Addr)
+	kingpin.Flag("port", "listen port, default 8000").IntVar(&gcfg.Port)
+	kingpin.Flag("addr", "listen address, eg 127.0.0.1:8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
 	kingpin.Flag("auth-type", "Auth type <http|openid>").StringVar(&gcfg.Auth.Type)
@@ -111,7 +117,7 @@ func parseFlags() error {
 	kingpin.Flag("debug", "enable debug mode").BoolVar(&gcfg.Debug)
 	kingpin.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
 	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
-	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerId)
+	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerID)
 
 	kingpin.Parse() // first parse conf
 
@@ -141,7 +147,7 @@ func main() {
 	ss := NewHTTPStaticServer(gcfg.Root)
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
-	ss.GoogleTrackerId = gcfg.GoogleTrackerId
+	ss.GoogleTrackerId = gcfg.GoogleTrackerID
 	ss.Upload = gcfg.Upload
 	ss.Delete = gcfg.Delete
 	ss.AuthType = gcfg.Auth.Type
@@ -168,8 +174,11 @@ func main() {
 			hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
 		}
 	case "openid":
-		handleOpenID(false) // FIXME(ssx): set secure default to false
+		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
+		// case "github":
+		// 	handleOAuth2ID(gcfg.Auth.Type, gcfg.Auth.ID, gcfg.Auth.Secret) // FIXME(ssx): set secure default to false
 	}
+
 	// CORS
 	if gcfg.Cors {
 		hdlr = handlers.CORS()(hdlr)
@@ -188,10 +197,14 @@ func main() {
 		w.Write(data)
 	})
 
+	if gcfg.Addr == "" {
+		gcfg.Addr = fmt.Sprintf(":%d", gcfg.Port)
+	}
 	if !strings.Contains(gcfg.Addr, ":") {
 		gcfg.Addr = ":" + gcfg.Addr
 	}
-	log.Printf("listening on %s\n", strconv.Quote(gcfg.Addr))
+	_, port, _ := net.SplitHostPort(gcfg.Addr)
+	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port)
 
 	var err error
 	if gcfg.Key != "" && gcfg.Cert != "" {

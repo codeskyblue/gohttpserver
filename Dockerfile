@@ -12,4 +12,5 @@ VOLUME /app/public
 ADD assets ./assets
 COPY --from=0 /go/src/github.com/codeskyblue/gohttpserver/gohttpserver .
 EXPOSE 8000
-CMD ["/app/gohttpserver", "--root=/app/public"]
+ENTRYPOINT [ "/app/gohttpserver" ]
+CMD ["--root=/app/public"]

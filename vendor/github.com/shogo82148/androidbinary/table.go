@@ -205,8 +205,8 @@ func (id ResID) String() string {
 }
 
 // Package returns the package index of id.
-func (id ResID) Package() int {
-	return int(id) >> 24
+func (id ResID) Package() uint32 {
+	return uint32(id) >> 24
 }
 
 // Type returns the type index of id.
@@ -239,8 +239,11 @@ func NewTableFile(r io.ReaderAt) (*TableFile, error) {
 	return f, nil
 }
 
-func (f *TableFile) findPackage(id int) *TablePackage {
-	return f.tablePackages[uint32(id)]
+func (f *TableFile) findPackage(id uint32) *TablePackage {
+	if f == nil {
+		return nil
+	}
+	return f.tablePackages[id]
 }
 
 func (p *TablePackage) findEntry(typeIndex, entryIndex int, config *ResTableConfig) TableEntry {

@@ -37,16 +37,17 @@
               </a>
             </li>
             [[if eq .AuthType "openid"]]
-            <li class="hidden-xs">
-              <a href="/-/logout" v-if="user.email">
+            <template v-if="!user.email">
+              <a href="/-/login" class="btn btn-sm btn-default navbar-btn">
+                Sign in <span class="glyphicon glyphicon-user"></span>
+              </a>
+            </template>
+            <template v-else>
+              <a href="/-/logout" class="btn btn-sm btn-default navbar-btn">
                 <span v-text="user.name"></span>
-                <span class="glyphicon glyphicon-indent-left"></span>
+                <i class="fa fa-sign-out"></i>
               </a>
-              <a href="/-/login" v-else>
-                Login
-                <span class="glyphicon glyphicon-user"></span>
-              </a>
-            </li>
+            </template>
             [[end]]
           </ul>
           <form class="navbar-form navbar-right">

@@ -17,10 +17,12 @@ builds:
   - "6"
   main: .
   ldflags: -s -w -X main.VERSION={{.Version}}
-  flags: -tags bindata
+  flags: -tags vfs
   binary: gohttpserver
+  hooks:
+    pre: go generate .
 archive:
-  format: tar.gz
+  format: zip
   name_template: '{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{
     .Arm }}{{ end }}'
   files:

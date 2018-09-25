@@ -11,8 +11,8 @@
 
 **Binaries** can be downloaded from [this repo releases](https://github.com/codeskyblue/gohttpserver/releases/)
 
-## Notes
-If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
+## Requirements
+Tested with go-1.10, go-1.11
 
 ## Screenshots
 ![screen](testdata/filetypes/gohttpserver.gif)
@@ -61,21 +61,38 @@ cd $GOPATH/src/github.com/codeskyblue/gohttpserver
 go build && ./gohttpserver
 ```
 
-## Docker Usage
-share current directory
-```bash
-docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
-```
-share current directory with http oauth
-```bash
-docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver ./gohttpserver --root /app/public --auth-type http --auth-http username:password
-```
+Or download binaries from [github releases](https://github.com/codeskyblue/gohttpserver/releases)
 
 ## Usage
 Listen on port 8000 of all interfaces, and enable file uploading.
 
 ```
-./gohttpserver -r ./ --addr :8000 --upload
+./gohttpserver -r ./ --port 8000 --upload
+```
+
+Use command `gohttpserver --help` to see more usage.
+
+## Docker Usage
+share current directory
+
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
+```
+
+Share current directory with http basic auth
+
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
+  codeskyblue/gohttpserver --root /app/public \
+  --auth-type http --auth-http username:password
+```
+
+Share current directory with openid auth. (Works only in netease company.)
+
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
+  codeskyblue/gohttpserver --root /app/public \
+  --auth-type openid
 ```
 
 ## Authentication options
@@ -90,8 +107,6 @@ Listen on port 8000 of all interfaces, and enable file uploading.
   ```sh
   $ gohttpserver --auth-type openid --auth-openid https://login.example-hostname.com/openid/
   ```
-
-  The openid returns url using "http" instead of "https", but I am not planing to fix this currently.
 
 - Enable upload
 
@@ -156,11 +171,11 @@ This is used for server on which https is enabled. default use <https://plistpro
 Test if proxy works:
 
 ```sh
-$ http POST https://proxyhost.com/plist < app.plist
+$ http POST https://someproxyhost.com/plist < app.plist
 {
 	"key": "18f99211"
 }
-$ http GET https://proxyhost.com/plist/18f99211
+$ http GET https://someproxyhost.com/plist/18f99211
 # show the app.plist content
 ```
 
@@ -175,6 +190,29 @@ $ curl -F file=@foo.txt -F token=12312jlkjafs localhost:8000/somedir
 {"destination":"somedir/foo.txt","success":true}
 ```
 
+### Deploy with nginx
+Recommended configuration, assume your gohttpserver listening on `127.0.0.1:8200`
+
+```
+server {
+  listen 80;
+  server_name your-domain-name.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:8200; # here need to change
+    proxy_redirect off;
+    proxy_set_header  Host    $host;
+    proxy_set_header  X-Real-IP $remote_addr;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Proto $scheme;
+
+    client_max_body_size 0; # disable upload limit
+  }
+}
+```
+
+Refs: <http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size>
+
 ## FAQ
 - [How to generate self signed certificate with openssl](http://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl)
 
@@ -185,20 +223,23 @@ The search query follows common format rules just like Google. Keywords are sepe
 1. `hello -world` means must contains `hello` but not contains `world`
 
 ## Developer Guide
-Depdencies are managed by godep
+Depdencies are managed by [govendor](https://github.com/kardianos/govendor)
 
-```sh
-go generate .
-go build -tags vfs
-```
+1. Build develop version. **assets** directory must exists
 
-Theme are all defined in [res/themes](res/themes) directory. Now only two themes are available, "black" and "green".
+  ```sh
+  go build
+  ./gohttpserver
+  ```
+2. Build single binary release
 
-## How to build single binary release
-```sh
-go-bindata-assetfs -tags bindata res/...
-go build -tags bindata
-```
+  ```sh
+  go generate .
+  go build -tags vfs
+  ```
+
+Theme are defined in [assets/themes](assets/themes) directory. Now only two themes are available, "black" and "green".
+
 
 ## Reference Web sites
 
