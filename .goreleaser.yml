@@ -4,7 +4,10 @@ release:
     owner: codeskyblue
     name: gohttpserver
 brew:
-  install: bin.install "gohttpserver"
+  github:
+    owner: codeskyblue
+    name: homebrew-tap
+  homepage: https://github.com/codeskyblue/gohttpserver
 builds:
 - goos:
   - linux
