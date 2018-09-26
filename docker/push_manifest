@@ -9,7 +9,7 @@ fi
 
 set -ex
 
-echo '{"experimental": "enabled"}' > $HOME/.docker/config.json
+sed -i '1a"experimental": "enabled",' $HOME/.docker/config.json
 docker manifest create codeskyblue/gohttpserver \
   codeskyblue/gohttpserver:latest \
   codeskyblue/gohttpserver:armhf
