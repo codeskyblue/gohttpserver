@@ -6,6 +6,10 @@ go:
   - "1.10"
 script:
   - go test -v
+addons:
+  apt:
+    packages:
+      - docker-ce
 deploy:
   - provider: script
     skip_cleanup: true
@@ -14,6 +18,8 @@ deploy:
       tags: true
       condition: $TRAVIS_OS_NAME = linux
   - provider: script
-    script: bash docker/docker_push
+    script:
+    - bash docker/push_images
+    - bash docker/push_manifest
     on:
       branch: master

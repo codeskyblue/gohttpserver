@@ -16,16 +16,3 @@ docker build -t $DOCKER_USERNAME/$IMAGE_NAME:armhf -f docker/Dockerfile.armhf .
 docker build -t $DOCKER_USERNAME/$IMAGE_NAME:latest -f docker/Dockerfile .
 
 docker push $DOCKER_USERNAME/$IMAGE_NAME
-
-# push manifest
-docker manifest create codeskyblue/gohttpserver \
-  codeskyblue/gohttpserver:latest \
-  codeskyblue/gohttpserver:armhf
-docker manifest annotate codeskyblue/gohttpserver:latest \
-  --os linux --arch amd64
-docker manifest annotate codeskyblue/gohttpserver:latest \
-  --os linux --arch arm --variant v7
-docker manifest push codeskyblue/gohttpserver
-
-# check again
-docker run mplatform/mquery codeskyblue/gohttpserver
