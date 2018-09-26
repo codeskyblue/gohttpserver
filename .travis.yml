@@ -19,8 +19,6 @@ deploy:
       condition: $TRAVIS_OS_NAME = linux
   - provider: script
     skip_cleanup: true
-    script:
-    - bash docker/push_images
-    - bash docker/push_manifest
+    script: bash docker/push_images && bash docker/push_manifest
     on:
       branch: master
