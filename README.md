@@ -84,7 +84,7 @@ Share current directory with http basic auth
 
 ```bash
 docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
-  codeskyblue/gohttpserver --root /app/public \
+  codeskyblue/gohttpserver \
   --auth-type http --auth-http username:password
 ```
 
@@ -92,7 +92,7 @@ Share current directory with openid auth. (Works only in netease company.)
 
 ```bash
 docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
-  codeskyblue/gohttpserver --root /app/public \
+  codeskyblue/gohttpserver \
   --auth-type openid
 ```
 

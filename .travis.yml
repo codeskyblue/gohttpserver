@@ -1,3 +1,6 @@
+sudo: required
+services:
+  - docker
 language: go
 go:
   - "1.10"
@@ -10,3 +13,7 @@ deploy:
     on:
       tags: true
       condition: $TRAVIS_OS_NAME = linux
+  - provider: script
+    script: bash docker/docker_push
+    on:
+      branch: master
