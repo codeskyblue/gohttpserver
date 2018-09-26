@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io"
@@ -142,8 +143,8 @@ func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	name := req.FormValue("name")
-	if strings.ContainsAny(name, "\\/:*<>|") {
-		http.Error(w, "Name should not contains \\/:*<>|", http.StatusForbidden)
+	if err := checkFilename(name); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
 	err := os.Mkdir(filepath.Join(s.Root, path, name), 0755)
@@ -193,8 +194,16 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
 	}()
 
-	// FIXME(ssx): should I check header.Filename here?
-	dstPath := filepath.Join(dirpath, header.Filename)
+	filename := req.FormValue("filename")
+	if filename == "" {
+		filename = header.Filename
+	}
+	if err := checkFilename(filename); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+
+	dstPath := filepath.Join(dirpath, filename)
 	dst, err := os.Create(dstPath)
 	if err != nil {
 		log.Println("Create file:", err)
@@ -743,4 +752,11 @@ func renderHTML(w http.ResponseWriter, name string, v interface{}) {
 	} else {
 		executeTemplate(w, name, v)
 	}
+}
+
+func checkFilename(name string) error {
+	if strings.ContainsAny(name, "\\/:*<>|") {
+		return errors.New("Name should not contains \\/:*<>|")
+	}
+	return nil
 }

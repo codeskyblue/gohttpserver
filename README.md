@@ -189,7 +189,13 @@ $ curl -F file=@foo.txt localhost:8000/somedir
 # upload with token
 $ curl -F file=@foo.txt -F token=12312jlkjafs localhost:8000/somedir
 {"destination":"somedir/foo.txt","success":true}
+
+# upload and change filename
+$ curl -F file=@foo.txt -F filename=hi.txt localhost:8000/somedir
+{"destination":"somedir/hi.txt","success":true}
 ```
+
+Filename should not contains `\/:*<>|`
 
 ### Deploy with nginx
 Recommended configuration, assume your gohttpserver listening on `127.0.0.1:8200`
