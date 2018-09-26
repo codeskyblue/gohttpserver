@@ -16,7 +16,7 @@ docker manifest create codeskyblue/gohttpserver \
 docker manifest annotate codeskyblue/gohttpserver \
   codeskyblue/gohttpserver:latest --os linux --arch amd64
 docker manifest annotate codeskyblue/gohttpserver \
-  codeskyblue/gohttpserver:latest --os linux --arch arm --variant v7
+  codeskyblue/gohttpserver:armhf --os linux --arch arm --variant v7
 docker manifest push codeskyblue/gohttpserver
 
 # check again
