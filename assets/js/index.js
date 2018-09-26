@@ -138,6 +138,13 @@ var vm = new Vue({
     removeAllUploads: function () {
       this.myDropzone.removeAllFiles();
     },
+    parentDirectory: function (path) {
+      return path.replace('\\', '/').split('/').slice(0, -1).join('/')
+    },
+    changeParentDirectory: function (path) {
+      var parentDir = this.parentDirectory(path);
+      loadFileOrDir(parentDir);
+    },
     genInstallURL: function (name, noEncode) {
       var parts = [location.host];
       if (!name) {
@@ -324,7 +331,10 @@ var vm = new Vue({
 })
 
 window.onpopstate = function (event) {
-  var pathname = decodeURI(location.pathname)
+  if (location.search.match(/\?search=/)) {
+    location.reload();
+    return;
+  }
   loadFileList()
 }
 

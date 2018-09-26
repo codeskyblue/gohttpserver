@@ -119,6 +119,10 @@
                 <!-- ?raw=false -->
                 <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
               </a>
+              <!-- for search -->
+              <button v-show="f.type == 'file' && f.name.indexOf('/') >= 0" class="btn btn-default btn-xs" @click="changeParentDirectory(f.path)">
+                <i class="fa fa-folder-open-o"></i>
+              </button>
             </td>
             <td><span v-if="f.type == 'dir'">~</span> {{f.size | formatBytes}}</td>
             <td class="hidden-xs">{{formatTime(f.mtime)}}</td>
