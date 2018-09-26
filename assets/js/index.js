@@ -147,12 +147,13 @@ var vm = new Vue({
     },
     genInstallURL: function (name, noEncode) {
       var parts = [location.host];
+      var pathname = decodeURI(location.pathname);
       if (!name) {
-        parts.push(location.pathname);
+        parts.push(pathname);
       } else if (getExtention(name) == "ipa") {
-        parts.push("/-/ipa/link", location.pathname, name);
+        parts.push("/-/ipa/link", pathname, name);
       } else {
-        parts.push(location.pathname, name);
+        parts.push(pathname, name);
       }
       var urlPath = location.protocol + "//" + pathJoin(parts);
       return noEncode ? urlPath : encodeURI(urlPath);
@@ -162,10 +163,10 @@ var vm = new Vue({
       $("#qrcode-title").html(title || name || location.pathname);
       $("#qrcode-link").attr("href", urlPath);
       $('#qrcodeCanvas').empty().qrcode({
-        text: urlPath
+        text: encodeURI(urlPath),
       });
 
-      $("#qrcodeRight a").attr("href", encodeURI(urlPath));
+      $("#qrcodeRight a").attr("href", urlPath);
       $("#qrcode-modal").modal("show");
     },
     genDownloadURL: function (f) {
