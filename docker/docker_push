@@ -10,8 +10,9 @@ echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 IMAGE_NAME="gohttpserver"
 
 # arm linux for respberry
-docker build -t $DOCKER_USERNAME/$IMAGE_NAME:armhf -f Dockerfile.armhf docker
+docker build -t $DOCKER_USERNAME/$IMAGE_NAME:armhf -f docker/Dockerfile.armhf .
 
 # x86 linux
-docker build -t $DOCKER_USERNAME/$IMAGE_NAME -f Dockerfile docker
+docker build -t $DOCKER_USERNAME/$IMAGE_NAME -f docker/Dockerfile .
+
 docker push $DOCKER_USERNAME/$IMAGE_NAME
