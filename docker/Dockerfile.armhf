@@ -2,7 +2,7 @@ FROM golang:1.10
 WORKDIR /go/src/github.com/codeskyblue/gohttpserver
 ADD . /go/src/github.com/codeskyblue/gohttpserver/
 RUN go get -v
-RUN GOOS=linux GOARCH=arm go build -o gohttpserver .
+RUN GOOS=linux GOARCH=arm go build -ldflags '-X main.VERSION=docker' -o gohttpserver .
 
 FROM multiarch/debian-debootstrap:armhf-stretch
 WORKDIR /app
