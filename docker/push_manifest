@@ -13,10 +13,10 @@ echo '{"experimental": "enabled"}' > $HOME/.docker/config.json
 docker manifest create codeskyblue/gohttpserver \
   codeskyblue/gohttpserver:latest \
   codeskyblue/gohttpserver:armhf
-docker manifest annotate codeskyblue/gohttpserver:latest \
-  --os linux --arch amd64
-docker manifest annotate codeskyblue/gohttpserver:latest \
-  --os linux --arch arm --variant v7
+docker manifest annotate codeskyblue/gohttpserver \
+  codeskyblue/gohttpserver:latest --os linux --arch amd64
+docker manifest annotate codeskyblue/gohttpserver \
+  codeskyblue/gohttpserver:latest --os linux --arch arm --variant v7
 docker manifest push codeskyblue/gohttpserver
 
 # check again
