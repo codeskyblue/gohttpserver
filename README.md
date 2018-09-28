@@ -195,7 +195,7 @@ $ curl -F file=@foo.txt -F filename=hi.txt localhost:8000/somedir
 {"destination":"somedir/hi.txt","success":true}
 ```
 
-Filename should not contains `\/:*<>|`
+Note: `\/:*<>|` are not allowed in filenames.
 
 ### Deploy with nginx
 Recommended configuration, assume your gohttpserver listening on `127.0.0.1:8200`
