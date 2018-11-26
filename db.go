@@ -79,20 +79,26 @@ func (model *Model) AutoSave() bool {
 	return false
 }
 
+type dldEntry struct {
+	ip   string
+	path string
+}
+
 // DldCounter is used to validate duplicated download requests
 type DldCounter struct {
-	IPHistory map[string]time.Time
+	IPHistory map[dldEntry]time.Time
 }
 
 var DCounter DldCounter = DldCounter{}
 var DldInterval float64 = 60.0 // seconds
 
-func (counter *DldCounter) Validate(ip string) bool {
+func (counter *DldCounter) Validate(ip string, path string) bool {
 	if counter.IPHistory == nil {
-		counter.IPHistory = make(map[string]time.Time)
+		counter.IPHistory = make(map[dldEntry]time.Time)
 	}
-	if time.Since(counter.IPHistory[ip]).Seconds() > DldInterval {
-		counter.IPHistory[ip] = time.Now()
+	entry := dldEntry{ip, path}
+	if time.Since(counter.IPHistory[entry]).Seconds() > DldInterval {
+		counter.IPHistory[entry] = time.Now()
 		// fmt.Println("valid", ip)
 		return true
 	}

@@ -770,7 +770,7 @@ func checkFilename(name string) error {
 
 func DldIncre(model Model, rAddress string, path string) {
 	ip, _, _ := net.SplitHostPort(rAddress)
-	if DCounter.Validate(ip) {
+	if DCounter.Validate(ip, path) {
 		model.Incre(path)
 	}
 }
