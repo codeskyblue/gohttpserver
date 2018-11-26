@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"regexp"
 
-	goplist "github.com/DHowett/go-plist"
+	goplist "github.com/fork2fix/go-plist"
+	//goplist "github.com/DHowett/go-plist"
 )
 
 func parseIpaIcon(path string) (data []byte, err error) {

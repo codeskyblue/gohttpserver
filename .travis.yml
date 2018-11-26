@@ -3,7 +3,9 @@ services:
   - docker
 language: go
 go:
-  - "1.10"
+  - "1.11"
+env:
+  - GO111MODULE=on
 script:
   - go test -v
 addons:
