@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"mime"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -126,7 +127,7 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		}
 		if r.FormValue("download") == "true" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
-			s.DBModel.Incre(path)
+			DldIncre(s.DBModel, r.RemoteAddr, path)
 		}
 		http.ServeFile(w, r, relPath)
 	}
@@ -289,7 +290,7 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hZip(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	s.DBModel.Incre(path)
+	DldIncre(s.DBModel, r.RemoteAddr, path)
 	CompressToZip(w, filepath.Join(s.Root, path))
 }
 
@@ -765,4 +766,11 @@ func checkFilename(name string) error {
 		return errors.New("Name should not contains \\/:*<>|")
 	}
 	return nil
+}
+
+func DldIncre(model Model, rAddress string, path string) {
+	ip, _, _ := net.SplitHostPort(rAddress)
+	if DCounter.Validate(ip) {
+		model.Incre(path)
+	}
 }
