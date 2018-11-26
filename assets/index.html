@@ -109,6 +109,7 @@
             <th class="hidden-xs">
               <span style="cursor: pointer" v-on:click='mtimeTypeFromNow = !mtimeTypeFromNow'>ModTime</span>
             </th>
+            <th>Downloads</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -126,10 +127,11 @@
             </td>
             <td><span v-if="f.type == 'dir'">~</span> {{f.size | formatBytes}}</td>
             <td class="hidden-xs">{{formatTime(f.mtime)}}</td>
+            <td class="hidden-xs">{{f.dldcnt}}</td>
             <td style="text-align: left">
               <template v-if="f.type == 'dir'">
                 <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">
-                  <span class="hidden-xs">Archive</span> Zip({{f.dldcnt}})
+                  <span class="hidden-xs">Archive</span> Zip
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>
                 <button class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)">
@@ -138,7 +140,7 @@
               </template>
               <template v-if="f.type == 'file'">
                 <a class="btn btn-default btn-xs hidden-xs" href="/{{f.path}}?download=true">
-                  <span class="hidden-xs">Download({{f.dldcnt}})</span>
+                  <span class="hidden-xs">Download</span>
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>
                 <button class="btn btn-default btn-xs bstooltip" data-trigger="manual" data-title="Copied!"

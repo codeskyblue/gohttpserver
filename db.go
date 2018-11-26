@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 )
 
 func panicErr(e error) {
@@ -16,9 +17,11 @@ func panicErr(e error) {
 type Model struct {
 	Filename string
 	Data     *map[string]int
+	LastSave time.Time
 }
 
 var DBModel Model = Model{}
+var SaveInterval float64 = 60.0 // seconds
 
 func (model *Model) DBRead(filename string) *map[string]int {
 	data := make(map[string]int)
@@ -47,18 +50,33 @@ func (model *Model) DBRead(filename string) *map[string]int {
 	return &data
 }
 
-func (model *Model) DBWrite() {
-	fmt.Println("writing")
-	dat, err := json.Marshal(*model.Data)
-	panicErr(err)
-	err = ioutil.WriteFile(model.Filename, dat, 0644)
-	panicErr(err)
+func (model *Model) DBWrite() error {
+	fmt.Println("db writing")
+	dat, err := json.Marshal(model.Data)
+	if err != nil {
+		return err
+	}
+	tmp := model.Filename + ".un~"
+	err = ioutil.WriteFile(tmp, dat, 0644)
+	if err != nil {
+		return err
+	}
+	return os.Rename(tmp, model.Filename)
 }
 
 func (model *Model) Incre(key string) {
 	(*model.Data)[key]++
 	fmt.Println(model.Data)
-	go model.DBWrite()
+	go model.AutoSave()
+}
+
+func (model *Model) AutoSave() bool {
+	if time.Since(model.LastSave).Seconds() > SaveInterval {
+		model.DBWrite()
+		model.LastSave = time.Now()
+		return true
+	}
+	return false
 }
 
 // func main() {
