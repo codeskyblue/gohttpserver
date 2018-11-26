@@ -144,7 +144,8 @@ func main() {
 	}
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
-	ss := NewHTTPStaticServer(gcfg.Root)
+	DBModel.DBRead("mydb.json")
+	ss := NewHTTPStaticServer(gcfg.Root, DBModel)
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
 	ss.GoogleTrackerID = gcfg.GoogleTrackerID

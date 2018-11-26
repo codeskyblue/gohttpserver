@@ -29,3 +29,4 @@ bindata_assetfs.go
 assets_vfsdata.go
 *.un~
 *.swp
+mydb.json
