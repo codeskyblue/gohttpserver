@@ -144,8 +144,8 @@ func main() {
 	}
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
-	DBModel.DBRead("mydb.json")
-	ss := NewHTTPStaticServer(gcfg.Root, DBModel)
+	DBModel.DBRead("ghs-stats.json")
+	ss := NewHTTPStaticServer(gcfg.Root, DBModel) // FIXME(ssx): should put DBModel inside HTTPStaticServer
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
 	ss.GoogleTrackerID = gcfg.GoogleTrackerID

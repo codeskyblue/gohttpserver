@@ -21,7 +21,9 @@ type Model struct {
 }
 
 var DBModel Model = Model{}
-var SaveInterval float64 = 60.0 // seconds
+
+// var SaveInterval float64 = 60.0 // seconds
+const SaveInterval = 60.0
 
 func (model *Model) DBRead(filename string) *map[string]int {
 	data := make(map[string]int)
@@ -99,20 +101,7 @@ func (counter *DldCounter) Validate(ip string, path string) bool {
 	entry := dldEntry{ip, path}
 	if time.Since(counter.IPHistory[entry]).Seconds() > DldInterval {
 		counter.IPHistory[entry] = time.Now()
-		// fmt.Println("valid", ip)
 		return true
 	}
-	// fmt.Println("invalid", ip)
 	return false
 }
-
-// func main() {
-// 	filename := "./mydb.json"
-// 	DBModel.DBRead(filename)
-// 	fmt.Println(DBModel.Filename)
-// 	fmt.Println(*DBModel.Data)
-// 	defer DBModel.DBWrite()
-// 	(*DBModel.Data)["b"] = 2
-// 	(*DBModel.Data)["a"] += 2
-// 	fmt.Println(DBModel.Data)
-// }
