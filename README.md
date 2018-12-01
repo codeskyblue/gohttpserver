@@ -54,6 +54,7 @@ Tested with go-1.10, go-1.11
 1. [x] Show folder size
 1. [x] Create folder
 1. [x] Skip delete confirm when alt pressed
+1. [x] Unzip file support
 
 ## Installation
 ```
