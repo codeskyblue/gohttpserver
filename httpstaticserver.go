@@ -46,6 +46,7 @@ type HTTPStaticServer struct {
 	Upload          bool
 	Delete          bool
 	Title           string
+	PathPrefix      string
 	Theme           string
 	PlistProxy      string
 	GoogleTrackerID string
@@ -55,7 +56,7 @@ type HTTPStaticServer struct {
 	m       *mux.Router
 }
 
-func NewHTTPStaticServer(root string) *HTTPStaticServer {
+func NewHTTPStaticServer(root, pathPrefix string) *HTTPStaticServer {
 	if root == "" {
 		root = "./"
 	}
@@ -66,9 +67,10 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	log.Printf("root path: %s\n", root)
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
-		Root:  root,
-		Theme: "black",
-		m:     m,
+		Root:       root,
+		PathPrefix: pathPrefix,
+		Theme:      "black",
+		m:          m,
 	}
 
 	go func() {
@@ -83,21 +85,21 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		}
 	}()
 
-	m.HandleFunc("/-/status", s.hStatus)
-	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
-	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
-	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
+	m.HandleFunc(s.PathPrefix+"-/status", s.hStatus)
+	m.HandleFunc(s.PathPrefix+"-/zip/{path:.*}", s.hZip)
+	m.HandleFunc(s.PathPrefix+"-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
+	m.HandleFunc(s.PathPrefix+"-/json/{path:.*}", s.hJSONList)
 	// routers for Apple *.ipa
-	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
-	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
+	m.HandleFunc(s.PathPrefix+"-/ipa/plist/{path:.*}", s.hPlist)
+	m.HandleFunc(s.PathPrefix+"-/ipa/link/{path:.*}", s.hIpaLink)
 
 	// TODO: /ipa/info
-	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
-	m.HandleFunc("/-/mkdir/{path:.*}", s.hMkdir)
+	m.HandleFunc(s.PathPrefix+"-/info/{path:.*}", s.hInfo)
+	m.HandleFunc(s.PathPrefix+"-/mkdir/{path:.*}", s.hMkdir)
 
-	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
-	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
-	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
+	m.HandleFunc(s.PathPrefix+"{path:.*}", s.hIndex).Methods("GET", "HEAD")
+	m.HandleFunc(s.PathPrefix+"{path:.*}", s.hUpload).Methods("POST")
+	m.HandleFunc(s.PathPrefix+"{path:.*}", s.hDelete).Methods("DELETE")
 	return s
 }
 
@@ -348,10 +350,10 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	plistUrl := genURLStr(r, "/-/ipa/plist/"+path).String()
+	plistUrl := genURLStr(r, s.PathPrefix+"-/ipa/plist/"+path).String()
 	if r.TLS == nil {
 		// send plist to plistproxy and get a https link
-		httpPlistLink := "http://" + r.Host + "/-/ipa/plist/" + path
+		httpPlistLink := "http://" + r.Host + s.PathPrefix + "-/ipa/plist/" + path
 		url, err := s.genPlistLink(httpPlistLink)
 		if err != nil {
 			http.Error(w, err.Error(), 500)
@@ -557,6 +559,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 			lr.Size = s.historyDirSize(lr.Path)
 		} else {
 			lr.Type = "file"
+			lr.Path = filepath.Join(s.PathPrefix, path)[1:]
 			lr.Size = info.Size() // formatSize(info)
 		}
 		lrs = append(lrs, lr)

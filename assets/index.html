@@ -5,17 +5,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>gohttp server</title>
-  <link rel="shortcut icon" type="image/png" href="/-/assets/favicon.png" />
-  <link rel="stylesheet" type="text/css" href="/-/assets/bootstrap-3.3.5/css/bootstrap.min.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/font-awesome-4.6.3/css/font-awesome.min.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/github-markdown.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/dropzone.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/scrollUp-image.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/style.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/themes/[[.Theme]].css">
+  <link rel="shortcut icon" type="image/png" href="[[.PathPrefix]]-/assets/favicon.png" />
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/bootstrap-3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/font-awesome-4.6.3/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/css/github-markdown.css">
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/css/dropzone.css">
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/css/scrollUp-image.css">
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/css/style.css">
+  <link rel="stylesheet" type="text/css" href="[[.PathPrefix]]-/assets/themes/[[.Theme]].css">
 </head>
 
 <body id="app">
+  <div id="pathprefix" style="display: none;">[[.PathPrefix]]</div>
   <nav class="navbar navbar-default">
     <div class="container">
       <div class="container">
@@ -38,12 +39,12 @@
             </li>
             [[if eq .AuthType "openid"]]
             <template v-if="!user.email">
-              <a href="/-/login" class="btn btn-sm btn-default navbar-btn">
+              <a href="[[.PathPrefix]]-/login" class="btn btn-sm btn-default navbar-btn">
                 Sign in <span class="glyphicon glyphicon-user"></span>
               </a>
             </template>
             <template v-else>
-              <a href="/-/logout" class="btn btn-sm btn-default navbar-btn">
+              <a href="[[.PathPrefix]]-/logout" class="btn btn-sm btn-default navbar-btn">
                 <span v-text="user.name"></span>
                 <i class="fa fa-sign-out"></i>
               </a>
@@ -128,7 +129,7 @@
             <td class="hidden-xs">{{formatTime(f.mtime)}}</td>
             <td style="text-align: left">
               <template v-if="f.type == 'dir'">
-                <a class="btn btn-default btn-xs" href="/-/zip/{{f.path}}">
+                <a class="btn btn-default btn-xs" href="[[.PathPrefix]]-/zip/{{f.path}}">
                   <span class="hidden-xs">Archive</span> Zip
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>
@@ -244,19 +245,19 @@
       </div>
     </div>
   </div>
-  <script src="/-/assets/js/jquery-3.1.0.min.js"></script>
-  <script src="/-/assets/js/jquery.qrcode.js"></script>
-  <script src="/-/assets/js/jquery.scrollUp.min.js"></script>
-  <script src="/-/assets/js/qrcode.js"></script>
-  <script src="/-/assets/js/vue-1.0.min.js"></script>
-  <script src="/-/assets/js/showdown-1.6.4.min.js"></script>
-  <script src="/-/assets/js/moment.min.js"></script>
-  <script src="/-/assets/js/dropzone.js"></script>
-  <script src="/-/assets/js/underscore-min.js"></script>
-  <script src="/-/assets/js/clipboard-1.5.12.min.js"></script>
-  <script src="/-/assets/bootstrap-3.3.5/js/bootstrap.min.js"></script>
-  <script src='/-/assets/[["js/index.js" | urlhash ]]'></script>
-  <!-- <script src="/-/assets/js/index.js"></script> -->
+  <script src="[[.PathPrefix]]-/assets/js/jquery-3.1.0.min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/jquery.qrcode.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/jquery.scrollUp.min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/qrcode.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/vue-1.0.min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/showdown-1.6.4.min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/moment.min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/dropzone.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/underscore-min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/js/clipboard-1.5.12.min.js"></script>
+  <script src="[[.PathPrefix]]-/assets/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+  <script src='[[.PathPrefix]]-/assets/[["js/index.js" | urlhash ]]'></script>
+  <!-- <script src="[[.PathPrefix]]-/assets/js/index.js"></script> -->
   [[if .GoogleTrackerID ]]
   <script>
     (function (i, s, o, g, r, a, m) {

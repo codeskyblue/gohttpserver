@@ -8,10 +8,17 @@ function getExtention(fname) {
   return fname.slice((fname.lastIndexOf(".") - 1 >>> 0) + 2);
 }
 
+var pathPrefix = $("#pathprefix").text();
+
 function pathJoin(parts, sep) {
   var separator = sep || '/';
   var replace = new RegExp(separator + '{1,}', 'g');
-  return parts.join(separator).replace(replace, separator);
+  var re = parts.join(separator).replace(replace, separator);
+  if (!re.startsWith(pathPrefix)) {
+     parts.unshift(pathPrefix);
+     re = parts.join(separator).replace(replace, separator);
+  }
+  return re;
 }
 
 function getQueryString(name) {
@@ -99,7 +106,7 @@ var vm = new Vue({
   },
   created: function () {
     $.ajax({
-      url: "/-/user",
+      url: pathJoin(["/-/user"]),
       method: "get",
       dataType: "json",
       success: function (ret) {
@@ -347,6 +354,7 @@ function loadFileOrDir(reqPath) {
 function loadFileList(pathname) {
   var pathname = pathname || location.pathname;
   // console.log("load filelist:", pathname)
+  pathname = pathname.substring(pathPrefix.length);
   if (getQueryString("raw") !== "false") { // not a file preview
     $.ajax({
       url: pathJoin(["/-/json", pathname]),
@@ -397,7 +405,7 @@ $(function () {
   loadFileList(location.pathname + location.search)
 
   // update version
-  $.getJSON("/-/sysinfo", function (res) {
+  $.getJSON(pathJoin(["/-/sysinfo"]), function (res) {
     vm.version = res.version;
   })
 

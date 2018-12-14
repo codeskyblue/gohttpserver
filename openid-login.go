@@ -33,8 +33,8 @@ func init() {
 	gob.Register(&M{})
 }
 
-func handleOpenID(loginUrl string, secure bool) {
-	http.HandleFunc("/-/login", func(w http.ResponseWriter, r *http.Request) {
+func handleOpenID(pathPrefix, loginUrl string, secure bool) {
+	http.HandleFunc(pathPrefix+"-/login", func(w http.ResponseWriter, r *http.Request) {
 		nextUrl := r.FormValue("next")
 		referer := r.Referer()
 		if nextUrl == "" && strings.Contains(referer, "://"+r.Host) {
@@ -46,14 +46,14 @@ func handleOpenID(loginUrl string, secure bool) {
 		}
 		log.Println("Scheme:", scheme)
 		if url, err := openid.RedirectURL(loginUrl,
-			scheme+"://"+r.Host+"/-/openidcallback?next="+nextUrl, ""); err == nil {
+			scheme+"://"+r.Host+pathPrefix+"-/openidcallback?next="+nextUrl, ""); err == nil {
 			http.Redirect(w, r, url, 303)
 		} else {
 			log.Println("Should not got error here:", err)
 		}
 	})
 
-	http.HandleFunc("/-/openidcallback", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(pathPrefix+"-/openidcallback", func(w http.ResponseWriter, r *http.Request) {
 		id, err := openid.Verify("http://"+r.Host+r.URL.String(), discoveryCache, nonceStore)
 		if err != nil {
 			io.WriteString(w, "Authentication check failed.")
@@ -77,12 +77,12 @@ func handleOpenID(loginUrl string, secure bool) {
 
 		nextUrl := r.FormValue("next")
 		if nextUrl == "" {
-			nextUrl = "/"
+			nextUrl = pathPrefix
 		}
 		http.Redirect(w, r, nextUrl, 302)
 	})
 
-	http.HandleFunc("/-/user", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(pathPrefix+"-/user", func(w http.ResponseWriter, r *http.Request) {
 		session, err := store.Get(r, defaultSessionName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -94,7 +94,7 @@ func handleOpenID(loginUrl string, secure bool) {
 		w.Write(data)
 	})
 
-	http.HandleFunc("/-/logout", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc(pathPrefix+"-/logout", func(w http.ResponseWriter, r *http.Request) {
 		session, err := store.Get(r, defaultSessionName)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

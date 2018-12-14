@@ -28,6 +28,7 @@ type Configure struct {
 	Addr            string   `yaml:"addr"`
 	Port            int      `yaml:"port"`
 	Root            string   `yaml:"root"`
+	PathPrefix      string   `yaml:"pathprefix`
 	HTTPAuth        string   `yaml:"httpauth"`
 	Cert            string   `yaml:"cert"`
 	Key             string   `yaml:"key"`
@@ -90,6 +91,7 @@ func versionMessage() string {
 func parseFlags() error {
 	// initial default conf
 	gcfg.Root = "./"
+	gcfg.PathPrefix = "/"
 	gcfg.Port = 8000
 	gcfg.Addr = ""
 	gcfg.Theme = "black"
@@ -102,6 +104,7 @@ func parseFlags() error {
 	kingpin.Version(versionMessage())
 	kingpin.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
 	kingpin.Flag("root", "root directory, default ./").Short('r').StringVar(&gcfg.Root)
+	kingpin.Flag("pathprefix", "http path prefix, default /").StringVar(&gcfg.PathPrefix)
 	kingpin.Flag("port", "listen port, default 8000").IntVar(&gcfg.Port)
 	kingpin.Flag("addr", "listen address, eg 127.0.0.1:8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
@@ -142,9 +145,15 @@ func main() {
 		data, _ := yaml.Marshal(gcfg)
 		fmt.Printf("--- config ---\n%s\n", string(data))
 	}
+	if !strings.HasPrefix(gcfg.PathPrefix, "/") {
+		gcfg.PathPrefix = "/" + gcfg.PathPrefix
+	}
+	if !strings.HasSuffix(gcfg.PathPrefix, "/") {
+		gcfg.PathPrefix = gcfg.PathPrefix + "/"
+	}
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
-	ss := NewHTTPStaticServer(gcfg.Root)
+	ss := NewHTTPStaticServer(gcfg.Root, gcfg.PathPrefix)
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
 	ss.GoogleTrackerID = gcfg.GoogleTrackerID
@@ -174,7 +183,7 @@ func main() {
 			hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
 		}
 	case "openid":
-		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
+		handleOpenID(gcfg.PathPrefix, gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
 		// case "github":
 		// 	handleOAuth2ID(gcfg.Auth.Type, gcfg.Auth.ID, gcfg.Auth.Secret) // FIXME(ssx): set secure default to false
 	}
@@ -187,9 +196,9 @@ func main() {
 		hdlr = handlers.ProxyHeaders(hdlr)
 	}
 
-	http.Handle("/", hdlr)
-	http.Handle("/-/assets/", http.StripPrefix("/-/assets/", http.FileServer(Assets)))
-	http.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
+	http.Handle(gcfg.PathPrefix, hdlr)
+	http.Handle(gcfg.PathPrefix+"-/assets/", http.StripPrefix(gcfg.PathPrefix+"-/assets/", http.FileServer(Assets)))
+	http.HandleFunc(gcfg.PathPrefix+"-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		data, _ := json.Marshal(map[string]interface{}{
 			"version": VERSION,
@@ -204,7 +213,7 @@ func main() {
 		gcfg.Addr = ":" + gcfg.Addr
 	}
 	_, port, _ := net.SplitHostPort(gcfg.Addr)
-	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port)
+	log.Printf("listening on %s, local address http://%s:%s%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port, gcfg.PathPrefix)
 
 	var err error
 	if gcfg.Key != "" && gcfg.Cert != "" {
