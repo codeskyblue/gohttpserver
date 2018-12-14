@@ -151,6 +151,23 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 	}
 
 	file, header, err := req.FormFile("file")
+
+	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
+			log.Println("Create directory:", err)
+			http.Error(w, "Directory create "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if file == nil {
+			w.Header().Set("Content-Type", "application/json;charset=utf-8")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success":     true,
+				"destination": dirpath,
+			})
+			return
+		}
+	}
+
 	if err != nil {
 		log.Println("Parse form file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
