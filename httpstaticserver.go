@@ -106,6 +106,9 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+        w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+        w.Header().Set("Content-Type", "application/json")
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
 	log.Println("GET", path, relPath)
