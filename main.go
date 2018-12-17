@@ -190,6 +190,8 @@ func main() {
 	http.Handle("/", hdlr)
 	http.Handle("/-/assets/", http.StripPrefix("/-/assets/", http.FileServer(Assets)))
 	http.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
 		data, _ := json.Marshal(map[string]interface{}{
 			"version": VERSION,
