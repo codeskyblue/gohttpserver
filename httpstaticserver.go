@@ -108,6 +108,11 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
+	if r.FormValue("json") == "true" {
+		s.hJSONList(w, r)
+		return
+	}
+
 	log.Println("GET", path, relPath)
 	if r.FormValue("raw") == "false" || isDir(relPath) {
 		if r.Method == "HEAD" {

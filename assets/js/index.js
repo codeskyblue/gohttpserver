@@ -349,7 +349,7 @@ function loadFileList(pathname) {
   // console.log("load filelist:", pathname)
   if (getQueryString("raw") !== "false") { // not a file preview
     $.ajax({
-      url: pathJoin(["/-/json", pathname]),
+      url: pathname + "?json=true",
       dataType: "json",
       cache: false,
       success: function (res) {
