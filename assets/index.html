@@ -137,7 +137,7 @@
                 </button>
               </template>
               <template v-if="f.type == 'file'">
-                <a class="btn btn-default btn-xs hidden-xs" href="/{{f.path}}?download=true">
+                <a class="btn btn-default btn-xs hidden-xs" href="{{genDownloadURL(f)}}">
                   <span class="hidden-xs">Download</span>
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>

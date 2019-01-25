@@ -170,7 +170,9 @@ var vm = new Vue({
       $("#qrcode-modal").modal("show");
     },
     genDownloadURL: function (f) {
-      return location.origin + "/" + f.path;
+      var search = location.search;
+      var sep = search == "" ? "?" : "&"
+      return location.origin + "/" + f.path + location.search + sep + "download=true";
     },
     shouldHaveQrcode: function (name) {
       return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
@@ -340,12 +342,13 @@ window.onpopstate = function (event) {
 }
 
 function loadFileOrDir(reqPath) {
-  window.history.pushState({}, "", reqPath);
-  loadFileList(reqPath)
+  let requestUri = reqPath + location.search
+  window.history.pushState({}, "", requestUri);
+  loadFileList(requestUri)
 }
 
 function loadFileList(pathname) {
-  var pathname = pathname || location.pathname;
+  var pathname = pathname || location.pathname + location.search;
   // console.log("load filelist:", pathname)
   if (getQueryString("raw") !== "false") { // not a file preview
     let sep = pathname.indexOf("?") === -1 ? "?" : "&"
