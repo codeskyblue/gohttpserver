@@ -181,6 +181,8 @@ $ http GET https://someproxyhost.com/plist/18f99211
 # show the app.plist content
 ```
 
+If your ghs running behide nginx server and have https configed. plistproxy will be disabled automaticly.
+
 ### Upload with CURL
 For example, upload a file named `foo.txt` to directory `somedir`
 
@@ -218,6 +220,8 @@ server {
   }
 }
 ```
+
+gohttpserver should started with `--xheaders` argument when behide nginx.
 
 Refs: <http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size>
 

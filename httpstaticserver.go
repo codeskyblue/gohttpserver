@@ -325,13 +325,10 @@ func (s *HTTPStaticServer) hUnzip(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func genURLStr(r *http.Request, path string) *url.URL {
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
+
+func combineURL(r *http.Request, path string) *url.URL {
 	return &url.URL{
-		Scheme: scheme,
+		Scheme: r.URL.Scheme,
 		Host:   r.Host,
 		Path:   path,
 	}
@@ -370,9 +367,11 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	plistUrl := genURLStr(r, "/-/ipa/plist/"+path).String()
-	if r.TLS == nil {
-		// send plist to plistproxy and get a https link
+	var plistUrl string
+
+	if r.URL.Scheme == "https" {
+		plistUrl = combineURL(r, "/-/ipa/plist/"+path).String()
+	} else if s.PlistProxy != "" {
 		httpPlistLink := "http://" + r.Host + "/-/ipa/plist/" + path
 		url, err := s.genPlistLink(httpPlistLink)
 		if err != nil {
@@ -380,6 +379,9 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		plistUrl = url
+	} else {
+		http.Error(w, "500: Server should be https:// or provide valid plistproxy", 500)
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/html")
