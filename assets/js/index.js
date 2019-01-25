@@ -348,8 +348,9 @@ function loadFileList(pathname) {
   var pathname = pathname || location.pathname;
   // console.log("load filelist:", pathname)
   if (getQueryString("raw") !== "false") { // not a file preview
+    let sep = pathname.indexOf("?") === -1 ? "?" : "&"
     $.ajax({
-      url: pathname + "?json=true",
+      url: pathname + sep + "json=true",
       dataType: "json",
       cache: false,
       success: function (res) {
