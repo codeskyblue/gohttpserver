@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mholt/archiver"
 	dkignore "github.com/codeskyblue/dockerignore"
 )
 

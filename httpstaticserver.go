@@ -238,7 +238,18 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+
+	if req.FormValue("unzip") == "true" {
+		err = archiver.Unarchive(dstPath, dirpath)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":     err == nil,
+			"description": fmt.Sprintf("unarchive err = %v", err),
+		})
+		return
+	}
+	
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":     true,
 		"destination": dstPath,
