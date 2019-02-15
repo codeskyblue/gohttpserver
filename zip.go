@@ -150,11 +150,16 @@ func unzipFile(filename, dest string) error {
 		}
 		defer rc.Close()
 
-		fpath := filepath.Join(dest, f.Name)
+		// ignore .ghs.yml
+		filename := sanitizedName(f.Name)
+		if filepath.Base(filename) == ".ghs.yml" {
+			continue
+		}
+		fpath := filepath.Join(dest, filename)
 
 		// filename maybe GBK or UTF-8
 		// Ref: https://studygolang.com/articles/3114
-		if f.Flags & (1<<11) == 0 { // GBK
+		if f.Flags&(1<<11) == 0 { // GBK
 			tr := simplifiedchinese.GB18030.NewDecoder()
 			fpathUtf8, err := tr.String(fpath)
 			if err == nil {
