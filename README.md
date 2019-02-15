@@ -55,6 +55,7 @@ Tested with go-1.10, go-1.11
 1. [x] Show folder size
 1. [x] Create folder
 1. [x] Skip delete confirm when alt pressed
+1. [x] Support unzip zip file when upload(with form: unzip=true)
 
 ## Installation
 ```
@@ -196,6 +197,13 @@ $ curl -F file=@foo.txt -F token=12312jlkjafs localhost:8000/somedir
 # upload and change filename
 $ curl -F file=@foo.txt -F filename=hi.txt localhost:8000/somedir
 {"destination":"somedir/hi.txt","success":true}
+```
+
+Upload zip file and unzip it (zip file will be delete when finished unzip)
+
+```
+$ curl -F file=@pkg.zip -F unzip=true localhost:8000/somedir
+{"success": true}
 ```
 
 Note: `\/:*<>|` are not allowed in filenames.

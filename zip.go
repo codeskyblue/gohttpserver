@@ -13,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/mholt/archiver"
 	dkignore "github.com/codeskyblue/dockerignore"
+	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
 type Zip struct {
@@ -130,4 +130,54 @@ func ExtractFromZip(zipFile, path string, w io.Writer) (err error) {
 		return
 	}
 	return fmt.Errorf("File %s not found", strconv.Quote(path))
+}
+
+func unzipFile(filename, dest string) error {
+	zr, err := zip.OpenReader(filename)
+	if err != nil {
+		return err
+	}
+	defer zr.Close()
+
+	if dest == "" {
+		dest = filepath.Dir(filename)
+	}
+
+	for _, f := range zr.File {
+		rc, err := f.Open()
+		if err != nil {
+			return err
+		}
+		defer rc.Close()
+
+		fpath := filepath.Join(dest, f.Name)
+
+		// filename maybe GBK or UTF-8
+		// Ref: https://studygolang.com/articles/3114
+		if f.Flags & (1<<11) == 0 { // GBK
+			tr := simplifiedchinese.GB18030.NewDecoder()
+			fpathUtf8, err := tr.String(fpath)
+			if err == nil {
+				fpath = fpathUtf8
+			}
+		}
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(fpath, os.ModePerm)
+			continue
+		}
+
+		os.MkdirAll(filepath.Dir(fpath), os.ModePerm)
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(outFile, rc)
+		outFile.Close()
+
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }

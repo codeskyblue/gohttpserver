@@ -242,14 +242,20 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 
 	if req.FormValue("unzip") == "true" {
-		err = archiver.Unarchive(dstPath, dirpath)
+		err = unzipFile(dstPath, dirpath)
+		dst.Close()
+		os.Remove(dstPath)
+		message := "success"
+		if err != nil {
+			message = err.Error()
+		}
 		json.NewEncoder(w).Encode(map[string]interface{}{
 			"success":     err == nil,
-			"description": fmt.Sprintf("unarchive err = %v", err),
+			"description": message,
 		})
 		return
 	}
-	
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":     true,
 		"destination": dstPath,
@@ -335,7 +341,6 @@ func (s *HTTPStaticServer) hUnzip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
-
 
 func combineURL(r *http.Request, path string) *url.URL {
 	return &url.URL{
