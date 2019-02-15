@@ -2,14 +2,15 @@ package main
 
 import (
 	"bytes"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestExtractFromZip(t *testing.T) {
 	buf := bytes.NewBuffer(nil)
 	err := ExtractFromZip("testdata/test.zip", "**/foo.txt", buf)
-	assert.NotNil(t, err)
+	assert.Nil(t, err)
 	t.Log("Content: " + buf.String())
 }
 
