@@ -180,6 +180,8 @@ func main() {
 		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
 		// case "github":
 		// 	handleOAuth2ID(gcfg.Auth.Type, gcfg.Auth.ID, gcfg.Auth.Secret) // FIXME(ssx): set secure default to false
+	case "oauth2-proxy":
+		handleOauth2()
 	}
 
 	// CORS

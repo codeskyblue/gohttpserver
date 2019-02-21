@@ -111,6 +111,12 @@ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
   $ gohttpserver --auth-type openid --auth-openid https://login.example-hostname.com/openid/
   ```
 
+- Use oauth2 with
+
+  ```sh
+  $ gohttpserver --auth-type oauth2-proxy
+  ```
+
 - Enable upload
 
   ```sh

@@ -83,26 +83,51 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		}
 	}()
 
-	m.HandleFunc("/-/status", s.hStatus)
-	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
-	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
-	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
+	m.HandleFunc("/-/status", s.hStatus) //unused
+	m.HandleFunc("/-/zip/{path:.*}", s.hZip) //unused
+	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip) //unused
+	m.HandleFunc("/-/json/{path:.*}", s.hJSONList) //unused
 	// routers for Apple *.ipa
-	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
-	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
+	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist) //unused
+	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink) //unused
 
 	// TODO: /ipa/info
-	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
-	m.HandleFunc("/-/mkdir/{path:.*}", s.hMkdir)
+	m.HandleFunc("/-/info/{path:.*}", s.hInfo) //unused
+	m.HandleFunc("/-/mkdir/{path:.*}", s.hMkdir) //unused
 
-	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
-	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
-	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
+	m.HandleFunc("/{path:.*}", s.hGet).Methods("GET", "HEAD")
+	m.HandleFunc("/{path:.*}", s.hPOST).Methods("POST")
+	m.HandleFunc("/{path:.*}", s.hDELETE).Methods("DELETE")
 	return s
 }
 
 func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.m.ServeHTTP(w, r)
+}
+
+func (s *HTTPStaticServer) hGet(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("op") == "info" {
+		 fmt.Println("hGet op=info")
+		 s.hInfo(w, r)
+	}else {
+		fmt.Println("hGet op not equal info")
+		s.hIndex(w, r)
+	}
+	return
+}
+
+func (s *HTTPStaticServer) hPOST(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("op") == "mkdir" {
+		s.hMkdir(w, r)
+	}else {
+		s.hUpload(w, r)
+	}
+	return
+}
+
+func (s *HTTPStaticServer) hDELETE(w http.ResponseWriter, r *http.Request) {
+	s.hDelete(w, r)
+	return
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
@@ -141,13 +166,14 @@ func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
-	path := mux.Vars(req)["path"]
+	path := filepath.Dir(mux.Vars(req)["path"])
 	auth := s.readAccessConf(path)
 	if !auth.canDelete(req) {
 		http.Error(w, "Mkdir forbidden", http.StatusForbidden)
 		return
 	}
-	name := req.FormValue("name")
+
+	name := filepath.Base(mux.Vars(req)["path"])
 	if err := checkFilename(name); err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
 		return
@@ -293,10 +319,7 @@ func parseApkInfo(path string) (ai *ApkInfo) {
 func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
-	if !isFile(relPath) {
-		http.Error(w, "Not a file", 403)
-		return
-	}
+
 	fi, err := os.Stat(relPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -315,6 +338,8 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 	case ".apk":
 		fji.Type = "apk"
 		fji.Extra = parseApkInfo(relPath)
+	case "":
+		fji.Type = "Dir"
 	default:
 		fji.Type = "text"
 	}

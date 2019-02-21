@@ -233,7 +233,10 @@ var vm = new Vue({
     showInfo: function (f) {
       console.log(f);
       $.ajax({
-        url: pathJoin(["/-/info", location.pathname, f.name]),
+        url: pathJoin(["/", location.pathname, f.name]),
+        data: {
+            op: "info",
+        },
         method: "GET",
         success: function (res) {
           $("#file-info-title").text(f.name);
@@ -250,9 +253,9 @@ var vm = new Vue({
         return
       }
       $.ajax({
-        url: pathJoin(["/-/mkdir", location.pathname]),
+        url: pathJoin(["/", location.pathname, "/", name]),
         data: {
-          name: name,
+          op: "mkdir",
         },
         method: "POST",
         success: function (res) {
@@ -282,8 +285,9 @@ var vm = new Vue({
         }
       });
     },
-    updateBreadcrumb: function () {
-      var pathname = decodeURI(location.pathname || "/");
+    updateBreadcrumb: function (pathname) {
+      var pathname = decodeURI(pathname || location.pathname || "/");
+      pathname = pathname.split('?')[0]
       var parts = pathname.split('/');
       this.breadcrumb = [];
       if (pathname == "/") {
@@ -343,16 +347,21 @@ window.onpopstate = function (event) {
 
 function loadFileOrDir(reqPath) {
   let requestUri = reqPath + location.search
-  window.history.pushState({}, "", requestUri);
-  loadFileList(requestUri)
+  var retObj = loadFileList(requestUri)
+  if(retObj !== null) {
+     retObj.done(function (value) {
+         window.history.pushState({}, "", requestUri);
+     });
+  }
+
 }
 
 function loadFileList(pathname) {
   var pathname = pathname || location.pathname + location.search;
-  // console.log("load filelist:", pathname)
+  var retObj = null
   if (getQueryString("raw") !== "false") { // not a file preview
-    let sep = pathname.indexOf("?") === -1 ? "?" : "&"
-    $.ajax({
+    var sep = pathname.indexOf("?") === -1 ? "?" : "&"
+    retObj = $.ajax({
       url: pathname + sep + "json=true",
       dataType: "json",
       cache: false,
@@ -361,22 +370,27 @@ function loadFileList(pathname) {
           var weight = f.type == 'dir' ? 1000 : 1;
           return -weight * f.mtime;
         })
-
         vm.files = res.files;
         vm.auth = res.auth;
       },
-      error: function (err) {
-        console.error(err)
+      error: function (jqXHR, textStatus, errorThrown) {
+          let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+          if(errMsg==null){
+              errMsg = jqXHR.statusText
+          }
+          alert(String(jqXHR.status).concat(":", errMsg));
+          console.error(errMsg)
       },
     });
 
   }
 
-  vm.updateBreadcrumb();
+  vm.updateBreadcrumb(pathname);
   vm.previewMode = getQueryString("raw") == "false";
   if (vm.previewMode) {
     vm.loadPreviewFile();
   }
+  return retObj
 }
 
 Vue.filter('fromNow', function (value) {

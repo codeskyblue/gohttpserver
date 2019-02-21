@@ -49,6 +49,19 @@
               </a>
             </template>
             [[end]]
+            [[if eq .AuthType "oauth2-proxy"]]
+            <template v-if="!user.email">
+                <a href="#" class="btn btn-sm btn-default navbar-btn">
+                    Guest <span class="glyphicon glyphicon-user"></span>
+                </a>
+            </template>
+            <template v-else>
+                <a href="/-/logout" class="btn btn-sm btn-default navbar-btn">
+                    <span v-text="user.name"></span>
+                    <i class="fa fa-sign-out"></i>
+                </a>
+            </template>
+            [[end]]
           </ul>
           <form class="navbar-form navbar-right">
             <div class="input-group">
@@ -132,6 +145,9 @@
                   <span class="hidden-xs">Archive</span> Zip
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>
+                <button class="btn btn-default btn-xs" v-on:click="showInfo(f)">
+                    <span class="glyphicon glyphicon-info-sign"></span>
+                </button>
                 <button class="btn btn-default btn-xs" v-if="auth.delete" v-on:click="deletePathConfirm(f, $event)">
                   <span style="color:#CC3300" class="glyphicon glyphicon-trash"></span>
                 </button>
