@@ -107,10 +107,8 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hGet(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("op") == "info" {
-		 fmt.Println("hGet op=info")
 		 s.hInfo(w, r)
 	}else {
-		fmt.Println("hGet op not equal info")
 		s.hIndex(w, r)
 	}
 	return
