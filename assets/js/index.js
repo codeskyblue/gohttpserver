@@ -235,7 +235,7 @@ var vm = new Vue({
       $.ajax({
         url: pathJoin(["/", location.pathname, f.name]),
         data: {
-            op: "info",
+          op: "info",
         },
         method: "GET",
         success: function (res) {
@@ -254,9 +254,6 @@ var vm = new Vue({
       }
       $.ajax({
         url: pathJoin(["/", location.pathname, "/", name]),
-        data: {
-          op: "mkdir",
-        },
         method: "POST",
         success: function (res) {
           console.log(res)
@@ -348,10 +345,10 @@ window.onpopstate = function (event) {
 function loadFileOrDir(reqPath) {
   let requestUri = reqPath + location.search
   var retObj = loadFileList(requestUri)
-  if(retObj !== null) {
-     retObj.done(function (value) {
-         window.history.pushState({}, "", requestUri);
-     });
+  if (retObj !== null) {
+    retObj.done(function () {
+      window.history.pushState({}, "", requestUri);
+    });
   }
 
 }
@@ -374,12 +371,12 @@ function loadFileList(pathname) {
         vm.auth = res.auth;
       },
       error: function (jqXHR, textStatus, errorThrown) {
-          let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-          if(errMsg==null){
-              errMsg = jqXHR.statusText
-          }
-          alert(String(jqXHR.status).concat(":", errMsg));
-          console.error(errMsg)
+        let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+        if (errMsg == null) {
+          errMsg = jqXHR.statusText
+        }
+        alert(String(jqXHR.status).concat(":", errMsg));
+        console.error(errMsg)
       },
     });
 

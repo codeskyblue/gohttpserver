@@ -1,15 +1,14 @@
 package main
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"net/url"
 )
 
 func handleOauth2() {
-
 	http.HandleFunc("/-/user", func(w http.ResponseWriter, r *http.Request) {
-		fullNameMap, _:= url.ParseQuery(r.Header.Get("X-Auth-Request-Fullname"))
+		fullNameMap, _ := url.ParseQuery(r.Header.Get("X-Auth-Request-Fullname"))
 		var fullName string
 		for k := range fullNameMap {
 			fullName = k
@@ -25,5 +24,4 @@ func handleOauth2() {
 		data, _ := json.Marshal(user)
 		w.Write(data)
 	})
-
 }
