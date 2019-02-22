@@ -21,6 +21,12 @@ function getQueryString(name) {
   return null;
 }
 
+function checkPathnameLegal(name) {
+    var reg = new RegExp("[\\/:*<>|]");
+    var r = name.match(reg)
+    return r == null;
+}
+
 var vm = new Vue({
   el: "#app",
   data: {
@@ -243,17 +249,26 @@ var vm = new Vue({
           $("#file-info-content").text(JSON.stringify(res, null, 4));
           $("#file-info-modal").modal("show");
           // console.log(JSON.stringify(res, null, 4));
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+            let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+            if (errMsg == null) {
+                errMsg = jqXHR.statusText
+            }
+            alert(String(jqXHR.status).concat(":", errMsg));
+            console.error(errMsg)
         }
       })
     },
     makeDirectory: function () {
       var name = window.prompt("Directory name?")
       console.log(name)
-      if (!name) {
+      if (!name || !checkPathnameLegal(name)) {
+        alert("Name should not be empty or contains any of \\/:*<>|")
         return
       }
       $.ajax({
-        url: pathJoin(["/", location.pathname, "/", name]),
+        url: pathJoin(["/", location.pathname, name]),
         data: {
           op: "mkdir",
         },
@@ -262,15 +277,19 @@ var vm = new Vue({
           console.log(res)
           loadFileList()
         },
-        error: function (err) {
-          alert(err.responseText);
+        error: function (jqXHR, textStatus, errorThrown) {
+          let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+          if (errMsg == null) {
+              errMsg = jqXHR.statusText
+          }
+          alert(String(jqXHR.status).concat(":", errMsg));
         }
       })
     },
     deletePathConfirm: function (f, e) {
       e.preventDefault();
       if (!e.altKey) { // skip confirm when alt pressed
-        if (!window.confirm("Delete " + f.name + " ?")) {
+        if (!window.confirm("Delete " + location.pathname + "/" + f.name + " ?")) {
           return;
         }
       }
@@ -280,8 +299,12 @@ var vm = new Vue({
         success: function (res) {
           loadFileList()
         },
-        error: function (err) {
-          alert(err.responseText);
+        error: function (jqXHR, textStatus, errorThrown) {
+            let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+            if (errMsg == null) {
+                errMsg = jqXHR.statusText
+            }
+            alert(String(jqXHR.status).concat(":", errMsg));
         }
       });
     },
@@ -375,7 +398,7 @@ function loadFileList(pathname) {
       },
       error: function (jqXHR, textStatus, errorThrown) {
           let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-          if(errMsg==null){
+          if(errMsg == null){
               errMsg = jqXHR.statusText
           }
           alert(String(jqXHR.status).concat(":", errMsg));
