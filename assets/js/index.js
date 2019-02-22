@@ -261,7 +261,7 @@ var vm = new Vue({
       })
     },
     makeDirectory: function () {
-      var name = window.prompt("Directory name?")
+      var name = window.prompt(location.pathname + " Directory name?")
       console.log(name)
       if (!name || !checkPathnameLegal(name)) {
         alert("Name should not be empty or contains any of \\/:*<>|")
