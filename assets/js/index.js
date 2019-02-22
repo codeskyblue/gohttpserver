@@ -292,7 +292,7 @@ var vm = new Vue({
     deletePathConfirm: function (f, e) {
       e.preventDefault();
       if (!e.altKey) { // skip confirm when alt pressed
-        if (!window.confirm("Delete " + location.pathname + f.name + " ?")) {
+        if (!window.confirm("Delete " + location.pathname + "/" + f.name + " ?")) {
           return;
         }
       }
