@@ -21,11 +21,21 @@ function getQueryString(name) {
   return null;
 }
 
-function checkPathnameLegal(name) {
+function checkPathNameLegal(name) {
   var reg = new RegExp("[\\/:*<>|]");
   var r = name.match(reg)
   return r == null;
 }
+
+function showErrorMessage(jqXHR) {
+  let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+  if (errMsg == null) {
+      errMsg = jqXHR.responseText
+  }
+  alert(String(jqXHR.status).concat(":", errMsg));
+  console.error(errMsg)
+}
+
 
 var vm = new Vue({
   el: "#app",
@@ -251,12 +261,7 @@ var vm = new Vue({
           // console.log(JSON.stringify(res, null, 4));
         },
         error: function (jqXHR, textStatus, errorThrown) {
-          let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-          if (errMsg == null) {
-              errMsg = jqXHR.statusText
-          }
-          alert(String(jqXHR.status).concat(":", errMsg));
-          console.error(errMsg)
+          showErrorMessage(jqXHR)
         }
       })
     },
@@ -266,7 +271,7 @@ var vm = new Vue({
       if (!name) {
         return
       }
-      if(!checkPathnameLegal(name)) {
+      if(!checkPathNameLegal(name)) {
         alert("Name should not contains any of \\/:*<>|")
         return
       }
@@ -281,11 +286,7 @@ var vm = new Vue({
           loadFileList()
         },
         error: function (jqXHR, textStatus, errorThrown) {
-          let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-          if (errMsg == null) {
-              errMsg = jqXHR.responseText
-          }
-          alert(String(jqXHR.status).concat(":", errMsg));
+          showErrorMessage(jqXHR)
         }
       })
     },
@@ -303,11 +304,7 @@ var vm = new Vue({
           loadFileList()
         },
         error: function (jqXHR, textStatus, errorThrown) {
-          let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-          if (errMsg == null) {
-              errMsg = jqXHR.responseText
-          }
-          alert(String(jqXHR.status).concat(":", errMsg));
+          showErrorMessage(jqXHR)
         }
       });
     },
@@ -376,7 +373,7 @@ function loadFileOrDir(reqPath) {
   var retObj = loadFileList(requestUri)
   if(retObj !== null) {
      retObj.done(function (value) {
-         window.history.pushState({}, "", requestUri);
+       window.history.pushState({}, "", requestUri);
      });
   }
 
@@ -401,12 +398,7 @@ function loadFileList(pathname) {
         vm.updateBreadcrumb(pathname);
       },
       error: function (jqXHR, textStatus, errorThrown) {
-        let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-        if(errMsg == null){
-            errMsg = jqXHR.responseText
-        }
-        alert(String(jqXHR.status).concat(":", errMsg));
-        console.error(errMsg)
+        showErrorMessage(jqXHR)
       },
     });
 
