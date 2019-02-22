@@ -261,7 +261,7 @@ var vm = new Vue({
       })
     },
     makeDirectory: function () {
-      var name = window.prompt(location.pathname + " Directory name?")
+      var name = window.prompt("current path: " + location.pathname + "\nplease enter the new Directory name", "")
       console.log(name)
       if (!name || !checkPathnameLegal(name)) {
         alert("Name should not be empty or contains any of \\/:*<>|")
@@ -280,7 +280,7 @@ var vm = new Vue({
         error: function (jqXHR, textStatus, errorThrown) {
           let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
           if (errMsg == null) {
-              errMsg = jqXHR.statusText
+              errMsg = jqXHR.responseText
           }
           alert(String(jqXHR.status).concat(":", errMsg));
         }
@@ -289,7 +289,7 @@ var vm = new Vue({
     deletePathConfirm: function (f, e) {
       e.preventDefault();
       if (!e.altKey) { // skip confirm when alt pressed
-        if (!window.confirm("Delete " + location.pathname + "/" + f.name + " ?")) {
+        if (!window.confirm("Delete " + location.pathname + f.name + " ?")) {
           return;
         }
       }
@@ -302,7 +302,7 @@ var vm = new Vue({
         error: function (jqXHR, textStatus, errorThrown) {
             let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
             if (errMsg == null) {
-                errMsg = jqXHR.statusText
+                errMsg = jqXHR.responseText
             }
             alert(String(jqXHR.status).concat(":", errMsg));
         }
@@ -395,11 +395,12 @@ function loadFileList(pathname) {
         })
         vm.files = res.files;
         vm.auth = res.auth;
+        vm.updateBreadcrumb(pathname);
       },
       error: function (jqXHR, textStatus, errorThrown) {
           let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
           if(errMsg == null){
-              errMsg = jqXHR.statusText
+              errMsg = jqXHR.responseText
           }
           alert(String(jqXHR.status).concat(":", errMsg));
           console.error(errMsg)
@@ -408,7 +409,6 @@ function loadFileList(pathname) {
 
   }
 
-  vm.updateBreadcrumb(pathname);
   vm.previewMode = getQueryString("raw") == "false";
   if (vm.previewMode) {
     vm.loadPreviewFile();

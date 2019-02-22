@@ -83,17 +83,12 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		}
 	}()
 
-	m.HandleFunc("/-/status", s.hStatus) //unused
-	m.HandleFunc("/-/zip/{path:.*}", s.hZip) //unused
-	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip) //unused
-	m.HandleFunc("/-/json/{path:.*}", s.hJSONList) //unused
 	// routers for Apple *.ipa
-	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist) //unused
-	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink) //unused
+	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
+	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 
 	// TODO: /ipa/info
-	m.HandleFunc("/-/info/{path:.*}", s.hInfo) //unused
-	m.HandleFunc("/-/mkdir/{path:.*}", s.hMkdir) //unused
+
 
 	m.HandleFunc("/{path:.*}", s.hGet).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hPOST).Methods("POST")
@@ -106,10 +101,13 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *HTTPStaticServer) hGet(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("op") == "info" {
-		 s.hInfo(w, r)
-	}else {
-		s.hIndex(w, r)
+	switch r.FormValue("op") {
+		case "info":
+			s.hInfo(w, r)
+		case "archive":
+			s.hZip(w, r)
+		default:
+			s.hIndex(w, r)
 	}
 	return
 }
@@ -157,12 +155,6 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
-	data, _ := json.MarshalIndent(s, "", "    ")
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
-}
-
 func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
 	path := filepath.Dir(mux.Vars(req)["path"])
 	auth := s.readAccessConf(path)
@@ -193,9 +185,15 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Delete forbidden", http.StatusForbidden)
 		return
 	}
+
 	err := os.Remove(filepath.Join(s.Root, path))
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		pathErr, ok:= err.(*os.PathError)
+		if ok{
+			http.Error(w, pathErr.Op + " " + path + ": " + pathErr.Err.Error(), 500)
+		} else {
+			http.Error(w, err.Error(), 500)
+		}
 		return
 	}
 	w.Write([]byte("Success"))
