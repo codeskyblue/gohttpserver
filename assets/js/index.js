@@ -251,7 +251,7 @@ var vm = new Vue({
       $.ajax({
         url: pathJoin(["/", location.pathname, f.name]),
         data: {
-            op: "info",
+          op: "info",
         },
         method: "GET",
         success: function (res) {
@@ -276,10 +276,7 @@ var vm = new Vue({
         return
       }
       $.ajax({
-        url: pathJoin(["/", location.pathname, name]),
-        data: {
-          op: "mkdir",
-        },
+        url: pathJoin(["/", location.pathname, "/", name]),
         method: "POST",
         success: function (res) {
           console.log(res)
@@ -371,10 +368,10 @@ window.onpopstate = function (event) {
 function loadFileOrDir(reqPath) {
   let requestUri = reqPath + location.search
   var retObj = loadFileList(requestUri)
-  if(retObj !== null) {
-     retObj.done(function (value) {
-       window.history.pushState({}, "", requestUri);
-     });
+  if (retObj !== null) {
+    retObj.done(function () {
+      window.history.pushState({}, "", requestUri);
+    });
   }
 
 }

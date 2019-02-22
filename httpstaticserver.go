@@ -87,12 +87,9 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 
-	// TODO: /ipa/info
-
-
-	m.HandleFunc("/{path:.*}", s.hGet).Methods("GET", "HEAD")
-	m.HandleFunc("/{path:.*}", s.hPOST).Methods("POST")
-	m.HandleFunc("/{path:.*}", s.hDELETE).Methods("DELETE")
+	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
+	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
+	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
 	return s
 }
 
@@ -100,37 +97,21 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.m.ServeHTTP(w, r)
 }
 
-func (s *HTTPStaticServer) hGet(w http.ResponseWriter, r *http.Request) {
-	switch r.FormValue("op") {
-		case "info":
-			s.hInfo(w, r)
-		case "archive":
-			s.hZip(w, r)
-		default:
-			s.hIndex(w, r)
-	}
-	return
-}
-
-func (s *HTTPStaticServer) hPOST(w http.ResponseWriter, r *http.Request) {
-	if r.FormValue("op") == "mkdir" {
-		s.hMkdir(w, r)
-	}else {
-		s.hUpload(w, r)
-	}
-	return
-}
-
-func (s *HTTPStaticServer) hDELETE(w http.ResponseWriter, r *http.Request) {
-	s.hDelete(w, r)
-	return
-}
-
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
 	if r.FormValue("json") == "true" {
 		s.hJSONList(w, r)
+		return
+	}
+
+	if r.FormValue("op") == "info" {
+		s.hInfo(w, r)
+		return
+	}
+
+	if r.FormValue("op") == "archive" {
+		s.hZip(w, r)
 		return
 	}
 
@@ -180,7 +161,6 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	// only can delete file now
 	path := mux.Vars(req)["path"]
 	auth := s.readAccessConf(path)
-	log.Printf("%#v", auth)
 	if !auth.canDelete(req) {
 		http.Error(w, "Delete forbidden", http.StatusForbidden)
 		return
@@ -188,7 +168,7 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 
 	err := os.Remove(filepath.Join(s.Root, path))
 	if err != nil {
-		pathErr, ok:= err.(*os.PathError)
+		pathErr, ok := err.(*os.PathError)
 		if ok{
 			http.Error(w, pathErr.Op + " " + path + ": " + pathErr.Err.Error(), 500)
 		} else {
@@ -199,7 +179,7 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Success"))
 }
 
-func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
+func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Request) {
 	path := mux.Vars(req)["path"]
 	dirpath := filepath.Join(s.Root, path)
 
@@ -218,14 +198,15 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, "Directory create "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if file == nil {
-			w.Header().Set("Content-Type", "application/json;charset=utf-8")
-			json.NewEncoder(w).Encode(map[string]interface{}{
-				"success":     true,
-				"destination": dirpath,
-			})
-			return
-		}
+	}
+
+	if file == nil { // only mkdir
+		w.Header().Set("Content-Type", "application/json;charset=utf-8")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":     true,
+			"destination": dirpath,
+		})
+		return
 	}
 
 	if err != nil {
@@ -335,7 +316,7 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 		fji.Type = "apk"
 		fji.Extra = parseApkInfo(relPath)
 	case "":
-		fji.Type = "Dir"
+		fji.Type = "dir"
 	default:
 		fji.Type = "text"
 	}
