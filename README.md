@@ -98,6 +98,13 @@ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
   --auth-type openid
 ```
 
+To build image yourself, please change the PWD to the root of this repo.
+
+```bash
+cd gohttpserver/
+docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
+```
+
 ## Authentication options
 - Enable basic http authentication
 
@@ -111,11 +118,23 @@ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
   $ gohttpserver --auth-type openid --auth-openid https://login.example-hostname.com/openid/
   ```
 
-- Use oauth2 with (TODO: need more details)
+- Use oauth2-proxy with
 
   ```sh
   $ gohttpserver --auth-type oauth2-proxy
   ```
+  You can configure to let a http reverse proxy handling authentication. 
+  When using oauth2-proxy, the backend will use identification info from request headers `X-Auth-Request-Email` as userId and `X-Auth-Request-Fullname` as user's display name. 
+  Please config your oauth2 reverse proxy yourself.
+  More about [oauth2-proxy](https://github.com/bitly/oauth2_proxy).
+  
+  All required headers list as following.
+
+  |header|value|
+  |---|---|
+  |X-Auth-Request-Email| userId |
+  |X-Auth-Request-Fullname| user's display name(urlencoded) |
+  |X-Auth-Request-User| user's nickname (mostly email prefix) |
 
 - Enable upload
 

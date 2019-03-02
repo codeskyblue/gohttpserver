@@ -21,6 +21,22 @@ function getQueryString(name) {
   return null;
 }
 
+function checkPathNameLegal(name) {
+  var reg = new RegExp("[\\/:*<>|]");
+  var r = name.match(reg)
+  return r == null;
+}
+
+function showErrorMessage(jqXHR) {
+  let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
+  if (errMsg == null) {
+      errMsg = jqXHR.responseText
+  }
+  alert(String(jqXHR.status).concat(":", errMsg));
+  console.error(errMsg)
+}
+
+
 var vm = new Vue({
   el: "#app",
   data: {
@@ -243,13 +259,20 @@ var vm = new Vue({
           $("#file-info-content").text(JSON.stringify(res, null, 4));
           $("#file-info-modal").modal("show");
           // console.log(JSON.stringify(res, null, 4));
+        },
+        error: function (jqXHR, textStatus, errorThrown) {
+          showErrorMessage(jqXHR)
         }
       })
     },
     makeDirectory: function () {
-      var name = window.prompt("Directory name?")
+      var name = window.prompt("current path: " + location.pathname + "\nplease enter the new directory name", "")
       console.log(name)
       if (!name) {
+        return
+      }
+      if(!checkPathNameLegal(name)) {
+        alert("Name should not contains any of \\/:*<>|")
         return
       }
       $.ajax({
@@ -259,15 +282,15 @@ var vm = new Vue({
           console.log(res)
           loadFileList()
         },
-        error: function (err) {
-          alert(err.responseText);
+        error: function (jqXHR, textStatus, errorThrown) {
+          showErrorMessage(jqXHR)
         }
       })
     },
     deletePathConfirm: function (f, e) {
       e.preventDefault();
       if (!e.altKey) { // skip confirm when alt pressed
-        if (!window.confirm("Delete " + f.name + " ?")) {
+        if (!window.confirm("Delete " + location.pathname + "/" + f.name + " ?")) {
           return;
         }
       }
@@ -277,8 +300,8 @@ var vm = new Vue({
         success: function (res) {
           loadFileList()
         },
-        error: function (err) {
-          alert(err.responseText);
+        error: function (jqXHR, textStatus, errorThrown) {
+          showErrorMessage(jqXHR)
         }
       });
     },
@@ -369,20 +392,15 @@ function loadFileList(pathname) {
         })
         vm.files = res.files;
         vm.auth = res.auth;
+        vm.updateBreadcrumb(pathname);
       },
       error: function (jqXHR, textStatus, errorThrown) {
-        let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
-        if (errMsg == null) {
-          errMsg = jqXHR.statusText
-        }
-        alert(String(jqXHR.status).concat(":", errMsg));
-        console.error(errMsg)
+        showErrorMessage(jqXHR)
       },
     });
 
   }
 
-  vm.updateBreadcrumb(pathname);
   vm.previewMode = getQueryString("raw") == "false";
   if (vm.previewMode) {
     vm.loadPreviewFile();

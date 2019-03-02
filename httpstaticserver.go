@@ -83,17 +83,9 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		}
 	}()
 
-	m.HandleFunc("/-/status", s.hStatus) //unused
-	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
-	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
-	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
-
-	// TODO: /ipa/info
-	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
-	m.HandleFunc("/-/mkdir/{path:.*}", s.hMkdir)
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
@@ -118,6 +110,11 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.FormValue("op") == "archive" {
+		s.hZip(w, r)
+		return
+	}
+
 	log.Println("GET", path, relPath)
 	if r.FormValue("raw") == "false" || isDir(relPath) {
 		if r.Method == "HEAD" {
@@ -137,12 +134,6 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		}
 		http.ServeFile(w, r, relPath)
 	}
-}
-
-func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
-	data, _ := json.MarshalIndent(s, "", "    ")
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
 }
 
 func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
@@ -174,9 +165,15 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Delete forbidden", http.StatusForbidden)
 		return
 	}
+
 	err := os.Remove(filepath.Join(s.Root, path))
 	if err != nil {
-		http.Error(w, err.Error(), 500)
+		pathErr, ok := err.(*os.PathError)
+		if ok{
+			http.Error(w, pathErr.Op + " " + path + ": " + pathErr.Err.Error(), 500)
+		} else {
+			http.Error(w, err.Error(), 500)
+		}
 		return
 	}
 	w.Write([]byte("Success"))
