@@ -128,7 +128,7 @@
         <tbody>
           <tr v-for="f in computedFiles">
             <td>
-              <a v-on:click='clickFileOrDir(f, $event)' href="{{getEncodePath(f)}}>
+              <a v-on:click='clickFileOrDir(f, $event)' href="{{getEncodePath(f)}}">
                 <!-- ?raw=false -->
                 <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
               </a>
