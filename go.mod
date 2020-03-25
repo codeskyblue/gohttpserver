@@ -1,5 +1,7 @@
 module github.com/codeskyblue/gohttpserver
 
+go 1.14
+
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc
