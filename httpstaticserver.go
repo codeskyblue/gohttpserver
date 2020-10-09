@@ -169,8 +169,8 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	err := os.Remove(filepath.Join(s.Root, path))
 	if err != nil {
 		pathErr, ok := err.(*os.PathError)
-		if ok{
-			http.Error(w, pathErr.Op + " " + path + ": " + pathErr.Err.Error(), 500)
+		if ok {
+			http.Error(w, pathErr.Op+" "+path+": "+pathErr.Err.Error(), 500)
 		} else {
 			http.Error(w, err.Error(), 500)
 		}
@@ -229,14 +229,26 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 	}
 
 	dstPath := filepath.Join(dirpath, filename)
-	dst, err := os.Create(dstPath)
-	if err != nil {
-		log.Println("Create file:", err)
-		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
-		return
+
+	// Large file (>32MB) will store in tmp directory
+	// The quickest operation is call os.Move instead of os.Copy
+	var copyErr error
+	if osFile, ok := file.(*os.File); ok && fileExists(osFile.Name()) {
+		tmpUploadPath := osFile.Name()
+		osFile.Close() // Windows can not rename opened file
+		log.Printf("Move %s -> %s", tmpUploadPath, dstPath)
+		copyErr = os.Rename(tmpUploadPath, dstPath)
+	} else {
+		dst, err := os.Create(dstPath)
+		if err != nil {
+			log.Println("Create file:", err)
+			http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, copyErr = io.Copy(dst, file)
+		dst.Close()
 	}
-	defer dst.Close()
-	if _, err := io.Copy(dst, file); err != nil {
+	if copyErr != nil {
 		log.Println("Handle upload file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -246,7 +258,6 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 
 	if req.FormValue("unzip") == "true" {
 		err = unzipFile(dstPath, dirpath)
-		dst.Close()
 		os.Remove(dstPath)
 		message := "success"
 		if err != nil {
