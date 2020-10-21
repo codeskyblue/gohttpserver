@@ -237,7 +237,7 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 		tmpUploadPath := osFile.Name()
 		osFile.Close() // Windows can not rename opened file
 		log.Printf("Move %s -> %s", tmpUploadPath, dstPath)
-		copyErr = os.Rename(tmpUploadPath, dstPath)
+		copyErr = MoveFile(tmpUploadPath, dstPath)
 	} else {
 		dst, err := os.Create(dstPath)
 		if err != nil {
@@ -249,8 +249,8 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 		dst.Close()
 	}
 	if copyErr != nil {
-		log.Println("Handle upload file:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Println("Handle upload file:", copyErr)
+		http.Error(w, copyErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
