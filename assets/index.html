@@ -85,6 +85,10 @@
       <ol class="breadcrumb">
         <li>
           <a v-on:click='changePath("/", $event)' href="/"><i class="fa fa-home"></i></a>
+          <a class="btn btn-default btn-xs" href="/?op=archive">
+            <span class="hidden-xs">Archive </span> Root
+            <span class="glyphicon glyphicon-download-alt"></span>
+          </a>
         </li>
         <li v-for="bc in breadcrumb.slice(0, breadcrumb.length-1)">
           <a v-on:click='changePath(bc.path, $event)' href="{{bc.path}}">{{bc.name}}</a>
