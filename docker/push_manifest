@@ -1,0 +1,24 @@
+#!/bin/bash
+#
+
+# push manifest
+if [[ ! -d $HOME/.docker ]]
+then
+    mkdir $HOME/.docker
+fi
+
+set -ex
+
+sed -i '/experimental/d' $HOME/.docker/config.json
+sed -i '1a"experimental": "enabled",' $HOME/.docker/config.json
+docker manifest create codeskyblue/gohttpserver \
+  codeskyblue/gohttpserver:latest \
+  codeskyblue/gohttpserver:armhf
+docker manifest annotate codeskyblue/gohttpserver \
+  codeskyblue/gohttpserver:latest --os linux --arch amd64
+docker manifest annotate codeskyblue/gohttpserver \
+  codeskyblue/gohttpserver:armhf --os linux --arch arm --variant v7
+docker manifest push codeskyblue/gohttpserver
+
+# check again
+docker run mplatform/mquery codeskyblue/gohttpserver

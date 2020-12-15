@@ -1,5 +1,6 @@
 # gohttpserver
 [![Build Status](https://travis-ci.org/codeskyblue/gohttpserver.svg?branch=master)](https://travis-ci.org/codeskyblue/gohttpserver)
+[![](https://images.microbadger.com/badges/image/codeskyblue/gohttpserver.svg)](https://microbadger.com/images/codeskyblue/gohttpserver "Get your own image badge on microbadger.com")
 
 - Goal: Make the best HTTP File Server.
 - Features: Human-friendly UI, file uploading support, direct QR-code generation for Apple & Android install package.
@@ -11,8 +12,8 @@
 
 **Binaries** can be downloaded from [this repo releases](https://github.com/codeskyblue/gohttpserver/releases/)
 
-## Notes
-If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
+## Requirements
+Tested with go-1.10, go-1.11
 
 ## Screenshots
 ![screen](testdata/filetypes/gohttpserver.gif)
@@ -23,7 +24,7 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
 1. [x] Support show or hide hidden files
-1. [x] Upload support (for security reason, you need enabled it by option `--upload`)
+1. [x] Upload support (auth by token or session)
 1. [x] README.md preview
 1. [x] HTTP Basic Auth
 1. [x] Partial reload pages when directory change
@@ -52,6 +53,9 @@ If using go1.5, ensure you set GO15VENDOREXPERIMENT=1
 1. [x] Support setting from conf file
 1. [x] Quick copy download link
 1. [x] Show folder size
+1. [x] Create folder
+1. [x] Skip delete confirm when alt pressed
+1. [x] Support unzip zip file when upload(with form: unzip=true)
 
 ## Installation
 ```
@@ -60,21 +64,45 @@ cd $GOPATH/src/github.com/codeskyblue/gohttpserver
 go build && ./gohttpserver
 ```
 
-## Docker Usage
-share current directory
-```bash
-docker run -it -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
-```
-share current directory with http oauth
-```bash
-docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver ./gohttpserver --root /app/public --auth-type http --auth-http username:password
-```
+Or download binaries from [github releases](https://github.com/codeskyblue/gohttpserver/releases)
 
 ## Usage
 Listen on port 8000 of all interfaces, and enable file uploading.
 
 ```
-./gohttpserver -r ./ --addr :8000 --upload
+./gohttpserver -r ./ --port 8000 --upload
+```
+
+Use command `gohttpserver --help` to see more usage.
+
+## Docker Usage
+share current directory
+
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
+```
+
+Share current directory with http basic auth
+
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
+  codeskyblue/gohttpserver \
+  --auth-type http --auth-http username:password
+```
+
+Share current directory with openid auth. (Works only in netease company.)
+
+```bash
+docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
+  codeskyblue/gohttpserver \
+  --auth-type openid
+```
+
+To build image yourself, please change the PWD to the root of this repo.
+
+```bash
+cd gohttpserver/
+docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
 ```
 
 ## Authentication options
@@ -90,7 +118,35 @@ Listen on port 8000 of all interfaces, and enable file uploading.
   $ gohttpserver --auth-type openid --auth-openid https://login.example-hostname.com/openid/
   ```
 
-  The openid returns url using "http" instead of "https", but I am not planing to fix this currently.
+- Use oauth2-proxy with
+
+  ```sh
+  $ gohttpserver --auth-type oauth2-proxy
+  ```
+  You can configure to let a http reverse proxy handling authentication. 
+  When using oauth2-proxy, the backend will use identification info from request headers `X-Auth-Request-Email` as userId and `X-Auth-Request-Fullname` as user's display name. 
+  Please config your oauth2 reverse proxy yourself.
+  More about [oauth2-proxy](https://github.com/bitly/oauth2_proxy).
+  
+  All required headers list as following.
+
+  |header|value|
+  |---|---|
+  |X-Auth-Request-Email| userId |
+  |X-Auth-Request-Fullname| user's display name(urlencoded) |
+  |X-Auth-Request-User| user's nickname (mostly email prefix) |
+
+- Enable upload
+
+  ```sh
+  $ gohttpserver --upload
+  ```
+
+- Enable delete and Create folder
+
+  ```sh
+  $ gohttpserver --delete
+  ```
 
 ## Advanced usage
 Add access rule by creating a `.ghs.yml` file under a sub-directory. An example:
@@ -103,9 +159,12 @@ users:
 - email: "codeskyblue@codeskyblue.com"
   delete: true
   upload: true
+  token: 4567gf8asydhf293r23r
 ```
 
 In this case, if openid auth is enabled and user "codeskyblue@codeskyblue.com" has logged in, he/she can delete/upload files under the directory where the `.ghs.yml` file exits.
+
+`token` is used for upload. see [upload with curl](#upload-with-curl)
 
 For example, in the following directory hierarchy, users can delete/uploade files in directory `foo`, but he/she cannot do this in directory `bar`.
 
@@ -140,20 +199,64 @@ This is used for server on which https is enabled. default use <https://plistpro
 Test if proxy works:
 
 ```sh
-$ http POST https://proxyhost.com/plist < app.plist
+$ http POST https://someproxyhost.com/plist < app.plist
 {
 	"key": "18f99211"
 }
-$ http GET https://proxyhost.com/plist/18f99211
+$ http GET https://someproxyhost.com/plist/18f99211
 # show the app.plist content
 ```
+
+If your ghs running behide nginx server and have https configed. plistproxy will be disabled automaticly.
 
 ### Upload with CURL
 For example, upload a file named `foo.txt` to directory `somedir`
 
 ```sh
 $ curl -F file=@foo.txt localhost:8000/somedir
+{"destination":"somedir/foo.txt","success":true}
+# upload with token
+$ curl -F file=@foo.txt -F token=12312jlkjafs localhost:8000/somedir
+{"destination":"somedir/foo.txt","success":true}
+
+# upload and change filename
+$ curl -F file=@foo.txt -F filename=hi.txt localhost:8000/somedir
+{"destination":"somedir/hi.txt","success":true}
 ```
+
+Upload zip file and unzip it (zip file will be delete when finished unzip)
+
+```
+$ curl -F file=@pkg.zip -F unzip=true localhost:8000/somedir
+{"success": true}
+```
+
+Note: `\/:*<>|` are not allowed in filenames.
+
+### Deploy with nginx
+Recommended configuration, assume your gohttpserver listening on `127.0.0.1:8200`
+
+```
+server {
+  listen 80;
+  server_name your-domain-name.com;
+
+  location / {
+    proxy_pass http://127.0.0.1:8200; # here need to change
+    proxy_redirect off;
+    proxy_set_header  Host    $host;
+    proxy_set_header  X-Real-IP $remote_addr;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Proto $scheme;
+
+    client_max_body_size 0; # disable upload limit
+  }
+}
+```
+
+gohttpserver should started with `--xheaders` argument when behide nginx.
+
+Refs: <http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size>
 
 ## FAQ
 - [How to generate self signed certificate with openssl](http://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl)
@@ -165,21 +268,23 @@ The search query follows common format rules just like Google. Keywords are sepe
 1. `hello -world` means must contains `hello` but not contains `world`
 
 ## Developer Guide
-Depdencies are managed by godep
+Depdencies are managed by [govendor](https://github.com/kardianos/govendor)
 
-```sh
-go get -v github.com/tools/godep
-go get github.com/jteeuwen/go-bindata/...
-go get github.com/elazarl/go-bindata-assetfs/...
-```
+1. Build develop version. **assets** directory must exists
 
-Theme are all defined in [res/themes](res/themes) directory. Now only two themes are available, "black" and "green".
+  ```sh
+  go build
+  ./gohttpserver
+  ```
+2. Build single binary release
 
-## How to build single binary release
-```sh
-go-bindata-assetfs -tags bindata res/...
-go build -tags bindata
-```
+  ```sh
+  go generate .
+  go build -tags vfs
+  ```
+
+Theme are defined in [assets/themes](assets/themes) directory. Now only two themes are available, "black" and "green".
+
 
 ## Reference Web sites
 
@@ -195,7 +300,8 @@ go build -tags bindata
 
 **Go Libraries**
 
-* <https://github.com/elazarl/go-bindata-assetfs>
+* [vfsgen](https://github.com/shurcooL/vfsgen)
+* [go-bindata-assetfs](https://github.com/elazarl/go-bindata-assetfs) Not using now
 * <http://www.gorillatoolkit.org/pkg/handlers>
 
 ## History

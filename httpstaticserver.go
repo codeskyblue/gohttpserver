@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"html/template"
 	"io"
 	"io/ioutil"
 	"log"
@@ -21,6 +24,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
 )
+
+const YAMLCONF = ".ghs.yml"
 
 type ApkInfo struct {
 	PackageName  string `json:"packageName"`
@@ -43,7 +48,7 @@ type HTTPStaticServer struct {
 	Title           string
 	Theme           string
 	PlistProxy      string
-	GoogleTrackerId string
+	GoogleTrackerID string
 	AuthType        string
 
 	indexes []IndexFileItem
@@ -78,19 +83,12 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		}
 	}()
 
-	m.HandleFunc("/-/status", s.hStatus)
-	m.HandleFunc("/-/zip/{path:.*}", s.hZip)
-	m.HandleFunc("/-/unzip/{zip_path:.*}/-/{path:.*}", s.hUnzip)
-	m.HandleFunc("/-/json/{path:.*}", s.hJSONList)
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 
-	// TODO: /ipa/info
-	m.HandleFunc("/-/info/{path:.*}", s.hInfo)
-
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
-	m.HandleFunc("/{path:.*}", s.hUpload).Methods("POST")
+	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
 	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
 	return s
 }
@@ -102,13 +100,35 @@ func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
+	if r.FormValue("json") == "true" {
+		s.hJSONList(w, r)
+		return
+	}
 
+	if r.FormValue("op") == "info" {
+		s.hInfo(w, r)
+		return
+	}
+
+	if r.FormValue("op") == "archive" {
+		s.hZip(w, r)
+		return
+	}
+
+	log.Println("GET", path, relPath)
 	if r.FormValue("raw") == "false" || isDir(relPath) {
 		if r.Method == "HEAD" {
 			return
 		}
-		tmpl.ExecuteTemplate(w, "index", s)
+		renderHTML(w, "index.html", s)
 	} else {
+		if filepath.Base(path) == YAMLCONF {
+			auth := s.readAccessConf(path)
+			if !auth.Delete {
+				http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
+				return
+			}
+		}
 		if r.FormValue("download") == "true" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
 		}
@@ -116,22 +136,20 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *HTTPStaticServer) hStatus(w http.ResponseWriter, r *http.Request) {
-	data, _ := json.MarshalIndent(s, "", "    ")
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(data)
-}
-
-func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
-	// only can delete file now
-	path := mux.Vars(req)["path"]
+func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
+	path := filepath.Dir(mux.Vars(req)["path"])
 	auth := s.readAccessConf(path)
-	log.Printf("%#v", auth)
 	if !auth.canDelete(req) {
-		http.Error(w, "Delete forbidden", http.StatusForbidden)
+		http.Error(w, "Mkdir forbidden", http.StatusForbidden)
 		return
 	}
-	err := os.Remove(filepath.Join(s.Root, path))
+
+	name := filepath.Base(mux.Vars(req)["path"])
+	if err := checkFilename(name); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
+		return
+	}
+	err := os.Mkdir(filepath.Join(s.Root, path, name), 0755)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -139,7 +157,29 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Success"))
 }
 
-func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
+func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
+	// only can delete file now
+	path := mux.Vars(req)["path"]
+	auth := s.readAccessConf(path)
+	if !auth.canDelete(req) {
+		http.Error(w, "Delete forbidden", http.StatusForbidden)
+		return
+	}
+
+	err := os.Remove(filepath.Join(s.Root, path))
+	if err != nil {
+		pathErr, ok := err.(*os.PathError)
+		if ok {
+			http.Error(w, pathErr.Op+" "+path+": "+pathErr.Err.Error(), 500)
+		} else {
+			http.Error(w, err.Error(), 500)
+		}
+		return
+	}
+	w.Write([]byte("Success"))
+}
+
+func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Request) {
 	path := mux.Vars(req)["path"]
 	dirpath := filepath.Join(s.Root, path)
 
@@ -151,6 +191,24 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 	}
 
 	file, header, err := req.FormFile("file")
+
+	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
+		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
+			log.Println("Create directory:", err)
+			http.Error(w, "Directory create "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if file == nil { // only mkdir
+		w.Header().Set("Content-Type", "application/json;charset=utf-8")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":     true,
+			"destination": dirpath,
+		})
+		return
+	}
+
 	if err != nil {
 		log.Println("Parse form file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -160,20 +218,58 @@ func (s *HTTPStaticServer) hUpload(w http.ResponseWriter, req *http.Request) {
 		file.Close()
 		req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
 	}()
-	dstPath := filepath.Join(dirpath, header.Filename)
-	dst, err := os.Create(dstPath)
-	if err != nil {
-		log.Println("Create file:", err)
-		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
+
+	filename := req.FormValue("filename")
+	if filename == "" {
+		filename = header.Filename
+	}
+	if err := checkFilename(filename); err != nil {
+		http.Error(w, err.Error(), http.StatusForbidden)
 		return
 	}
-	defer dst.Close()
-	if _, err := io.Copy(dst, file); err != nil {
+
+	dstPath := filepath.Join(dirpath, filename)
+
+	// Large file (>32MB) will store in tmp directory
+	// The quickest operation is call os.Move instead of os.Copy
+	var copyErr error
+	if osFile, ok := file.(*os.File); ok && fileExists(osFile.Name()) {
+		tmpUploadPath := osFile.Name()
+		osFile.Close() // Windows can not rename opened file
+		log.Printf("Move %s -> %s", tmpUploadPath, dstPath)
+		copyErr = os.Rename(tmpUploadPath, dstPath)
+	} else {
+		dst, err := os.Create(dstPath)
+		if err != nil {
+			log.Println("Create file:", err)
+			http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		_, copyErr = io.Copy(dst, file)
+		dst.Close()
+	}
+	if copyErr != nil {
 		log.Println("Handle upload file:", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+
+	if req.FormValue("unzip") == "true" {
+		err = unzipFile(dstPath, dirpath)
+		os.Remove(dstPath)
+		message := "success"
+		if err != nil {
+			message = err.Error()
+		}
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":     err == nil,
+			"description": message,
+		})
+		return
+	}
+
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":     true,
 		"destination": dstPath,
@@ -201,7 +297,7 @@ func parseApkInfo(path string) (ai *ApkInfo) {
 		return
 	}
 	ai = &ApkInfo{}
-	ai.MainActivity, _ = apkf.MainAcitivty()
+	ai.MainActivity, _ = apkf.MainActivity()
 	ai.PackageName = apkf.PackageName()
 	ai.Version.Code = apkf.Manifest().VersionCode
 	ai.Version.Name = apkf.Manifest().VersionName
@@ -211,10 +307,7 @@ func parseApkInfo(path string) (ai *ApkInfo) {
 func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	relPath := filepath.Join(s.Root, path)
-	if !isFile(relPath) {
-		http.Error(w, "Not a file", 403)
-		return
-	}
+
 	fi, err := os.Stat(relPath)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
@@ -233,6 +326,8 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 	case ".apk":
 		fji.Type = "apk"
 		fji.Extra = parseApkInfo(relPath)
+	case "":
+		fji.Type = "dir"
 	default:
 		fji.Type = "text"
 	}
@@ -260,13 +355,9 @@ func (s *HTTPStaticServer) hUnzip(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func genURLStr(r *http.Request, path string) *url.URL {
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
-	}
+func combineURL(r *http.Request, path string) *url.URL {
 	return &url.URL{
-		Scheme: scheme,
+		Scheme: r.URL.Scheme,
 		Host:   r.Host,
 		Path:   path,
 	}
@@ -305,9 +396,11 @@ func (s *HTTPStaticServer) hPlist(w http.ResponseWriter, r *http.Request) {
 
 func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
-	plistUrl := genURLStr(r, "/-/ipa/plist/"+path).String()
-	if r.TLS == nil {
-		// send plist to plistproxy and get a https link
+	var plistUrl string
+
+	if r.URL.Scheme == "https" {
+		plistUrl = combineURL(r, "/-/ipa/plist/"+path).String()
+	} else if s.PlistProxy != "" {
 		httpPlistLink := "http://" + r.Host + "/-/ipa/plist/" + path
 		url, err := s.genPlistLink(httpPlistLink)
 		if err != nil {
@@ -315,17 +408,17 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		plistUrl = url
-		//plistUrl = strings.TrimSuffix(s.PlistProxy, "/") + "/" + r.Host + "/-/ipa/plist/" + path
+	} else {
+		http.Error(w, "500: Server should be https:// or provide valid plistproxy", 500)
+		return
 	}
 
 	w.Header().Set("Content-Type", "text/html")
-	tmpl.ExecuteTemplate(w, "ipa-install", map[string]string{
+	log.Println("PlistURL:", plistUrl)
+	renderHTML(w, "ipa-install.html", map[string]string{
 		"Name":      filepath.Base(path),
 		"PlistLink": plistUrl,
 	})
-	// w.Write([]byte(fmt.Sprintf(
-	// 	`<a href='itms-services://?action=download-manifest&url=%s'>Click this link to install</a>`,
-	// 	plistUrl)))
 }
 
 func (s *HTTPStaticServer) genPlistLink(httpPlistLink string) (plistUrl string, err error) {
@@ -379,6 +472,7 @@ type UserControl struct {
 	// Access bool
 	Upload bool
 	Delete bool
+	Token  string
 }
 
 type AccessConf struct {
@@ -426,7 +520,20 @@ func (c *AccessConf) canDelete(r *http.Request) bool {
 	return c.Delete
 }
 
+func (c *AccessConf) canUploadByToken(token string) bool {
+	for _, rule := range c.Users {
+		if rule.Token == token {
+			return rule.Upload
+		}
+	}
+	return c.Upload
+}
+
 func (c *AccessConf) canUpload(r *http.Request) bool {
+	token := r.FormValue("token")
+	if token != "" {
+		return c.canUploadByToken(token)
+	}
 	session, err := store.Get(r, defaultSessionName)
 	if err != nil {
 		return c.Upload
@@ -436,6 +543,7 @@ func (c *AccessConf) canUpload(r *http.Request) bool {
 		return c.Upload
 	}
 	userInfo := val.(*UserInfo)
+
 	for _, rule := range c.Users {
 		if rule.Email == userInfo.Email {
 			return rule.Upload
@@ -598,7 +706,7 @@ func (s *HTTPStaticServer) readAccessConf(requestPath string) (ac AccessConf) {
 	if isFile(relPath) {
 		relPath = filepath.Dir(relPath)
 	}
-	cfgFile := filepath.Join(relPath, ".ghs.yml")
+	cfgFile := filepath.Join(relPath, YAMLCONF)
 	data, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -639,4 +747,69 @@ func isFile(path string) bool {
 func isDir(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.Mode().IsDir()
+}
+
+func assetsContent(name string) string {
+	fd, err := Assets.Open(name)
+	if err != nil {
+		panic(err)
+	}
+	data, err := ioutil.ReadAll(fd)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
+}
+
+// TODO: I need to read more abouthtml/template
+var (
+	funcMap template.FuncMap
+)
+
+func init() {
+	funcMap = template.FuncMap{
+		"title": strings.Title,
+		"urlhash": func(path string) string {
+			httpFile, err := Assets.Open(path)
+			if err != nil {
+				return path + "#no-such-file"
+			}
+			info, err := httpFile.Stat()
+			if err != nil {
+				return path + "#stat-error"
+			}
+			return fmt.Sprintf("%s?t=%d", path, info.ModTime().Unix())
+		},
+	}
+}
+
+var (
+	_tmpls = make(map[string]*template.Template)
+)
+
+func executeTemplate(w http.ResponseWriter, name string, v interface{}) {
+	if t, ok := _tmpls[name]; ok {
+		t.Execute(w, v)
+		return
+	}
+	t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
+	_tmpls[name] = t
+	t.Execute(w, v)
+}
+
+func renderHTML(w http.ResponseWriter, name string, v interface{}) {
+	if _, ok := Assets.(http.Dir); ok {
+		log.Println("Hot load", name)
+		t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
+		t.Execute(w, v)
+	} else {
+		executeTemplate(w, name, v)
+	}
+}
+
+func checkFilename(name string) error {
+	if strings.ContainsAny(name, "\\/:*<>|") {
+		return errors.New("Name should not contains \\/:*<>|")
+	}
+	return nil
 }

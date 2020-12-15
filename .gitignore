@@ -23,8 +23,9 @@ _testmain.go
 *.test
 *.prof
 
-dist/
 
 gohttpserver
 bindata_assetfs.go
-
+assets_vfsdata.go
+*.un~
+*.swp

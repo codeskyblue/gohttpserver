@@ -33,7 +33,7 @@ func init() {
 	gob.Register(&M{})
 }
 
-func handleOpenID(secure bool) {
+func handleOpenID(loginUrl string, secure bool) {
 	http.HandleFunc("/-/login", func(w http.ResponseWriter, r *http.Request) {
 		nextUrl := r.FormValue("next")
 		referer := r.Referer()
@@ -41,10 +41,11 @@ func handleOpenID(secure bool) {
 			nextUrl = referer
 		}
 		scheme := "http"
-		if secure {
-			scheme = "https"
+		if r.URL.Scheme != "" {
+			scheme = r.URL.Scheme
 		}
-		if url, err := openid.RedirectURL("https://login.netease.com/openid",
+		log.Println("Scheme:", scheme)
+		if url, err := openid.RedirectURL(loginUrl,
 			scheme+"://"+r.Host+"/-/openidcallback?next="+nextUrl, ""); err == nil {
 			http.Redirect(w, r, url, 303)
 		} else {

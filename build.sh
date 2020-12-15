@@ -23,12 +23,12 @@ fi
 build() {
 	echo "$1 $2 ..."
 	GOOS=$1 GOARCH=$2 go build \
-		-tags bindata \
+		-tags vfs \
 		-ldflags "$LDFLAGS" \
 		-o dist/gohttpserver-${3:-""}
 }
 
-go-bindata-assetfs -tags bindata res/...
+go generate .
 
 build linux arm linux-arm
 build darwin amd64 mac-amd64

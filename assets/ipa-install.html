@@ -1,0 +1,71 @@
+<html>
+
+<head>
+  <title>[[.Name]] install</title>
+  <meta http-equiv="Content-Type" content="text/HTML; charset=utf-8">
+  <meta content="target-densitydpi=device-dpi,width=640" name="viewport" id="viewport">
+  <link rel="shortcut icon" type="image/png" href="/-/assets/favicon.png" />
+  <script type="text/javascript" src="/-/assets/js/ua-parser.min.js"></script>
+  <script type="text/javascript">
+    function showById(name) {
+      document.getElementById(name).style.display = 'block';
+    }
+
+    function checkBrowerAndDownload() {
+      var parser = new UAParser();
+      var os_info = parser.getOS();
+      console.log(os_info)
+
+      var plistLink = "[[.PlistLink]]";
+      var ipaInstallLink = 'itms-services://?action=download-manifest&url=' + plistLink;
+      document.getElementById('itms-link').href = ipaInstallLink;
+
+      // wechat is support AppStore link now.
+      if (navigator.userAgent.toLowerCase().match(/MicroMessenger/i) == "micromessenger") {
+        showById('safari');
+        location.href = ipaInstallLink;
+        return;
+      } else if (os_info.name == 'Android') {
+        showById("android");
+        return;
+      } else if (os_info.name == 'iOS') {
+        showById('safari');
+        location.href = ipaInstallLink;
+        return;
+      } else {
+        showById('browser');
+        return;
+      }
+    }
+  </script>
+</head>
+
+<body>
+  <style>
+    #wechat {
+      position: relative;
+      width: 640px;
+      margin: 0 auto;
+      background: #fff;
+      overflow: hidden;
+      min-height: 777px;
+    }
+  </style>
+  <div id="wechat" style="display: none">
+    <img style='width: 100%;position: relative;' src='/-/assets/imgs/wx.png' />
+  </div>
+  <div id="browser" style="display: none">
+    This is IPA install page, you should open this link with your iPhone.
+  </div>
+  <div id="safari" style="display: none">
+    If install not started soon, click <a id="itms-link" href="#">here</a>
+  </div>
+  <div id="android" style="display: none">
+    This is IPA install page, not for android.
+  </div>
+  <script type="text/javascript">
+    checkBrowerAndDownload();
+  </script>
+</body>
+
+</html>

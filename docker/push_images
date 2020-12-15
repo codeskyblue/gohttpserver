@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# article: https://lantian.pub/article/modify-computer/build-arm-docker-image-on-x86-docker-hub-travis-automatic-build.lantian
+
+set -ex
+
+docker run --rm --privileged multiarch/qemu-user-static:register --reset
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+IMAGE_NAME="gohttpserver"
+
+# arm linux for respberry
+docker build -t $DOCKER_USERNAME/$IMAGE_NAME:armhf -f docker/Dockerfile.armhf .
+
+# x86 linux
+docker build -t $DOCKER_USERNAME/$IMAGE_NAME:latest -f docker/Dockerfile .
+
+docker push $DOCKER_USERNAME/$IMAGE_NAME
