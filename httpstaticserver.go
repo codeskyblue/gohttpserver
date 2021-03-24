@@ -158,15 +158,16 @@ func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
-	// only can delete file now
 	path := mux.Vars(req)["path"]
+	path = filepath.Clean(path) // for safe reason, prevent path contain ..
 	auth := s.readAccessConf(path)
 	if !auth.canDelete(req) {
 		http.Error(w, "Delete forbidden", http.StatusForbidden)
 		return
 	}
 
-	err := os.Remove(filepath.Join(s.Root, path))
+	// TODO: path safe check
+	err := os.RemoveAll(filepath.Join(s.Root, path))
 	if err != nil {
 		pathErr, ok := err.(*os.PathError)
 		if ok {
@@ -232,7 +233,7 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 
 	// Large file (>32MB) will store in tmp directory
 	// The quickest operation is call os.Move instead of os.Copy
-	// Note: it seems not working well
+	// Note: it seems not working well, os.Rename might be failed
 
 	var copyErr error
 	// if osFile, ok := file.(*os.File); ok && fileExists(osFile.Name()) {
