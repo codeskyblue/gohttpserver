@@ -30,7 +30,7 @@ function checkPathNameLegal(name) {
 function showErrorMessage(jqXHR) {
   let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
   if (errMsg == null) {
-      errMsg = jqXHR.responseText
+    errMsg = jqXHR.responseText
   }
   alert(String(jqXHR.status).concat(":", errMsg));
   console.error(errMsg)
@@ -141,6 +141,9 @@ var vm = new Vue({
     });
   },
   methods: {
+    getEncodePath: function (f) {
+      return pathJoin([location.pathname, encodeURIComponent(f.name)]);
+    },
     formatTime: function (timestamp) {
       var m = moment(timestamp);
       if (this.mtimeTypeFromNow) {
@@ -167,7 +170,7 @@ var vm = new Vue({
       if (!name) {
         parts.push(pathname);
       } else if (getExtention(name) == "ipa") {
-        parts.push("/-/ipa/link", pathname, name);
+        parts.push("/-/ipa/link", pathname, encodeURIComponent(name));
       } else {
         parts.push(pathname, name);
       }
@@ -188,7 +191,7 @@ var vm = new Vue({
     genDownloadURL: function (f) {
       var search = location.search;
       var sep = search == "" ? "?" : "&"
-      return location.origin + "/" + f.path + location.search + sep + "download=true";
+      return location.origin + this.getEncodePath(f) + location.search + sep + "download=true";
     },
     shouldHaveQrcode: function (name) {
       return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
@@ -234,11 +237,12 @@ var vm = new Vue({
       return "fa-file-text-o"
     },
     clickFileOrDir: function (f, e) {
+      var reqPath = pathJoin([location.pathname, encodeURIComponent(f.name)]);
       // TODO: fix here tomorrow
       if (f.type == "file") {
-        return true;
+        window.location.href = reqPath;
+        return;
       }
-      var reqPath = pathJoin([location.pathname, f.name]);
       loadFileOrDir(reqPath);
       e.preventDefault()
     },
@@ -249,7 +253,7 @@ var vm = new Vue({
     showInfo: function (f) {
       console.log(f);
       $.ajax({
-        url: pathJoin(["/", location.pathname, f.name]),
+        url: pathJoin(["/", location.pathname, encodeURIComponent(f.name)]),
         data: {
           op: "info",
         },
@@ -276,7 +280,7 @@ var vm = new Vue({
         return
       }
       $.ajax({
-        url: pathJoin(["/", location.pathname, "/", name]),
+        url: pathJoin(["/", location.pathname, "/", encodeURIComponent(name)]),
         method: "POST",
         success: function (res) {
           console.log(res)
@@ -295,7 +299,7 @@ var vm = new Vue({
         }
       }
       $.ajax({
-        url: pathJoin([location.pathname, f.name]),
+        url: pathJoin([location.pathname, encodeURIComponent(f.name)]),
         method: 'DELETE',
         success: function (res) {
           loadFileList()
@@ -333,23 +337,23 @@ var vm = new Vue({
       }
       var that = this;
       $.getJSON(pathJoin(['/-/info', location.pathname]))
-        .then(function (res) {
-          console.log(res);
-          that.preview.filename = res.name;
-          that.preview.filesize = res.size;
-          return $.ajax({
-            url: '/' + res.path,
-            dataType: 'text',
+          .then(function (res) {
+            console.log(res);
+            that.preview.filename = res.name;
+            that.preview.filesize = res.size;
+            return $.ajax({
+              url: '/' + res.path,
+              dataType: 'text',
+            });
+          })
+          .then(function (res) {
+            console.log(res)
+            that.preview.contentHTML = '<pre>' + res + '</pre>';
+            console.log("Finally")
+          })
+          .done(function (res) {
+            console.log("done", res)
           });
-        })
-        .then(function (res) {
-          console.log(res)
-          that.preview.contentHTML = '<pre>' + res + '</pre>';
-          console.log("Finally")
-        })
-        .done(function (res) {
-          console.log("done", res)
-        });
     },
     loadAll: function () {
       // TODO: move loadFileList here
@@ -440,10 +444,10 @@ $(function () {
     console.info('Text:', e.text);
     console.info('Trigger:', e.trigger);
     $(e.trigger)
-      .tooltip('show')
-      .mouseleave(function () {
-        $(this).tooltip('hide');
-      })
+        .tooltip('show')
+        .mouseleave(function () {
+          $(this).tooltip('hide');
+        })
 
     e.clearSelection();
   });
