@@ -1,44 +1,25 @@
-project_name: gohttpserver
-release:
-  github:
-    owner: codeskyblue
-    name: gohttpserver
-brew:
-  github:
-    owner: codeskyblue
-    name: homebrew-tap
-  homepage: https://github.com/codeskyblue/gohttpserver
-builds:
-- goos:
-  - linux
-  - darwin
-  - windows
-  goarch:
-  - amd64
-  - "386"
-  goarm:
-  - "6"
-  main: .
-  ldflags: -s -w -X main.VERSION={{.Version}}
-  flags: -tags vfs
-  binary: gohttpserver
+before:
   hooks:
-    pre: go generate .
-archive:
-  format: zip
-  name_template: '{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{
-    .Arm }}{{ end }}'
-  files:
-  - licence*
-  - LICENCE*
-  - license*
-  - LICENSE*
-  - readme*
-  - README*
-  - changelog*
-  - CHANGELOG*
-  - .ghs.yml
-snapshot:
-  name_template: SNAPSHOT-{{ .Commit }}
-checksum:
-  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+    - go mod tidy
+    - go generate .
+builds:
+  - env:
+      - CGO_ENABLED=0
+    main: .
+    flags:
+      - -tags=vfs
+    ldflags: -s -w -X main.VERSION={{.Version}}
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - "386"
+    goarm:
+      - "6"
+brews:
+  - tap:
+      owner: codeskyblue
+      name: homebrew-tap
+    folder: Formula
