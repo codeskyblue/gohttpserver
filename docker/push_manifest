@@ -9,8 +9,12 @@ fi
 
 set -ex
 
-sed -i '/experimental/d' $HOME/.docker/config.json
-sed -i '1a"experimental": "enabled",' $HOME/.docker/config.json
+if test $(uname) = "Linux"
+then
+	sed -i '/experimental/d' $HOME/.docker/config.json
+	sed -i '1a"experimental": "enabled",' $HOME/.docker/config.json
+fi
+
 docker manifest create codeskyblue/gohttpserver \
   codeskyblue/gohttpserver:latest \
   codeskyblue/gohttpserver:armhf

@@ -66,6 +66,12 @@ go build && ./gohttpserver
 
 Or download binaries from [github releases](https://github.com/codeskyblue/gohttpserver/releases)
 
+If you are using Mac, simply run command
+
+```bash
+brew install codeskyblue/tap/gohttpserver
+```
+
 ## Usage
 Listen on port 8000 of all interfaces, and enable file uploading.
 
