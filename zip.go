@@ -83,6 +83,9 @@ func (z *Zip) Add(relpath, abspath string) error {
 func CompressToZip(w http.ResponseWriter, rootDir string) {
 	rootDir = filepath.Clean(rootDir)
 	zipFileName := filepath.Base(rootDir) + ".zip"
+	if rootDir == "." {
+		zipFileName = "ROOT.zip"
+	}
 
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+zipFileName+`"`)
@@ -92,6 +95,10 @@ func CompressToZip(w http.ResponseWriter, rootDir string) {
 
 	filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
 		zipPath := path[len(rootDir):]
+		if rootDir == "." {
+			zipPath = path[len(rootDir)-1:]
+		}
+
 		if info.Name() == YAMLCONF { // ignore .ghs.yml for security
 			return nil
 		}
