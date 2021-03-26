@@ -1,4 +1,4 @@
-FROM golang:1.13
+FROM golang:1.16
 WORKDIR /appsrc/gohttpserver
 ADD . /appsrc/gohttpserver
 RUN GOOS=linux GOARCH=arm go build -ldflags '-X main.VERSION=docker' -o gohttpserver .
