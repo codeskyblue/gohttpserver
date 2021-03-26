@@ -4,6 +4,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -79,4 +80,19 @@ func fileExists(path string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+// Convert path to normal paths
+func cleanPath(path string) string {
+	return filepath.ToSlash(filepath.Clean(path))
+}
+
+func isFile(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsRegular()
+}
+
+func isDir(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && info.Mode().IsDir()
 }
