@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"regexp"
@@ -248,7 +249,13 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, copyErr = io.Copy(dst, file)
+	// Note: very large size file might cause poor performance
+	// _, copyErr = io.Copy(dst, file)
+	// use sync.Pool caching buf to reduce gc ratio
+	var bufPtr = &sync.Pool{
+		New: func() interface{} { return make([]byte, 32*1024) },
+	}
+	_, copyErr = io.CopyBuffer(dst, file, bufPtr.Get().([]byte))
 	dst.Close()
 	// }
 	if copyErr != nil {
