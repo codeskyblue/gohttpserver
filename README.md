@@ -13,7 +13,7 @@
 **Binaries** can be downloaded from [this repo releases](https://github.com/codeskyblue/gohttpserver/releases/)
 
 ## Requirements
-Tested with go-1.10, go-1.11
+Tested with go-1.16
 
 ## Screenshots
 ![screen](testdata/filetypes/gohttpserver.gif)

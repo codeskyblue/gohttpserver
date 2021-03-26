@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#000000">  
   <title>[[.Title]]</title>
   <link rel="shortcut icon" type="image/png" href="/-/assets/favicon.png" />
   <link rel="stylesheet" type="text/css" href="/-/assets/bootstrap-3.3.5/css/bootstrap.min.css">
@@ -256,7 +257,7 @@
     <div class="col-md-12">
       <div id="footer" class="pull-right" style="margin: 2em 1em">
         <a href="https://github.com/codeskyblue/gohttpserver">gohttpserver (ver:{{version}})</a>, written by <a href="https://github.com/codeskyblue">codeskyblue</a>.
-        Copyright 2016-2018. go1.10
+        Copyright 2016-2021. go1.16
       </div>
     </div>
   </div>
@@ -273,6 +274,11 @@
   <script src="/-/assets/bootstrap-3.3.5/js/bootstrap.min.js"></script>
   <script src='/-/assets/[["js/index.js" | urlhash ]]'></script>
   <!-- <script src="/-/assets/js/index.js"></script> -->
+  <!--Sync status bar color with border-color on mobile platforms.-->
+  <script>
+    var META = document.getElementsByTagName("meta");
+    META[2]["content"]=$('.navbar').css('border-color');
+  </script>
   [[if .GoogleTrackerID ]]
   <script>
     (function (i, s, o, g, r, a, m) {

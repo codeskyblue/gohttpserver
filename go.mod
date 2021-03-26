@@ -1,5 +1,7 @@
 module github.com/codeskyblue/gohttpserver
 
+go 1.16
+
 require (
 	github.com/alecthomas/kingpin v2.2.6+incompatible
 	github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc // indirect
@@ -23,5 +25,3 @@ require (
 	golang.org/x/tools v0.1.0 // indirect
 	howett.net/plist v0.0.0-20201203080718-1454fab16a06 // indirect
 )
-
-go 1.13
