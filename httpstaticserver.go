@@ -105,12 +105,13 @@ func (s *HTTPStaticServer) getRealPath(r *http.Request) string {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	path = cleanPath(path) // use cleanPath to prevent safe issues
-	relPath, err := filepath.Rel(s.Prefix, path)
+	path = filepath.Clean(path) // prevent .. for safe issues
+	relativePath, err := filepath.Rel(s.Prefix, path)
 	if err != nil {
-		relPath = filepath.Join(s.Prefix, path)
+		relativePath = path
 	}
-	return filepath.ToSlash(relPath)
+	realPath := filepath.Join(s.Root, relativePath)
+	return filepath.ToSlash(realPath)
 }
 
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
@@ -151,28 +152,6 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, realPath)
 	}
 }
-
-// func (s *HTTPStaticServer) hMkdir(w http.ResponseWriter, req *http.Request) {
-// 	path := filepath.Dir(mux.Vars(req)["path"])
-// 	realPath := s.getRealPath(req)
-// 	auth := s.readAccessConf(realPath)
-// 	if !auth.canDelete(req) {
-// 		http.Error(w, "Mkdir forbidden", http.StatusForbidden)
-// 		return
-// 	}
-
-// 	name := filepath.Base(mux.Vars(req)["path"])
-// 	if err := checkFilename(name); err != nil {
-// 		http.Error(w, err.Error(), http.StatusForbidden)
-// 		return
-// 	}
-// 	err := os.Mkdir(filepath.Join(s.Root, path, name), 0755)
-// 	if err != nil {
-// 		http.Error(w, err.Error(), 500)
-// 		return
-// 	}
-// 	w.Write([]byte("Success"))
-// }
 
 func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	path := mux.Vars(req)["path"]

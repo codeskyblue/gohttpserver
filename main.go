@@ -218,6 +218,10 @@ func main() {
 	rooter := mainRooter
 	if gcfg.Prefix != "" {
 		rooter = mainRooter.PathPrefix(gcfg.Prefix).Subrouter()
+		mainRooter.Handle(gcfg.Prefix, hdlr)
+		mainRooter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, gcfg.Prefix, http.StatusTemporaryRedirect)
+		})
 	}
 
 	rooter.PathPrefix("/-/assets/").Handler(http.StripPrefix(gcfg.Prefix+"/-/assets/", http.FileServer(Assets)))
