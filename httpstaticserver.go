@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"regexp"
@@ -53,6 +54,7 @@ type HTTPStaticServer struct {
 
 	indexes []IndexFileItem
 	m       *mux.Router
+	bufPool sync.Pool // use sync.Pool caching buf to reduce gc ratio
 }
 
 func NewHTTPStaticServer(root string) *HTTPStaticServer {
@@ -69,6 +71,9 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		Root:  root,
 		Theme: "black",
 		m:     m,
+		bufPool: sync.Pool{
+			New: func() interface{} { return make([]byte, 32*1024) },
+		},
 	}
 
 	go func() {
@@ -248,7 +253,12 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	_, copyErr = io.Copy(dst, file)
+
+	// Note: very large size file might cause poor performance
+	// _, copyErr = io.Copy(dst, file)
+	buf := s.bufPool.Get().([]byte)
+	defer s.bufPool.Put(buf)
+	_, copyErr = io.CopyBuffer(dst, file, buf)
 	dst.Close()
 	// }
 	if copyErr != nil {
