@@ -132,7 +132,7 @@ docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
   You can configure to let a http reverse proxy handling authentication. 
   When using oauth2-proxy, the backend will use identification info from request headers `X-Auth-Request-Email` as userId and `X-Auth-Request-Fullname` as user's display name. 
   Please config your oauth2 reverse proxy yourself.
-  More about [oauth2-proxy](https://github.com/bitly/oauth2_proxy).
+  More about [oauth2-proxy](https://github.com/oauth2-proxy/oauth2-proxy).
   
   All required headers list as following.
 
