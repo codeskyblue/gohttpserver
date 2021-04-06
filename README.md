@@ -264,6 +264,35 @@ gohttpserver should started with `--xheaders` argument when behide nginx.
 
 Refs: <http://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size>
 
+gohttpserver also support `--prefix` flag which will help to when meet `/` is occupied by other service. relative issue <https://github.com/codeskyblue/gohttpserver/issues/105>
+
+Usage example:
+
+```bash
+# for gohttpserver
+./gohttpserver --prefox /foo --addr :8200 --xheaders
+```
+
+**Nginx settigns**
+
+```
+server {
+  listen 80;
+  server_name your-domain-name.com;
+
+  location /foo {
+    proxy_pass http://127.0.0.1:8200; # here need to change
+    proxy_redirect off;
+    proxy_set_header  Host    $host;
+    proxy_set_header  X-Real-IP $remote_addr;
+    proxy_set_header  X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Proto $scheme;
+
+    client_max_body_size 0; # disable upload limit
+  }
+}
+```
+
 ## FAQ
 - [How to generate self signed certificate with openssl](http://stackoverflow.com/questions/10175812/how-to-create-a-self-signed-certificate-with-openssl)
 
