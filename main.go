@@ -214,18 +214,18 @@ func main() {
 		hdlr = handlers.ProxyHeaders(hdlr)
 	}
 
-	mainRooter := mux.NewRouter()
-	rooter := mainRooter
+	mainRouter := mux.NewRouter()
+	router := mainRouter
 	if gcfg.Prefix != "" {
-		rooter = mainRooter.PathPrefix(gcfg.Prefix).Subrouter()
-		mainRooter.Handle(gcfg.Prefix, hdlr)
-		mainRooter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		router = mainRouter.PathPrefix(gcfg.Prefix).Subrouter()
+		mainRouter.Handle(gcfg.Prefix, hdlr)
+		mainRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, gcfg.Prefix, http.StatusTemporaryRedirect)
 		})
 	}
 
-	rooter.PathPrefix("/-/assets/").Handler(http.StripPrefix(gcfg.Prefix+"/-/assets/", http.FileServer(Assets)))
-	rooter.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
+	router.PathPrefix("/-/assets/").Handler(http.StripPrefix(gcfg.Prefix+"/-/assets/", http.FileServer(Assets)))
+	router.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
 		data, _ := json.Marshal(map[string]interface{}{
 			"version": VERSION,
 		})
@@ -233,7 +233,7 @@ func main() {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
 		w.Write(data)
 	})
-	rooter.PathPrefix("/").Handler(hdlr)
+	router.PathPrefix("/").Handler(hdlr)
 
 	if gcfg.Addr == "" {
 		gcfg.Addr = fmt.Sprintf(":%d", gcfg.Port)
@@ -245,7 +245,7 @@ func main() {
 	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port)
 
 	srv := &http.Server{
-		Handler: mainRooter,
+		Handler: mainRouter,
 		Addr:    gcfg.Addr,
 	}
 
