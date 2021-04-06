@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	_ "github.com/shurcooL/vfsgen"
 )
 
@@ -28,6 +30,7 @@ type Configure struct {
 	Addr            string   `yaml:"addr"`
 	Port            int      `yaml:"port"`
 	Root            string   `yaml:"root"`
+	Prefix          string   `yaml:"prefix"`
 	HTTPAuth        string   `yaml:"httpauth"`
 	Cert            string   `yaml:"cert"`
 	Key             string   `yaml:"key"`
@@ -102,6 +105,7 @@ func parseFlags() error {
 	kingpin.Version(versionMessage())
 	kingpin.Flag("conf", "config file path, yaml format").FileVar(&gcfg.Conf)
 	kingpin.Flag("root", "root directory, default ./").Short('r').StringVar(&gcfg.Root)
+	kingpin.Flag("prefix", "url prefix, eg /foo").StringVar(&gcfg.Prefix)
 	kingpin.Flag("port", "listen port, default 8000").IntVar(&gcfg.Port)
 	kingpin.Flag("addr", "listen address, eg 127.0.0.1:8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
@@ -134,6 +138,17 @@ func parseFlags() error {
 	return nil
 }
 
+func fixPrefix(prefix string) string {
+	prefix = regexp.MustCompile(`/*$`).ReplaceAllString(prefix, "")
+	if !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	if prefix == "/" {
+		prefix = ""
+	}
+	return prefix
+}
+
 func main() {
 	if err := parseFlags(); err != nil {
 		log.Fatal(err)
@@ -144,7 +159,14 @@ func main() {
 	}
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
 
+	// make sure prefix matches: ^/.*[^/]$
+	gcfg.Prefix = fixPrefix(gcfg.Prefix)
+	if gcfg.Prefix != "" {
+		log.Printf("url prefix: %s", gcfg.Prefix)
+	}
+
 	ss := NewHTTPStaticServer(gcfg.Root)
+	ss.Prefix = gcfg.Prefix
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
 	ss.GoogleTrackerID = gcfg.GoogleTrackerID
@@ -163,7 +185,7 @@ func main() {
 	if ss.PlistProxy != "" {
 		log.Printf("plistproxy: %s", strconv.Quote(ss.PlistProxy))
 	}
-	
+
 	var hdlr http.Handler = ss
 
 	hdlr = accesslog.NewLoggingHandler(hdlr, logger)
@@ -192,15 +214,26 @@ func main() {
 		hdlr = handlers.ProxyHeaders(hdlr)
 	}
 
-	http.Handle("/", hdlr)
-	http.Handle("/-/assets/", http.StripPrefix("/-/assets/", http.FileServer(Assets)))
-	http.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+	mainRouter := mux.NewRouter()
+	router := mainRouter
+	if gcfg.Prefix != "" {
+		router = mainRouter.PathPrefix(gcfg.Prefix).Subrouter()
+		mainRouter.Handle(gcfg.Prefix, hdlr)
+		mainRouter.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, gcfg.Prefix, http.StatusTemporaryRedirect)
+		})
+	}
+
+	router.PathPrefix("/-/assets/").Handler(http.StripPrefix(gcfg.Prefix+"/-/assets/", http.FileServer(Assets)))
+	router.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
 		data, _ := json.Marshal(map[string]interface{}{
 			"version": VERSION,
 		})
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
 		w.Write(data)
 	})
+	router.PathPrefix("/").Handler(hdlr)
 
 	if gcfg.Addr == "" {
 		gcfg.Addr = fmt.Sprintf(":%d", gcfg.Port)
@@ -211,11 +244,16 @@ func main() {
 	_, port, _ := net.SplitHostPort(gcfg.Addr)
 	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port)
 
+	srv := &http.Server{
+		Handler: mainRouter,
+		Addr:    gcfg.Addr,
+	}
+
 	var err error
 	if gcfg.Key != "" && gcfg.Cert != "" {
-		err = http.ListenAndServeTLS(gcfg.Addr, gcfg.Cert, gcfg.Key, nil)
+		err = srv.ListenAndServeTLS(gcfg.Cert, gcfg.Key)
 	} else {
-		err = http.ListenAndServe(gcfg.Addr, nil)
+		err = srv.ListenAndServe()
 	}
 	log.Fatal(err)
 }

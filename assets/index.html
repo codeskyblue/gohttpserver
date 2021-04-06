@@ -6,14 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#000000">  
   <title>[[.Title]]</title>
-  <link rel="shortcut icon" type="image/png" href="/-/assets/favicon.png" />
-  <link rel="stylesheet" type="text/css" href="/-/assets/bootstrap-3.3.5/css/bootstrap.min.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/font-awesome-4.6.3/css/font-awesome.min.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/github-markdown.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/dropzone.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/scrollUp-image.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/css/style.css">
-  <link rel="stylesheet" type="text/css" href="/-/assets/themes/[[.Theme]].css">
+  <link rel="shortcut icon" type="image/png" href="[[.Prefix]]/-/assets/favicon.png" />
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/bootstrap-3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/font-awesome-4.6.3/css/font-awesome.min.css">
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/css/github-markdown.css">
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/css/dropzone.css">
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/css/scrollUp-image.css">
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/css/style.css">
+  <link rel="stylesheet" type="text/css" href="[[.Prefix]]/-/assets/themes/[[.Theme]].css">
 </head>
 
 <body id="app">
@@ -27,7 +27,7 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">[[.Title]]</a>
+          <a class="navbar-brand" href="[[.Prefix]]/">[[.Title]]</a>
         </div>
         <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-2">
           <ul class="nav navbar-nav">
@@ -261,19 +261,22 @@
       </div>
     </div>
   </div>
-  <script src="/-/assets/js/jquery-3.1.0.min.js"></script>
-  <script src="/-/assets/js/jquery.qrcode.js"></script>
-  <script src="/-/assets/js/jquery.scrollUp.min.js"></script>
-  <script src="/-/assets/js/qrcode.js"></script>
-  <script src="/-/assets/js/vue-1.0.min.js"></script>
-  <script src="/-/assets/js/showdown-1.6.4.min.js"></script>
-  <script src="/-/assets/js/moment.min.js"></script>
-  <script src="/-/assets/js/dropzone.js"></script>
-  <script src="/-/assets/js/underscore-min.js"></script>
-  <script src="/-/assets/js/clipboard-1.5.12.min.js"></script>
-  <script src="/-/assets/bootstrap-3.3.5/js/bootstrap.min.js"></script>
-  <script src='/-/assets/[["js/index.js" | urlhash ]]'></script>
-  <!-- <script src="/-/assets/js/index.js"></script> -->
+  <script>
+    window.URL_PFEFIX = "[[.Prefix]]"
+  </script>
+  <script src="[[.Prefix]]/-/assets/js/jquery-3.1.0.min.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/jquery.qrcode.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/jquery.scrollUp.min.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/qrcode.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/vue-1.0.min.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/showdown-1.6.4.min.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/moment.min.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/dropzone.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/underscore-min.js"></script>
+  <script src="[[.Prefix]]/-/assets/js/clipboard-1.5.12.min.js"></script>
+  <script src="[[.Prefix]]/-/assets/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+  <script src='[[.Prefix]]/-/assets/[["js/index.js" | urlhash ]]'></script>
+  <!-- <script src="[[.Prefix]]/-/assets/js/index.js"></script> -->
   <!--Sync status bar color with border-color on mobile platforms.-->
   <script>
     var META = document.getElementsByTagName("meta");
