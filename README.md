@@ -58,10 +58,8 @@ Tested with go-1.16
 1. [x] Support unzip zip file when upload(with form: unzip=true)
 
 ## Installation
-```
-go get -v github.com/codeskyblue/gohttpserver
-cd $GOPATH/src/github.com/codeskyblue/gohttpserver
-go build && ./gohttpserver
+```bash
+$ go install github.com/codeskyblue/gohttpserver@latest
 ```
 
 Or download binaries from [github releases](https://github.com/codeskyblue/gohttpserver/releases)
@@ -69,14 +67,14 @@ Or download binaries from [github releases](https://github.com/codeskyblue/gohtt
 If you are using Mac, simply run command
 
 ```bash
-brew install codeskyblue/tap/gohttpserver
+$ brew install codeskyblue/tap/gohttpserver
 ```
 
 ## Usage
 Listen on port 8000 of all interfaces, and enable file uploading.
 
 ```
-./gohttpserver -r ./ --port 8000 --upload
+$ gohttpserver -r ./ --port 8000 --upload
 ```
 
 Use command `gohttpserver --help` to see more usage.
@@ -85,13 +83,13 @@ Use command `gohttpserver --help` to see more usage.
 share current directory
 
 ```bash
-docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
+$ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
 ```
 
 Share current directory with http basic auth
 
 ```bash
-docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
+$ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
   codeskyblue/gohttpserver \
   --auth-type http --auth-http username:password
 ```
@@ -99,7 +97,7 @@ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
 Share current directory with openid auth. (Works only in netease company.)
 
 ```bash
-docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
+$ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
   codeskyblue/gohttpserver \
   --auth-type openid
 ```
@@ -107,8 +105,8 @@ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
 To build image yourself, please change the PWD to the root of this repo.
 
 ```bash
-cd gohttpserver/
-docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
+$ cd gohttpserver/
+$ docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
 ```
 
 ## Authentication options
@@ -198,8 +196,8 @@ accessTables:
 ### ipa plist proxy
 This is used for server on which https is enabled. default use <https://plistproxy.herokuapp.com/plist>
 
-```
-./gohttpserver --plistproxy=https://someproxyhost.com/
+```bash
+$ gohttpserver --plistproxy=https://someproxyhost.com/
 ```
 
 Test if proxy works:
@@ -270,7 +268,7 @@ Usage example:
 
 ```bash
 # for gohttpserver
-./gohttpserver --prefox /foo --addr :8200 --xheaders
+$ gohttpserver --prefox /foo --addr :8200 --xheaders
 ```
 
 **Nginx settigns**
@@ -308,14 +306,14 @@ Depdencies are managed by [govendor](https://github.com/kardianos/govendor)
 1. Build develop version. **assets** directory must exists
 
   ```sh
-  go build
-  ./gohttpserver
+  $ go build
+  $ ./gohttpserver
   ```
 2. Build single binary release
 
   ```sh
-  go generate .
-  go build -tags vfs
+  $ go generate .
+  $ go build -tags vfs
   ```
 
 Theme are defined in [assets/themes](assets/themes) directory. Now only two themes are available, "black" and "green".
