@@ -270,7 +270,7 @@ Usage example:
 
 ```bash
 # for gohttpserver
-$ gohttpserver --prefox /foo --addr :8200 --xheaders
+$ gohttpserver --prefix /foo --addr :8200 --xheaders
 ```
 
 **Nginx settigns**
