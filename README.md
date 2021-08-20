@@ -314,8 +314,7 @@ Depdencies are managed by [govendor](https://github.com/kardianos/govendor)
 2. Build single binary release
 
   ```sh
-  $ go generate .
-  $ go build -tags vfs
+  $ go build
   ```
 
 Theme are defined in [assets/themes](assets/themes) directory. Now only two themes are available, "black" and "green".
@@ -335,7 +334,7 @@ Theme are defined in [assets/themes](assets/themes) directory. Now only two them
 
 **Go Libraries**
 
-* [vfsgen](https://github.com/shurcooL/vfsgen)
+* [vfsgen](https://github.com/shurcooL/vfsgen) Not using now
 * [go-bindata-assetfs](https://github.com/elazarl/go-bindata-assetfs) Not using now
 * <http://www.gorillatoolkit.org/pkg/handlers>
 

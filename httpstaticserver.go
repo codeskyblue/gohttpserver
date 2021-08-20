@@ -142,7 +142,7 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "HEAD" {
 			return
 		}
-		renderHTML(w, "index.html", s)
+		renderHTML(w, "assets/index.html", s)
 	} else {
 		if filepath.Base(path) == YAMLCONF {
 			auth := s.readAccessConf(realPath)
@@ -423,7 +423,7 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/html")
 	log.Println("PlistURL:", plistUrl)
-	renderHTML(w, "ipa-install.html", map[string]string{
+	renderHTML(w, "assets/ipa-install.html", map[string]string{
 		"Name":      filepath.Base(path),
 		"PlistLink": plistUrl,
 	})
@@ -784,7 +784,7 @@ var (
 	_tmpls = make(map[string]*template.Template)
 )
 
-func executeTemplate(w http.ResponseWriter, name string, v interface{}) {
+func renderHTML(w http.ResponseWriter, name string, v interface{}) {
 	if t, ok := _tmpls[name]; ok {
 		t.Execute(w, v)
 		return
@@ -792,16 +792,6 @@ func executeTemplate(w http.ResponseWriter, name string, v interface{}) {
 	t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
 	_tmpls[name] = t
 	t.Execute(w, v)
-}
-
-func renderHTML(w http.ResponseWriter, name string, v interface{}) {
-	if _, ok := Assets.(http.Dir); ok {
-		log.Println("Hot load", name)
-		t := template.Must(template.New(name).Funcs(funcMap).Delims("[[", "]]").Parse(assetsContent(name)))
-		t.Execute(w, v)
-	} else {
-		executeTemplate(w, name, v)
-	}
 }
 
 func checkFilename(name string) error {
