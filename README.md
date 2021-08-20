@@ -59,9 +59,7 @@ Tested with go-1.16
 
 ## Installation
 ```bash
-$ git clone https://github.com/codeskyblue/gohttpserver
-$ cd gohttpserver
-$ go build && ./gohttpserver
+$ go install github.com/codeskyblue/gohttpserver@latest
 ```
 
 Or download binaries from [github releases](https://github.com/codeskyblue/gohttpserver/releases)
