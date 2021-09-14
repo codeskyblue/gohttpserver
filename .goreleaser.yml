@@ -1,13 +1,10 @@
 before:
   hooks:
     - go mod tidy
-    - go generate .
 builds:
   - env:
       - CGO_ENABLED=0
     main: .
-    flags:
-      - -tags=vfs
     ldflags: -s -w -X main.VERSION={{.Version}} -X main.BUILDTIME={{.Date}} -X main.GITCOMMIT={{.Commit}}
     goos:
       - linux

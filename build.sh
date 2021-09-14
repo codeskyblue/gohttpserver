@@ -23,12 +23,9 @@ fi
 build() {
 	echo "$1 $2 ..."
 	GOOS=$1 GOARCH=$2 go build \
-		-tags vfs \
 		-ldflags "$LDFLAGS" \
 		-o dist/gohttpserver-${3:-""}
 }
-
-go generate .
 
 build linux arm linux-arm
 build darwin amd64 mac-amd64

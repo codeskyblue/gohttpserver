@@ -22,7 +22,6 @@ import (
 	"github.com/goji/httpauth"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
-	_ "github.com/shurcooL/vfsgen"
 )
 
 type Configure struct {
@@ -224,7 +223,7 @@ func main() {
 		})
 	}
 
-	router.PathPrefix("/-/assets/").Handler(http.StripPrefix(gcfg.Prefix+"/-/assets/", http.FileServer(Assets)))
+	router.PathPrefix("/-/assets/").Handler(http.StripPrefix(gcfg.Prefix+"/-/", http.FileServer(Assets)))
 	router.HandleFunc("/-/sysinfo", func(w http.ResponseWriter, r *http.Request) {
 		data, _ := json.Marshal(map[string]interface{}{
 			"version": VERSION,

@@ -434,7 +434,7 @@ $(function () {
   loadFileList(location.pathname + location.search)
 
   // update version
-  $.getJSON(URL_PREFIX + "/-/sysinfo", function (res) {
+  $.getJSON("/-/sysinfo", function (res) {
     vm.version = res.version;
   })
 
