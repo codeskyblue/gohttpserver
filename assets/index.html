@@ -129,7 +129,7 @@
         <tbody>
           <tr v-for="f in computedFiles">
             <td>
-              <a v-on:click='clickFileOrDir(f, $event)' href="{{getEncodePath(f)}}">
+              <a v-on:click='clickFileOrDir(f, $event)' href="{{getEncodePath(f.name)}}">
                 <!-- ?raw=false -->
                 <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
               </a>
@@ -142,7 +142,7 @@
             <td class="hidden-xs">{{formatTime(f.mtime)}}</td>
             <td style="text-align: left">
               <template v-if="f.type == 'dir'">
-                <a class="btn btn-default btn-xs" href="{{getEncodePath(f)}}/?op=archive">
+                <a class="btn btn-default btn-xs" href="{{getEncodePath(f.name)}}/?op=archive">
                   <span class="hidden-xs">Archive</span> Zip
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>

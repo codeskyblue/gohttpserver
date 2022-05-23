@@ -36,7 +36,6 @@ function showErrorMessage(jqXHR) {
   console.error(errMsg)
 }
 
-
 var vm = new Vue({
   el: "#app",
   data: {
@@ -141,8 +140,8 @@ var vm = new Vue({
     });
   },
   methods: {
-    getEncodePath: function (f) {
-      return pathJoin([location.pathname, encodeURIComponent(f.name)]);
+    getEncodePath: function (filepath) {
+      return pathJoin([location.pathname].concat(filepath.split("/").map(v => encodeURIComponent(v))))
     },
     formatTime: function (timestamp) {
       var m = moment(timestamp);
@@ -191,7 +190,7 @@ var vm = new Vue({
     genDownloadURL: function (f) {
       var search = location.search;
       var sep = search == "" ? "?" : "&"
-      return location.origin + this.getEncodePath(f) + location.search + sep + "download=true";
+      return location.origin + this.getEncodePath(f.name) + location.search + sep + "download=true";
     },
     shouldHaveQrcode: function (name) {
       return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
@@ -237,7 +236,7 @@ var vm = new Vue({
       return "fa-file-text-o"
     },
     clickFileOrDir: function (f, e) {
-      var reqPath = pathJoin([location.pathname, encodeURIComponent(f.name)]);
+      var reqPath = this.getEncodePath(f.name)
       // TODO: fix here tomorrow
       if (f.type == "file") {
         window.location.href = reqPath;
@@ -253,7 +252,7 @@ var vm = new Vue({
     showInfo: function (f) {
       console.log(f);
       $.ajax({
-        url: pathJoin(["/", location.pathname, encodeURIComponent(f.name)]),
+        url: this.getEncodePath(f.name),
         data: {
           op: "info",
         },
@@ -280,7 +279,7 @@ var vm = new Vue({
         return
       }
       $.ajax({
-        url: pathJoin(["/", location.pathname, "/", encodeURIComponent(name)]),
+        url: this.getEncodePath(name),
         method: "POST",
         success: function (res) {
           console.log(res)
@@ -294,12 +293,12 @@ var vm = new Vue({
     deletePathConfirm: function (f, e) {
       e.preventDefault();
       if (!e.altKey) { // skip confirm when alt pressed
-        if (!window.confirm("Delete " + location.pathname + "/" + f.name + " ?")) {
+        if (!window.confirm("Delete " + f.name + " ?")) {
           return;
         }
       }
       $.ajax({
-        url: pathJoin([location.pathname, encodeURIComponent(f.name)]),
+        url: this.getEncodePath(f.name),
         method: 'DELETE',
         success: function (res) {
           loadFileList()
