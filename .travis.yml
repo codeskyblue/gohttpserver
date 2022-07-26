@@ -2,7 +2,7 @@ services:
   - docker
 language: go
 go:
-  - "1.16"
+  - "1.18"
 env:
   - GO111MODULE=on
 script:
