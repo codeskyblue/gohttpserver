@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -41,6 +42,8 @@ type Configure struct {
 	PlistProxy      string   `yaml:"plistproxy"`
 	Title           string   `yaml:"title"`
 	Debug           bool     `yaml:"debug"`
+	StrongTLS       bool     `yaml:"strongtls"`
+	TLS12           bool     `yaml:"tls1.2"`
 	GoogleTrackerID string   `yaml:"google-tracker-id"`
 	Auth            struct {
 		Type   string `yaml:"type"` // openid|http|github
@@ -99,6 +102,8 @@ func parseFlags() error {
 	gcfg.Auth.OpenID = defaultOpenID
 	gcfg.GoogleTrackerID = "UA-81205425-2"
 	gcfg.Title = "Go HTTP File Server"
+	gcfg.StrongTLS = false
+	gcfg.TLS12 = false
 
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
@@ -115,6 +120,8 @@ func parseFlags() error {
 	kingpin.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
 	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("delete", "enable delete support").BoolVar(&gcfg.Delete)
+	kingpin.Flag("strong-tls", "use strong TLS parameters (TLS1.3 only, strict cipher-suites) at the cost of portability").BoolVar(&gcfg.StrongTLS)
+	kingpin.Flag("tls1_2", "explicitly permit TLS1.2 when using strong-tls").BoolVar(&gcfg.TLS12)
 	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
 	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("debug", "enable debug mode").BoolVar(&gcfg.Debug)
@@ -243,9 +250,61 @@ func main() {
 	_, port, _ := net.SplitHostPort(gcfg.Addr)
 	log.Printf("listening on %s, local address http://%s:%s\n", strconv.Quote(gcfg.Addr), getLocalIP(), port)
 
-	srv := &http.Server{
-		Handler: mainRouter,
-		Addr:    gcfg.Addr,
+	// Customized TLS configuration (protocol version, cipher-suites)
+	var tls_cfg *tls.Config
+	var tls_min uint16
+	if gcfg.StrongTLS == true {
+		if gcfg.TLS12 == true {
+			tls_min = tls.VersionTLS12
+		} else {
+			tls_min = tls.VersionTLS13
+		}
+		// For security of cipher-suites as well as portability:
+		// 		https://wiki.mozilla.org/Security/Cipher_Suites
+		// 		https://github.com/ssllabs/research/wiki/SSL-and-TLS-Deployment-Best-Practices
+		// For testing:
+		//      https://www.ssllabs.com/ssltest/
+		tls_cfg = &tls.Config{
+			MinVersion:               tls_min,
+			CurvePreferences:         []tls.CurveID{tls.CurveP521, tls.CurveP384, tls.CurveP256},
+			// PreferServerCipherSuites is deprecated and the strongest will be negotiated
+			CipherSuites: []uint16{
+				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+				tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+				tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+				tls.TLS_AES_256_GCM_SHA384,
+				tls.TLS_CHACHA20_POLY1305_SHA256,
+				tls.TLS_AES_128_GCM_SHA256,
+			},
+		}
+	} else {
+		// Leave the default TLS cipher-suites, just govern the TLS protocol version
+		if gcfg.TLS12 == true {
+			tls_min = tls.VersionTLS12
+		} else {
+			tls_min = tls.VersionTLS11
+		}
+		tls_cfg = &tls.Config{
+			MinVersion:				tls_min,
+		}
+	}
+
+	var srv *http.Server
+	if gcfg.Key != "" && gcfg.Cert != "" {
+		srv = &http.Server{
+			Handler: mainRouter,
+			Addr:    gcfg.Addr,
+			TLSConfig:    tls_cfg,
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler), 0),
+		}
+	} else {
+		srv = &http.Server{
+			Handler: mainRouter,
+			Addr:    gcfg.Addr,
+		}
 	}
 
 	var err error
