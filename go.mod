@@ -19,7 +19,6 @@ require (
 	github.com/shogo82148/androidbinary v0.0.0-20180627093851-01c4bfa8b3b5
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.3.0
-	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
-	golang.org/x/text v0.3.3
+	golang.org/x/text v0.3.8
 	howett.net/plist v0.0.0-20201203080718-1454fab16a06 // indirect
 )
