@@ -1,0 +1,19 @@
+FROM golang:1.16.0-alpine as build
+
+WORKDIR /app
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+# Binary Compression
+RUN apk add upx --no-cache
+
+# Build app and pack using upx
+ADD . /app
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags '-s -w -X main.VERSION=docker' -o gohttpserver && upx gohttpserver
+
+FROM alpine:3
+WORKDIR /app
+ADD assets /usr/local/bin/assets
+COPY --from=build /app/gohttpserver /usr/local/bin/gohttpserver
+EXPOSE 8000
+ENTRYPOINT [ "/usr/local/bin/gohttpserver" ]
