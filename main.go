@@ -49,6 +49,7 @@ type Configure struct {
 		ID     string `yaml:"id"`     // for oauth2
 		Secret string `yaml:"secret"` // for oauth2
 	} `yaml:"auth"`
+	NoIndex bool `yaml:"no-index"`
 }
 
 type httpLogger struct{}
@@ -99,6 +100,7 @@ func parseFlags() error {
 	gcfg.Auth.OpenID = defaultOpenID
 	gcfg.GoogleTrackerID = "UA-81205425-2"
 	gcfg.Title = "Go HTTP File Server"
+	gcfg.NoIndex = false
 
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
@@ -121,6 +123,7 @@ func parseFlags() error {
 	kingpin.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
 	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
 	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerID)
+	kingpin.Flag("no-index", "disable indexing").BoolVar(&gcfg.NoIndex)
 
 	kingpin.Parse() // first parse conf
 
@@ -164,7 +167,7 @@ func main() {
 		log.Printf("url prefix: %s", gcfg.Prefix)
 	}
 
-	ss := NewHTTPStaticServer(gcfg.Root)
+	ss := NewHTTPStaticServer(gcfg.Root, gcfg.NoIndex)
 	ss.Prefix = gcfg.Prefix
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title
