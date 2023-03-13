@@ -48,7 +48,8 @@ type Configure struct {
 		ID     string `yaml:"id"`     // for oauth2
 		Secret string `yaml:"secret"` // for oauth2
 	} `yaml:"auth"`
-	DeepPathMaxDepth int `yaml:"deep-path-max-depth"`
+	DeepPathMaxDepth int  `yaml:"deep-path-max-depth"`
+	NoIndex          bool `yaml:"no-index"`
 }
 
 type httpLogger struct{}
@@ -100,6 +101,7 @@ func parseFlags() error {
 	gcfg.GoogleTrackerID = "UA-81205425-2"
 	gcfg.Title = "Go HTTP File Server"
 	gcfg.DeepPathMaxDepth = 5
+	gcfg.NoIndex = false
 
 	kingpin.HelpFlag.Short('h')
 	kingpin.Version(versionMessage())
@@ -122,6 +124,7 @@ func parseFlags() error {
 	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
 	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerID)
 	kingpin.Flag("deep-path-max-depth", "set to -1 to not combine dirs").IntVar(&gcfg.DeepPathMaxDepth)
+	kingpin.Flag("no-index", "disable indexing").BoolVar(&gcfg.NoIndex)
 
 	kingpin.Parse() // first parse conf
 
@@ -178,7 +181,7 @@ func main() {
 		log.Printf("url prefix: %s", gcfg.Prefix)
 	}
 
-	ss := NewHTTPStaticServer(gcfg.Root)
+	ss := NewHTTPStaticServer(gcfg.Root, gcfg.NoIndex)
 	ss.Prefix = gcfg.Prefix
 	ss.Theme = gcfg.Theme
 	ss.Title = gcfg.Title

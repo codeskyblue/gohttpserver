@@ -58,13 +58,14 @@ type HTTPStaticServer struct {
 	GoogleTrackerID  string
 	AuthType         string
 	DeepPathMaxDepth int
+	NoIndex          bool
 
 	indexes []IndexFileItem
 	m       *mux.Router
 	bufPool sync.Pool // use sync.Pool caching buf to reduce gc ratio
 }
 
-func NewHTTPStaticServer(root string) *HTTPStaticServer {
+func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	// if root == "" {
 	// 	root = "./"
 	// }
@@ -82,19 +83,22 @@ func NewHTTPStaticServer(root string) *HTTPStaticServer {
 		bufPool: sync.Pool{
 			New: func() interface{} { return make([]byte, 32*1024) },
 		},
+		NoIndex: noIndex,
 	}
 
-	go func() {
-		time.Sleep(1 * time.Second)
-		for {
-			startTime := time.Now()
-			log.Println("Started making search index")
-			s.makeIndex()
-			log.Printf("Completed search index in %v", time.Since(startTime))
-			//time.Sleep(time.Second * 1)
-			time.Sleep(time.Minute * 10)
-		}
-	}()
+	if !noIndex {
+		go func() {
+			time.Sleep(1 * time.Second)
+			for {
+				startTime := time.Now()
+				log.Println("Started making search index")
+				s.makeIndex()
+				log.Printf("Completed search index in %v", time.Since(startTime))
+				//time.Sleep(time.Second * 1)
+				time.Sleep(time.Minute * 10)
+			}
+		}()
+	}
 
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)

@@ -64,6 +64,8 @@
             </template>
             [[end]]
           </ul>
+
+          [[if not .NoIndex ]]
           <form class="navbar-form navbar-right">
             <div class="input-group">
               <input type="text" name="search" class="form-control" placeholder="Search text" v-bind:value="search"
@@ -75,6 +77,7 @@
               </span>
             </div>
           </form>
+          [[end]]
           <ul id="nav-right-bar" class="nav navbar-nav navbar-right">
           </ul>
         </div>
