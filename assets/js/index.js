@@ -390,8 +390,8 @@ function loadFileList(pathname) {
       cache: false,
       success: function (res) {
         res.files = _.sortBy(res.files, function (f) {
-          var weight = f.type == 'dir' ? 1000 : 1;
-          return -weight * f.mtime;
+          var weight = f.type == 'dir' ? 'A' : 'a'; // 排序依据 文件名前缀
+          return weight + f.name.toUpperCase(); // 依据文件名
         })
         vm.files = res.files;
         vm.auth = res.auth;
