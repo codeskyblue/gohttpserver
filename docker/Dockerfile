@@ -3,7 +3,7 @@ WORKDIR /app/gohttpserver
 ADD . /app/gohttpserver
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags '-X main.VERSION=docker' -o gohttpserver
 
-FROM debian:stretch
+FROM debian:stable
 WORKDIR /app
 RUN mkdir -p /app/public
 RUN apt-get update && apt-get install -y ca-certificates
