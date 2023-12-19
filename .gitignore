@@ -31,3 +31,4 @@ assets_vfsdata.go
 *.swp
 
 dist/
+.DS_Store

@@ -207,7 +207,7 @@ func main() {
 
 	// CORS
 	if gcfg.Cors {
-		hdlr = handlers.CORS()(hdlr)
+		hdlr = handlers.CORS(handlers.AllowedMethods([]string{"GET", "HEAD", "OPTIONS"}))(hdlr)
 	}
 	if gcfg.XHeaders {
 		hdlr = handlers.ProxyHeaders(hdlr)
