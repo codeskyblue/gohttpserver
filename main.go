@@ -48,7 +48,8 @@ type Configure struct {
 		ID     string `yaml:"id"`     // for oauth2
 		Secret string `yaml:"secret"` // for oauth2
 	} `yaml:"auth"`
-	NoIndex bool `yaml:"no-index"`
+	DeepPathMaxDepth int  `yaml:"deep-path-max-depth"`
+	NoIndex          bool `yaml:"no-index"`
 }
 
 type httpLogger struct{}
@@ -99,6 +100,7 @@ func parseFlags() error {
 	gcfg.Auth.OpenID = defaultOpenID
 	gcfg.GoogleTrackerID = "UA-81205425-2"
 	gcfg.Title = "Go HTTP File Server"
+	gcfg.DeepPathMaxDepth = 5
 	gcfg.NoIndex = false
 
 	kingpin.HelpFlag.Short('h')
@@ -121,6 +123,7 @@ func parseFlags() error {
 	kingpin.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
 	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
 	kingpin.Flag("google-tracker-id", "set to empty to disable it").StringVar(&gcfg.GoogleTrackerID)
+	kingpin.Flag("deep-path-max-depth", "set to -1 to not combine dirs").IntVar(&gcfg.DeepPathMaxDepth)
 	kingpin.Flag("no-index", "disable indexing").BoolVar(&gcfg.NoIndex)
 
 	kingpin.Parse() // first parse conf
@@ -186,6 +189,7 @@ func main() {
 	ss.Upload = gcfg.Upload
 	ss.Delete = gcfg.Delete
 	ss.AuthType = gcfg.Auth.Type
+	ss.DeepPathMaxDepth = gcfg.DeepPathMaxDepth
 
 	if gcfg.PlistProxy != "" {
 		u, err := url.Parse(gcfg.PlistProxy)

@@ -48,16 +48,17 @@ type Directory struct {
 }
 
 type HTTPStaticServer struct {
-	Root            string
-	Prefix          string
-	Upload          bool
-	Delete          bool
-	Title           string
-	Theme           string
-	PlistProxy      string
-	GoogleTrackerID string
-	AuthType        string
-	NoIndex         bool
+	Root             string
+	Prefix           string
+	Upload           bool
+	Delete           bool
+	Title            string
+	Theme            string
+	PlistProxy       string
+	GoogleTrackerID  string
+	AuthType         string
+	DeepPathMaxDepth int
+	NoIndex          bool
 
 	indexes []IndexFileItem
 	m       *mux.Router
@@ -575,6 +576,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 	auth := s.readAccessConf(realPath)
 	auth.Upload = auth.canUpload(r)
 	auth.Delete = auth.canDelete(r)
+	maxDepth := s.DeepPathMaxDepth
 
 	// path string -> info os.FileInfo
 	fileInfoMap := make(map[string]os.FileInfo, 0)
@@ -619,7 +621,7 @@ func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
 			lr.Name = filepath.ToSlash(name) // fix for windows
 		}
 		if info.IsDir() {
-			name := deepPath(realPath, info.Name())
+			name := deepPath(realPath, info.Name(), maxDepth)
 			lr.Name = name
 			lr.Path = filepath.Join(filepath.Dir(path), name)
 			lr.Type = "dir"
@@ -744,9 +746,8 @@ func (s *HTTPStaticServer) readAccessConf(realPath string) (ac AccessConf) {
 	return
 }
 
-func deepPath(basedir, name string) string {
+func deepPath(basedir, name string, maxDepth int) string {
 	// loop max 5, incase of for loop not finished
-	maxDepth := 5
 	for depth := 0; depth <= maxDepth; depth += 1 {
 		finfos, err := ioutil.ReadDir(filepath.Join(basedir, name))
 		if err != nil || len(finfos) != 1 {
