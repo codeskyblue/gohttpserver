@@ -33,7 +33,6 @@ type Configure struct {
 	HTTPAuth        string   `yaml:"httpauth"`
 	Cert            string   `yaml:"cert"`
 	Key             string   `yaml:"key"`
-	Cors            bool     `yaml:"cors"`
 	Theme           string   `yaml:"theme"`
 	XHeaders        bool     `yaml:"xheaders"`
 	Upload          bool     `yaml:"upload"`
@@ -116,7 +115,6 @@ func parseFlags() error {
 	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
 	kingpin.Flag("delete", "enable delete support").BoolVar(&gcfg.Delete)
 	kingpin.Flag("xheaders", "used when behide nginx").BoolVar(&gcfg.XHeaders)
-	kingpin.Flag("cors", "enable cross-site HTTP request").BoolVar(&gcfg.Cors)
 	kingpin.Flag("debug", "enable debug mode").BoolVar(&gcfg.Debug)
 	kingpin.Flag("plistproxy", "plist proxy when server is not https").Short('p').StringVar(&gcfg.PlistProxy)
 	kingpin.Flag("title", "server title").StringVar(&gcfg.Title)
@@ -146,6 +144,19 @@ func fixPrefix(prefix string) string {
 		prefix = ""
 	}
 	return prefix
+}
+
+func cors(next http.Handler) http.Handler {
+	// access control and CORS middleware
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		if r.Method == "OPTIONS" {
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func main() {
@@ -206,9 +217,8 @@ func main() {
 	}
 
 	// CORS
-	if gcfg.Cors {
-		hdlr = handlers.CORS(handlers.AllowedMethods([]string{"GET", "HEAD", "OPTIONS"}))(hdlr)
-	}
+	hdlr = cors(hdlr)
+
 	if gcfg.XHeaders {
 		hdlr = handlers.ProxyHeaders(hdlr)
 	}
