@@ -33,7 +33,7 @@ Tested with go-1.16
 1. [x] Apple ipa auto generate .plist file, qrcode can be recognized by iphone (Require https)
 1. [x] Plist proxy
 1. [ ] Download count statistics
-1. [x] CORS enabled (AllowMethods: GET, HEAD, OPTIONS)
+1. [x] CORS enabled
 1. [ ] Offline download
 1. [ ] Code file preview
 1. [ ] Edit file support
