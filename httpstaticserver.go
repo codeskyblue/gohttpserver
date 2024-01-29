@@ -2,9 +2,14 @@ package main
 
 import (
 	"bytes"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"hash"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -132,6 +137,12 @@ func (s *HTTPStaticServer) getRealPath(r *http.Request) string {
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	realPath := s.getRealPath(r)
+	query := r.URL.Query()
+	if query.Get("op") == "queryHash" {
+		s.hDiget(w, r)
+		return
+	}
+
 	if r.FormValue("json") == "true" {
 		s.hJSONList(w, r)
 		return
@@ -166,6 +177,51 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		}
 		http.ServeFile(w, r, realPath)
 	}
+}
+
+func (s *HTTPStaticServer) hDiget(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	hashType := r.URL.Query().Get("hashType")
+
+	realPath := s.getRealPath(r)
+
+	if filepath.Base(path) == YAMLCONF {
+		auth := s.readAccessConf(realPath)
+		fmt.Println(auth)
+		if !auth.Delete {
+			http.Error(w, "Security warning, not allowed to read", http.StatusForbidden)
+			return
+		}
+	}
+	w.Header().Set("Content-Type", "application/json;charset=utf-8") // for ajax
+
+	file, err := os.ReadFile(realPath)
+	if err != nil {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "No Such File",
+		})
+		return
+	}
+	hashTypeDic := map[string](func() hash.Hash){"sha256": sha256.New, "sha512": sha512.New, "md5": md5.New, "sha1": sha1.New}
+
+	var digest hash.Hash
+	digestHandler, ok := hashTypeDic[hashType]
+	if !ok {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"message": "Failed to Create Hash Text",
+		})
+		return
+	}
+	digest = digestHandler()
+	digest.Write(file)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":    true,
+		"type":       hashType,
+		"digestText": digest.Sum(nil),
+	})
+
 }
 
 func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
