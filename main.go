@@ -2,6 +2,8 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -42,11 +44,11 @@ type Configure struct {
 	Debug           bool     `yaml:"debug"`
 	GoogleTrackerID string   `yaml:"google-tracker-id"`
 	Auth            struct {
-		Type   string `yaml:"type"` // openid|http|github
-		OpenID string `yaml:"openid"`
-		HTTP   string `yaml:"http"`
-		ID     string `yaml:"id"`     // for oauth2
-		Secret string `yaml:"secret"` // for oauth2
+		Type   string   `yaml:"type"` // openid|http|github
+		OpenID string   `yaml:"openid"`
+		HTTP   []string `yaml:"http"`
+		ID     string   `yaml:"id"`     // for oauth2
+		Secret string   `yaml:"secret"` // for oauth2
 	} `yaml:"auth"`
 	DeepPathMaxDepth int  `yaml:"deep-path-max-depth"`
 	NoIndex          bool `yaml:"no-index"`
@@ -113,7 +115,7 @@ func parseFlags() error {
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
 	kingpin.Flag("auth-type", "Auth type <http|openid>").StringVar(&gcfg.Auth.Type)
-	kingpin.Flag("auth-http", "HTTP basic auth (ex: user:pass)").StringVar(&gcfg.Auth.HTTP)
+	kingpin.Flag("auth-http", "HTTP basic auth (ex: user:pass)").StringsVar(&gcfg.Auth.HTTP)
 	kingpin.Flag("auth-openid", "OpenID auth identity url").StringVar(&gcfg.Auth.OpenID)
 	kingpin.Flag("theme", "web theme, one of <black|green>").StringVar(&gcfg.Theme)
 	kingpin.Flag("upload", "enable upload support").BoolVar(&gcfg.Upload)
@@ -165,6 +167,28 @@ func cors(next http.Handler) http.Handler {
 	})
 }
 
+func multiBasicAuth(auths []string) func(http.Handler) http.Handler {
+	userPassMap := make(map[string]string)
+	for _, auth := range auths {
+		userpass := strings.SplitN(auth, ":", 2)
+		if len(userpass) == 2 {
+			userPassMap[userpass[0]] = userpass[1]
+		}
+	}
+	return httpauth.BasicAuth(httpauth.AuthOptions{
+		Realm: "Restricted",
+		AuthFunc: func(user, pass string, request *http.Request) bool {
+			password, ok := userPassMap[user]
+			if !ok {
+				return false
+			}
+			givenPass := sha256.Sum256([]byte(pass))
+			requiredPass := sha256.Sum256([]byte(password))
+			return subtle.ConstantTimeCompare(givenPass[:], requiredPass[:]) == 1
+		},
+	})
+}
+
 func main() {
 	if err := parseFlags(); err != nil {
 		log.Fatal(err)
@@ -208,13 +232,9 @@ func main() {
 	hdlr = accesslog.NewLoggingHandler(hdlr, logger)
 
 	// HTTP Basic Authentication
-	userpass := strings.SplitN(gcfg.Auth.HTTP, ":", 2)
 	switch gcfg.Auth.Type {
 	case "http":
-		if len(userpass) == 2 {
-			user, pass := userpass[0], userpass[1]
-			hdlr = httpauth.SimpleBasicAuth(user, pass)(hdlr)
-		}
+		hdlr = multiBasicAuth(gcfg.Auth.HTTP)(hdlr)
 	case "openid":
 		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
 		// case "github":
