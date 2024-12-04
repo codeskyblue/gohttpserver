@@ -1,3 +1,4 @@
+version: 2
 before:
   hooks:
     - go mod tidy
@@ -16,8 +17,16 @@ builds:
       - "386"
     goarm:
       - "6"
-brews:
-  - tap:
-      owner: codeskyblue
-      name: homebrew-tap
-    folder: Formula
+
+archives:
+  - format: tar.gz
+    # use zip for windows archives
+    format_overrides:
+      - goos: windows
+        format: zip
+
+# brews:
+#   - tap:
+#       owner: codeskyblue
+#       name: homebrew-tap
+#     folder: Formula
