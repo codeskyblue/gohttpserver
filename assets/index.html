@@ -161,6 +161,10 @@
                   <span class="hidden-xs">Download</span>
                   <span class="glyphicon glyphicon-download-alt"></span>
                 </a>
+                <a class="btn btn-default btn-xs hidden-xs" @click="openHashModal(f)">
+                  <span class="hidden-xs">Hash</span>
+                  <span class="glyphicon glyphicon-credit-card"></span>
+                </a>
                 <button class="btn btn-default btn-xs bstooltip" data-trigger="manual" data-title="Copied!"
                   data-clipboard-text="{{genDownloadURL(f)}}">
                   <i class="fa fa-copy"></i>
@@ -252,6 +256,47 @@
             </div>
             <div class="modal-body">
               <pre id="file-info-content"></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File hash modal -->
+      <div id="file-hash-modal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+              <h4 class="modal-title">
+                <span id="file-hash-title"></span>
+              </h4>
+            </div>
+            <div class="modal-body">
+              <pre id="file-hash-content">
+                <p
+                :style="{
+                  color: hashModal.err ? 'red' : undefined,
+                  whiteSpace: 'pre-wrap'
+                }"
+                >{{hashModal.content}}</p>
+                <div
+                :style="{
+                  display: 'flex',
+                  justifyContent: 'space-around',
+                }"
+                >
+                  <button 
+                  v-for="(k, val) in ['sha256','sha512','md5']"
+                  @click="genHash(val)"
+                  class="
+                  btn 
+                  btn-default
+                  "
+                  :key="val"
+                  >{{val}}</button>
+                </div>
+                
+              </pre>
             </div>
           </div>
         </div>
