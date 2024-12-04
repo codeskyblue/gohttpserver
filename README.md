@@ -91,7 +91,7 @@ Share current directory with http basic auth
 ```bash
 $ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
   codeskyblue/gohttpserver \
-  --auth-type http --auth-http username:password
+  --auth-type http --auth-http username1:password1 --auth-http username2:password2
 ```
 
 Share current directory with openid auth. (Works only in netease company.)
@@ -113,7 +113,7 @@ $ docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
 - Enable basic http authentication
 
   ```sh
-  $ gohttpserver --auth-type http --auth-http username:password
+  $ gohttpserver --auth-type http --auth-http username1:password1 --auth-http username2:password2
   ```
 
 - Use openid auth
