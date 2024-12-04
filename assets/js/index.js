@@ -239,7 +239,15 @@ var vm = new Vue({
       var reqPath = this.getEncodePath(f.name)
       // TODO: fix here tomorrow
       if (f.type == "file") {
-        window.location.href = reqPath;
+        // check whether the file is video
+        var videoExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
+        var fileExtension = getExtention(f.name).toLowerCase();
+        if (videoExtensions.includes(fileExtension)) {
+          window.location.href = '/-/video-player' + reqPath;
+        } else {
+          window.location.href = reqPath;
+        }
+        e.preventDefault()
         return;
       }
       loadFileOrDir(reqPath);

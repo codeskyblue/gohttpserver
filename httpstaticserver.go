@@ -103,6 +103,7 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	// routers for Apple *.ipa
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
+	m.HandleFunc("/-/video-player/{path:.*}", s.hVideoPlayer)
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
@@ -815,4 +816,29 @@ func checkFilename(name string) error {
 		return errors.New("Name should not contains \\/:*<>|")
 	}
 	return nil
+}
+
+func (s *HTTPStaticServer) hVideoPlayer(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	realPath := s.getRealPath(r)
+	extension := strings.ToLower(strings.TrimPrefix(filepath.Ext(path), "."))
+
+	if _, err := os.Stat(realPath); os.IsNotExist(err) {
+		http.Error(w, "File not found", http.StatusNotFound)
+		return
+	}
+
+	fileName := filepath.Base(path)
+
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
+	videoURL := fmt.Sprintf("%s://%s/%s", scheme, r.Host, path)
+
+	renderHTML(w, "assets/video-player.html", map[string]interface{}{
+		"FileName":  fileName,
+		"VideoURL":  videoURL,
+		"Extension": extension,
+	})
 }
