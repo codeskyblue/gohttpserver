@@ -22,6 +22,7 @@ import (
 	"regexp"
 
 	"github.com/go-yaml/yaml"
+	"github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
 )
@@ -101,17 +102,25 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	}
 
 	// routers for Apple *.ipa
-	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
-	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
-	m.HandleFunc("/-/video-player/{path:.*}", s.hVideoPlayer)
+	m.HandleFunc("/-/ipa/plist/{path:.*}", withContextClear(s.hPlist))
+	m.HandleFunc("/-/ipa/link/{path:.*}", withContextClear(s.hIpaLink))
+	m.HandleFunc("/-/video-player/{path:.*}", withContextClear(s.hVideoPlayer))
 
-	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
-	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
-	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
+	m.HandleFunc("/{path:.*}", withContextClear(s.hIndex)).Methods("GET", "HEAD")
+	m.HandleFunc("/{path:.*}", withContextClear(s.hUploadOrMkdir)).Methods("POST")
+	m.HandleFunc("/{path:.*}", withContextClear(s.hDelete)).Methods("DELETE")
 	return s
 }
 
+func withContextClear(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer context.Clear(r)
+		handler(w, r)
+	}
+}
+
 func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// address of "r" passed to handler func is changed
 	s.m.ServeHTTP(w, r)
 }
 

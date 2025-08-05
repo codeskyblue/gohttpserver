@@ -12,6 +12,7 @@ require (
 	github.com/fork2fix/go-plist v0.0.0-20181126021357-36960be5e636
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/goji/httpauth v0.0.0-20160601135302-2da839ab0f4d
+	github.com/gorilla/context v1.1.1
 	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.6.2
 	github.com/gorilla/sessions v1.1.3
