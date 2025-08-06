@@ -24,6 +24,7 @@ import (
 	"github.com/go-yaml/yaml"
 	"github.com/gorilla/mux"
 	"github.com/shogo82148/androidbinary/apk"
+	"golang.org/x/net/webdav"
 )
 
 const YAMLCONF = ".ghs.yml"
@@ -62,6 +63,7 @@ type HTTPStaticServer struct {
 
 	indexes []IndexFileItem
 	m       *mux.Router
+	Handler  *webdav.Handler
 	bufPool sync.Pool // use sync.Pool caching buf to reduce gc ratio
 }
 
@@ -75,11 +77,16 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 		root = root + "/"
 	}
 	log.Printf("root path: %s\n", root)
+	fs := &webdav.Handler{
+		FileSystem: webdav.Dir(root),
+		LockSystem: webdav.NewMemLS(),
+	}
 	m := mux.NewRouter()
 	s := &HTTPStaticServer{
 		Root:  root,
 		Theme: "black",
 		m:     m,
+		Handler:     fs,
 		bufPool: sync.Pool{
 			New: func() interface{} { return make([]byte, 32*1024) },
 		},
@@ -108,11 +115,29 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
 	m.HandleFunc("/{path:.*}", s.hDelete).Methods("DELETE")
+	m.HandleFunc("/{path:.*}", s.hWebdav).Methods("OPTIONS", "PROPFIND", "PUT", "LOCK", "UNLOCK","MKCOL", "MOVE", "PROPPATCH")
 	return s
 }
 
 func (s *HTTPStaticServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.m.ServeHTTP(w, r)
+}
+
+func (s *HTTPStaticServer) hWebdav(w http.ResponseWriter, r *http.Request) {
+	path := mux.Vars(r)["path"]
+	realPath := s.getRealPath(r)
+	auth := s.readAccessConf(realPath)
+
+	if filepath.Base(path) == YAMLCONF {
+		http.Error(w, "Security warning, not allowed to rw", http.StatusForbidden)
+		return
+	}
+	if !auth.canWebdavAccess(w, r) {
+		http.Error(w, "Not authorized", 401)
+		return
+	}
+
+	s.Handler.ServeHTTP(w, r)
 }
 
 // Return real path with Seperator(/)
@@ -133,6 +158,13 @@ func (s *HTTPStaticServer) getRealPath(r *http.Request) string {
 func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	realPath := s.getRealPath(r)
+	auth := s.readAccessConf(realPath)
+
+	if !auth.canWebdavAccess(w, r) {
+		http.Error(w, "Get forbidden", http.StatusForbidden)
+		return
+	}
+
 	if r.FormValue("json") == "true" {
 		s.hJSONList(w, r)
 		return
@@ -165,7 +197,8 @@ func (s *HTTPStaticServer) hIndex(w http.ResponseWriter, r *http.Request) {
 		if r.FormValue("download") == "true" {
 			w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(filepath.Base(path)))
 		}
-		http.ServeFile(w, r, realPath)
+		s.Handler.ServeHTTP(w, r)
+		//http.ServeFile(w, r, realPath)
 	}
 }
 
@@ -175,10 +208,13 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	// path = filepath.Clean(path) // for safe reason, prevent path contain ..
 	auth := s.readAccessConf(realPath)
 	if !auth.canDelete(req) {
-		http.Error(w, "Delete forbidden", http.StatusForbidden)
-		return
+		if !auth.canWebdavAccess(w, req) {
+			http.Error(w, "Delete forbidden", http.StatusForbidden)
+			return
+		}
 	}
-
+	s.Handler.ServeHTTP(w, req)
+	return
 	// TODO: path safe check
 	err := os.RemoveAll(realPath)
 	if err != nil {
@@ -501,6 +537,21 @@ type AccessConf struct {
 }
 
 var reCache = make(map[string]*regexp.Regexp)
+
+func (c *AccessConf) canWebdavAccess(w http.ResponseWriter, r *http.Request) bool {
+	if len(c.Users) == 0 {
+		return true
+	}
+	w.Header().Set("WWW-Authenticate", `Basic realm="Restricted"`)
+
+	username, password, _ := r.BasicAuth()
+	for _, rule := range c.Users {
+		if rule.Email == username && rule.Token == password {
+			return true
+		}
+	}
+	return false
+}
 
 func (c *AccessConf) canAccess(fileName string) bool {
 	for _, table := range c.AccessTables {
