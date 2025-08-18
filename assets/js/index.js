@@ -47,6 +47,12 @@ var vm = new Vue({
     breadcrumb: [],
     showHidden: false,
     previewMode: false,
+    hashModal: {
+      err: false,
+      title: 'Hash',
+      content: undefined,
+      filename: undefined,
+    },
     preview: {
       filename: '',
       filetype: '',
@@ -187,6 +193,28 @@ var vm = new Vue({
       $("#qrcodeRight a").attr("href", urlPath);
       $("#qrcode-modal").modal("show");
     },
+    openHashModal: function (f) {
+      console.log(this)
+      this.hashModal.filename = f?.name
+      this.hashModal.content = undefined
+      this.hashModal.err = false
+      $("#file-hash-modal").modal("show");
+    },
+    genHash: async function (hashType) {
+      try {
+        const url = new URL(this.getEncodePath(this.hashModal.filename)+`?op=queryHash&hashType=${hashType}`, location.origin)
+        const res = await $.ajax(url.toString())
+        if (!Boolean(res?.success)) {
+          throw Error(res.message)
+        }
+        this.hashModal.err = false
+        this.hashModal.content = `${res.type} : ${res.digestText}`
+      } catch (error) {
+        this.hashModal.err = true
+        this.hashModal.content = error?.message ?? 'Error, please try again.'
+      }
+
+    },
     genDownloadURL: function (f) {
       var search = location.search;
       var sep = search == "" ? "?" : "&"
@@ -282,7 +310,7 @@ var vm = new Vue({
       if (!name) {
         return
       }
-      if(!checkPathNameLegal(name)) {
+      if (!checkPathNameLegal(name)) {
         alert("Name should not contains any of \\/:*<>|")
         return
       }
@@ -344,23 +372,23 @@ var vm = new Vue({
       }
       var that = this;
       $.getJSON(pathJoin(['/-/info', location.pathname]))
-          .then(function (res) {
-            console.log(res);
-            that.preview.filename = res.name;
-            that.preview.filesize = res.size;
-            return $.ajax({
-              url: '/' + res.path,
-              dataType: 'text',
-            });
-          })
-          .then(function (res) {
-            console.log(res)
-            that.preview.contentHTML = '<pre>' + res + '</pre>';
-            console.log("Finally")
-          })
-          .done(function (res) {
-            console.log("done", res)
+        .then(function (res) {
+          console.log(res);
+          that.preview.filename = res.name;
+          that.preview.filesize = res.size;
+          return $.ajax({
+            url: '/' + res.path,
+            dataType: 'text',
           });
+        })
+        .then(function (res) {
+          console.log(res)
+          that.preview.contentHTML = '<pre>' + res + '</pre>';
+          console.log("Finally")
+        })
+        .done(function (res) {
+          console.log("done", res)
+        });
     },
     loadAll: function () {
       // TODO: move loadFileList here
@@ -451,10 +479,10 @@ $(function () {
     console.info('Text:', e.text);
     console.info('Trigger:', e.trigger);
     $(e.trigger)
-        .tooltip('show')
-        .mouseleave(function () {
-          $(this).tooltip('hide');
-        })
+      .tooltip('show')
+      .mouseleave(function () {
+        $(this).tooltip('hide');
+      })
 
     e.clearSelection();
   });
