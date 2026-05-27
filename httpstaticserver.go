@@ -106,6 +106,7 @@ func NewHTTPStaticServer(root string, noIndex bool) *HTTPStaticServer {
 	m.HandleFunc("/-/ipa/plist/{path:.*}", s.hPlist)
 	m.HandleFunc("/-/ipa/link/{path:.*}", s.hIpaLink)
 	m.HandleFunc("/-/video-player/{path:.*}", s.hVideoPlayer)
+	m.HandleFunc("/-/move", s.hMove).Methods("POST")
 
 	m.HandleFunc("/{path:.*}", s.hIndex).Methods("GET", "HEAD")
 	m.HandleFunc("/{path:.*}", s.hUploadOrMkdir).Methods("POST")
@@ -358,6 +359,77 @@ func (s *HTTPStaticServer) hInfo(w http.ResponseWriter, r *http.Request) {
 	data, _ := json.Marshal(fji)
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(data)
+}
+
+func (s *HTTPStaticServer) resolvePath(path string) string {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+	path = filepath.Clean(path)
+	relativePath, err := filepath.Rel(s.Prefix, path)
+	if err != nil {
+		relativePath = path
+	}
+	return filepath.Join(s.Root, relativePath)
+}
+
+func (s *HTTPStaticServer) hMove(w http.ResponseWriter, r *http.Request) {
+	src := r.FormValue("src")
+	dst := r.FormValue("dst")
+	overwrite := r.FormValue("overwrite") == "true"
+
+	if src == "" || dst == "" {
+		http.Error(w, "src and dst are required", http.StatusBadRequest)
+		return
+	}
+
+	realSrc := s.resolvePath(src)
+	realDst := s.resolvePath(dst)
+
+	// Check Delete permission for src
+	authSrc := s.readAccessConf(realSrc)
+	if !authSrc.canDelete(r) {
+		http.Error(w, "Delete forbidden for src", http.StatusForbidden)
+		return
+	}
+
+	// Check Upload permission for dst (parent directory)
+	authDst := s.readAccessConf(filepath.Dir(realDst))
+	if !authDst.canUpload(r) {
+		http.Error(w, "Upload forbidden for dst", http.StatusForbidden)
+		return
+	}
+
+	if _, err := os.Stat(realSrc); os.IsNotExist(err) {
+		http.Error(w, "Source does not exist", http.StatusNotFound)
+		return
+	}
+
+	if _, err := os.Stat(realDst); err == nil {
+		if !overwrite {
+			http.Error(w, "Destination exists", http.StatusConflict)
+			return
+		}
+	}
+
+	if err := os.MkdirAll(filepath.Dir(realDst), os.ModePerm); err != nil {
+		http.Error(w, "Failed to create destination directory: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := os.Rename(realSrc, realDst); err != nil {
+		http.Error(w, "Move failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !s.NoIndex {
+		go s.makeIndex()
+	}
+
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success": true,
+	})
 }
 
 func (s *HTTPStaticServer) hZip(w http.ResponseWriter, r *http.Request) {
