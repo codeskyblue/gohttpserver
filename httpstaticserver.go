@@ -247,34 +247,38 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 
 	dstPath := filepath.Join(dirpath, filename)
 
-	// Large file (>32MB) will store in tmp directory
-	// The quickest operation is call os.Move instead of os.Copy
-	// Note: it seems not working well, os.Rename might be failed
-
-	var copyErr error
-	// if osFile, ok := file.(*os.File); ok && fileExists(osFile.Name()) {
-	// 	tmpUploadPath := osFile.Name()
-	// 	osFile.Close() // Windows can not rename opened file
-	// 	log.Printf("Move %s -> %s", tmpUploadPath, dstPath)
-	// 	copyErr = os.Rename(tmpUploadPath, dstPath)
-	// } else {
-	dst, err := os.Create(dstPath)
+	// Write to a temporary file in the same directory first, then atomically
+	// rename it over the destination. Otherwise concurrent downloads can see
+	// an empty or partially written file while the upload is in progress.
+	tmp, err := os.CreateTemp(dirpath, ".upload-*.tmp")
 	if err != nil {
-		log.Println("Create file:", err)
+		log.Println("Create temp file:", err)
 		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	tmpPath := tmp.Name()
+	// os.CreateTemp uses 0600, keep uploads readable like os.Create did.
+	if err = tmp.Chmod(0644); err != nil {
+		log.Println("Chmod temp file:", err)
+	}
 
 	// Note: very large size file might cause poor performance
-	// _, copyErr = io.Copy(dst, file)
 	buf := s.bufPool.Get().([]byte)
 	defer s.bufPool.Put(buf)
-	_, copyErr = io.CopyBuffer(dst, file, buf)
-	dst.Close()
-	// }
+	_, copyErr := io.CopyBuffer(tmp, file, buf)
+	if copyErr == nil {
+		copyErr = tmp.Sync()
+	}
+	if closeErr := tmp.Close(); copyErr == nil && closeErr != nil {
+		copyErr = closeErr
+	}
+	if copyErr == nil {
+		copyErr = os.Rename(tmpPath, dstPath)
+	}
 	if copyErr != nil {
-		log.Println("Handle upload file:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		os.Remove(tmpPath)
+		log.Println("Handle upload file:", copyErr)
+		http.Error(w, copyErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
