@@ -117,6 +117,20 @@
                 <button class="btn btn-xs btn-default" v-show="auth.delete" @click="makeDirectory">
                   New Folder <i class="fa fa-folder"></i>
                 </button>
+                <div class="pull-right" v-if="totalPages > 1">
+                  <button class="btn btn-xs btn-default" v-on:click="goToPage(page - 1)"
+                    v-bind:disabled="page <= 1" title="Previous page">
+                    <i class="fa fa-chevron-left"></i>
+                  </button>
+                  <span class="pagination-info">Page {{page}} / {{totalPages}}</span>
+                  <button class="btn btn-xs btn-default" v-on:click="goToPage(page + 1)"
+                    v-bind:disabled="page >= totalPages" title="Next page">
+                    <i class="fa fa-chevron-right"></i>
+                  </button>
+                  <select class="form-control input-sm page-size-select" v-model="pageSize" title="Items per page">
+                    <option v-for="size in pageSizeOptions" v-bind:value="size">{{size}} / page</option>
+                  </select>
+                </div>
               </div>
             </td>
           </tr>
@@ -130,7 +144,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="f in computedFiles">
+          <tr v-for="f in pagedFiles">
             <td>
               <a v-on:click='clickFileOrDir(f, $event)' href="{{getEncodePath(f.name)}}">
                 <!-- ?raw=false -->
