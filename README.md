@@ -82,36 +82,6 @@ $ gohttpserver -r ./ --port 8000 --upload
 
 Use command `gohttpserver --help` to see more usage.
 
-## Docker Usage
-share current directory
-
-```bash
-$ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver codeskyblue/gohttpserver
-```
-
-Share current directory with http basic auth
-
-```bash
-$ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
-  codeskyblue/gohttpserver \
-  --auth-type http --auth-http username1:password1 --auth-http username2:password2
-```
-
-Share current directory with openid auth. (Works only in netease company.)
-
-```bash
-$ docker run -it --rm -p 8000:8000 -v $PWD:/app/public --name gohttpserver \
-  codeskyblue/gohttpserver \
-  --auth-type openid
-```
-
-To build image yourself, please change the PWD to the root of this repo.
-
-```bash
-$ cd gohttpserver/
-$ docker build -t codeskyblue/gohttpserver -f docker/Dockerfile .
-```
-
 ## Authentication options
 - Enable basic http authentication
 
