@@ -379,8 +379,14 @@ func (s *HTTPStaticServer) hUnzip(w http.ResponseWriter, r *http.Request) {
 }
 
 func combineURL(r *http.Request, path string) *url.URL {
+	// r.URL.Scheme is empty for incoming server requests, so the scheme must be
+	// derived from the TLS state of the connection instead.
+	scheme := "http"
+	if r.TLS != nil {
+		scheme = "https"
+	}
 	return &url.URL{
-		Scheme: r.URL.Scheme,
+		Scheme: scheme,
 		Host:   r.Host,
 		Path:   path,
 	}
@@ -421,16 +427,30 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	path := mux.Vars(r)["path"]
 	var plistUrl string
 
-	if r.URL.Scheme == "https" {
+	if r.TLS != nil {
 		plistUrl = combineURL(r, "/-/ipa/plist/"+path).String()
 	} else if s.PlistProxy != "" {
-		httpPlistLink := "http://" + r.Host + "/-/ipa/plist/" + path
-		url, err := s.genPlistLink(httpPlistLink)
+		// Generate the plist in-process. Building it via an HTTP request to
+		// ourselves would derive the request target from the caller-controlled
+		// Host header (SSRF, CWE-918).
+		plinfo, err := parseIPA(s.getRealPath(r))
 		if err != nil {
-			http.Error(w, err.Error(), 500)
+			log.Println("Generate plist:", err)
+			http.Error(w, "plist generation failed", http.StatusInternalServerError)
 			return
 		}
-		plistUrl = url
+		data, err := generateDownloadPlist(combineURL(r, path), path, plinfo)
+		if err != nil {
+			log.Println("Generate plist:", err)
+			http.Error(w, "plist generation failed", http.StatusInternalServerError)
+			return
+		}
+		plistUrl, err = s.genPlistLink(data)
+		if err != nil {
+			log.Println("Generate plist link:", err)
+			http.Error(w, "plist generation failed", http.StatusInternalServerError)
+			return
+		}
 	} else {
 		http.Error(w, "500: Server should be https:// or provide valid plistproxy", 500)
 		return
@@ -444,19 +464,12 @@ func (s *HTTPStaticServer) hIpaLink(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (s *HTTPStaticServer) genPlistLink(httpPlistLink string) (plistUrl string, err error) {
+func (s *HTTPStaticServer) genPlistLink(data []byte) (plistUrl string, err error) {
 	// Maybe need a proxy, a little slowly now.
 	pp := s.PlistProxy
 	if pp == "" {
 		pp = defaultPlistProxy
 	}
-	resp, err := http.Get(httpPlistLink)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	data, _ := ioutil.ReadAll(resp.Body)
 	retData, err := http.Post(pp, "text/xml", bytes.NewBuffer(data))
 	if err != nil {
 		return
