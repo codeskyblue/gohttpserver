@@ -78,7 +78,7 @@ func TestFileListPaginationWiring(t *testing.T) {
 	template := string(page)
 	for _, want := range []string{
 		`v-for="f in pagedFiles"`,
-		`v-if="totalPages > 1"`,
+		`class="list-pagination text-center" v-if="totalPages > 1"`,
 		`v-model="pageSize"`,
 		`goToPage(page - 1)`,
 		`goToPage(page + 1)`,
@@ -89,5 +89,11 @@ func TestFileListPaginationWiring(t *testing.T) {
 	}
 	if strings.Contains(template, `v-for="f in computedFiles"`) {
 		t.Fatal("file list must render the paginated slice, not the full filtered list")
+	}
+	// The pagination controls belong below the file list, not in the toolbar above it.
+	tableEnd := strings.Index(template, "</table>")
+	paginationAt := strings.Index(template, `list-pagination`)
+	if tableEnd == -1 || paginationAt == -1 || paginationAt < tableEnd {
+		t.Fatal("file list pagination must be rendered below the table")
 	}
 }

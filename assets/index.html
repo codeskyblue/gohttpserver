@@ -117,20 +117,6 @@
                 <button class="btn btn-xs btn-default" v-show="auth.delete" @click="makeDirectory">
                   New Folder <i class="fa fa-folder"></i>
                 </button>
-                <div class="pull-right" v-if="totalPages > 1">
-                  <button class="btn btn-xs btn-default" v-on:click="goToPage(page - 1)"
-                    v-bind:disabled="page <= 1" title="Previous page">
-                    <i class="fa fa-chevron-left"></i>
-                  </button>
-                  <span class="pagination-info">Page {{page}} / {{totalPages}}</span>
-                  <button class="btn btn-xs btn-default" v-on:click="goToPage(page + 1)"
-                    v-bind:disabled="page >= totalPages" title="Next page">
-                    <i class="fa fa-chevron-right"></i>
-                  </button>
-                  <select class="form-control input-sm page-size-select" v-model="pageSize" title="Items per page">
-                    <option v-for="size in pageSizeOptions" v-bind:value="size">{{size}} / page</option>
-                  </select>
-                </div>
               </div>
             </td>
           </tr>
@@ -197,6 +183,26 @@
           </tr>
         </tbody>
       </table>
+      <nav class="list-pagination text-center" v-if="totalPages > 1">
+        <ul class="pagination pagination-sm">
+          <li v-bind:class="page <= 1 ? 'disabled' : ''">
+            <a href="javascript:void(0)" v-on:click="goToPage(page - 1)" title="Previous page">
+              <i class="fa fa-chevron-left"></i>
+            </a>
+          </li>
+          <li class="disabled">
+            <span>Page {{page}} / {{totalPages}}</span>
+          </li>
+          <li v-bind:class="page >= totalPages ? 'disabled' : ''">
+            <a href="javascript:void(0)" v-on:click="goToPage(page + 1)" title="Next page">
+              <i class="fa fa-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+        <select class="form-control input-sm page-size-select" v-model="pageSize" title="Items per page">
+          <option v-for="size in pageSizeOptions" v-bind:value="size">{{size}} / page</option>
+        </select>
+      </nav>
     </div>
     <div class="col-md-12" id="preview" v-if="preview.filename">
       <div class="panel panel-default">
