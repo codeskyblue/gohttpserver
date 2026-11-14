@@ -32,3 +32,20 @@ div.dropzone {
 #qrcodeCanvas {
     padding-right: 20px;
 }
+
+.list-pagination {
+    margin: 0.5em 0 1em;
+}
+
+.list-pagination .pagination {
+    display: inline-block;
+    margin: 0;
+    vertical-align: middle;
+}
+
+.page-size-select {
+    display: inline-block;
+    width: auto;
+    margin-left: 0.5em;
+    vertical-align: middle;
+}

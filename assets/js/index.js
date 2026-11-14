@@ -57,6 +57,9 @@ var vm = new Vue({
     mtimeTypeFromNow: false, // or fromNow
     auth: {},
     search: getQueryString("search"),
+    page: 1,
+    pageSize: 100,
+    pageSizeOptions: [50, 100, 200],
     files: [{
       name: "loading ...",
       path: "",
@@ -113,6 +116,25 @@ var vm = new Vue({
 
       return files;
     },
+    totalPages: function () {
+      return Math.max(1, Math.ceil(this.computedFiles.length / this.pageSize));
+    },
+    pagedFiles: function () {
+      var start = (this.page - 1) * this.pageSize;
+      return this.computedFiles.slice(start, start + this.pageSize);
+    },
+  },
+  watch: {
+    // Keep the current page in range, e.g. after the last item of a page was deleted.
+    computedFiles: function () {
+      this.clampPage();
+    },
+    pageSize: function () {
+      this.page = 1;
+    },
+    showHidden: function () {
+      this.page = 1;
+    },
   },
   created: function () {
     $.ajax({
@@ -154,6 +176,17 @@ var vm = new Vue({
     },
     toggleHidden: function () {
       this.showHidden = !this.showHidden;
+    },
+    clampPage: function () {
+      var lastPage = this.totalPages;
+      if (this.page > lastPage) {
+        this.page = lastPage;
+      } else if (this.page < 1) {
+        this.page = 1;
+      }
+    },
+    goToPage: function (page) {
+      this.page = Math.min(Math.max(1, page), this.totalPages);
     },
     removeAllUploads: function () {
       this.myDropzone.removeAllFiles();
@@ -375,12 +408,12 @@ window.onpopstate = function (event) {
     location.reload();
     return;
   }
-  loadFileList()
+  loadFileList(null, true)
 }
 
 function loadFileOrDir(reqPath) {
   let requestUri = reqPath + location.search
-  var retObj = loadFileList(requestUri)
+  var retObj = loadFileList(requestUri, true)
   if (retObj !== null) {
     retObj.done(function () {
       window.history.pushState({}, "", requestUri);
@@ -389,7 +422,7 @@ function loadFileOrDir(reqPath) {
 
 }
 
-function loadFileList(pathname) {
+function loadFileList(pathname, resetPage) {
   var pathname = pathname || location.pathname + location.search;
   var retObj = null
   if (getQueryString("raw") !== "false") { // not a file preview
@@ -404,6 +437,9 @@ function loadFileList(pathname) {
           return -weight * f.mtime;
         })
         vm.files = res.files;
+        if (resetPage) {
+          vm.page = 1;
+        }
         vm.auth = res.auth;
         vm.updateBreadcrumb(pathname);
       },
@@ -440,7 +476,7 @@ $(function () {
   });
 
   // For page first loading
-  loadFileList(location.pathname + location.search)
+  loadFileList(location.pathname + location.search, true)
 
   // update version
   $.getJSON("/-/sysinfo", function (res) {

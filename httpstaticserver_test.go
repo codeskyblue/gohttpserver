@@ -58,6 +58,52 @@ func TestReadmePreviewTemplateEscapesContent(t *testing.T) {
 	}
 }
 
+func TestFileListPaginationWiring(t *testing.T) {
+	script, err := os.ReadFile("assets/js/index.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"page: 1",
+		"pageSize: 100",
+		"pageSizeOptions: [50, 100, 200]",
+		"totalPages: function",
+		"pagedFiles: function",
+		"goToPage: function",
+		"clampPage: function",
+	} {
+		if !strings.Contains(string(script), want) {
+			t.Fatalf("assets/js/index.js must contain %q for file list pagination", want)
+		}
+	}
+
+	page, err := os.ReadFile("assets/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	template := string(page)
+	for _, want := range []string{
+		`v-for="f in pagedFiles"`,
+		`class="list-pagination text-center" v-if="totalPages > 1"`,
+		`v-model="pageSize"`,
+		`goToPage(page - 1)`,
+		`goToPage(page + 1)`,
+	} {
+		if !strings.Contains(template, want) {
+			t.Fatalf("assets/index.html must contain %q for file list pagination", want)
+		}
+	}
+	if strings.Contains(template, `v-for="f in computedFiles"`) {
+		t.Fatal("file list must render the paginated slice, not the full filtered list")
+	}
+	// The pagination controls belong below the file list, not in the toolbar above it.
+	tableEnd := strings.Index(template, "</table>")
+	paginationAt := strings.Index(template, `list-pagination`)
+	if tableEnd == -1 || paginationAt == -1 || paginationAt < tableEnd {
+		t.Fatal("file list pagination must be rendered below the table")
+	}
+}
+
 func newUploadRequest(t *testing.T, url, filename string, content []byte) *http.Request {
 	t.Helper()
 
