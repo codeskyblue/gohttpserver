@@ -26,6 +26,7 @@ Tested with go-1.16
 1. [x] Breadcrumb path quick change
 1. [x] All assets package to Standalone binary
 1. [x] Different file type different icon
+1. [x] Image and video thumbnails in the directory listing
 1. [x] Support show or hide hidden files
 1. [x] Upload support (auth by token or session)
 1. [x] README.md preview
