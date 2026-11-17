@@ -58,6 +58,82 @@ func TestReadmePreviewTemplateEscapesContent(t *testing.T) {
 	}
 }
 
+// TestFileListMediaThumbnails guards the minimal thumbnail feature from issue
+// #133: images and videos get a thumbnail in the name cell, everything else
+// keeps its icon, and no thumbnail autoplays.
+func TestFileListMediaThumbnails(t *testing.T) {
+	script, err := os.ReadFile("assets/js/index.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	js := string(script)
+	for _, want := range []string{
+		"var imageExtensions =",
+		"var videoExtensions =",
+		"isImage: function",
+		"isVideo: function",
+		"genThumbURL: function",
+		"url + '#t=0.1'",
+	} {
+		if !strings.Contains(js, want) {
+			t.Fatalf("assets/js/index.js must contain %q for media thumbnails", want)
+		}
+	}
+	// The extension lists must live in one place: neither the icon switch nor
+	// the click handler may keep their own copy.
+	if strings.Contains(js, "var fileExtension") {
+		t.Fatal("clickFileOrDir must use isVideo instead of its own extension list")
+	}
+	if got := strings.Count(js, `"fa-file-picture-o"`); got != 1 {
+		t.Fatalf("image icon must be returned from one place, found %d occurrences", got)
+	}
+	if !strings.Contains(js, "if (this.isVideo(f)) {") {
+		t.Fatal("clickFileOrDir must route videos through isVideo")
+	}
+
+	page, err := os.ReadFile("assets/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	template := string(page)
+	for _, want := range []string{
+		`class="file-thumb"`,
+		`v-if="isImage(f)"`,
+		`v-if="isVideo(f)"`,
+		`v-bind:src="genThumbURL(f)"`,
+		`loading="lazy"`,
+		`preload="metadata"`,
+		`muted`,
+		`v-if="!isImage(f) && !isVideo(f)"`,
+	} {
+		if !strings.Contains(template, want) {
+			t.Fatalf("assets/index.html must contain %q for media thumbnails", want)
+		}
+	}
+	if got := strings.Count(template, `class="file-thumb"`); got != 2 {
+		t.Fatalf("index.html must render one image and one video thumbnail, found %d thumbnails", got)
+	}
+	if strings.Contains(template, "autoplay") {
+		t.Fatal("list thumbnails must not autoplay")
+	}
+
+	style, err := os.ReadFile("assets/css/style.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	css := string(style)
+	for _, want := range []string{
+		".file-thumb",
+		"object-fit: cover",
+		"width: 48px",
+		"width: 36px",
+	} {
+		if !strings.Contains(css, want) {
+			t.Fatalf("assets/css/style.css must contain %q for media thumbnails", want)
+		}
+	}
+}
+
 func TestFileListPaginationWiring(t *testing.T) {
 	script, err := os.ReadFile("assets/js/index.js")
 	if err != nil {

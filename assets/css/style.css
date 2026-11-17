@@ -49,3 +49,22 @@ div.dropzone {
     margin-left: 0.5em;
     vertical-align: middle;
 }
+
+/* Thumbnails stay a fixed square so a large photo or the first video frame
+   cannot stretch the row; the image is cropped instead of scaled down. */
+.file-thumb {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 0.5em;
+    vertical-align: middle;
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 767px) {
+    .file-thumb {
+        width: 36px;
+        height: 36px;
+    }
+}

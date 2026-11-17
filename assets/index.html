@@ -134,7 +134,10 @@
             <td>
               <a v-on:click='clickFileOrDir(f, $event)' href="{{getEncodePath(f.name)}}">
                 <!-- ?raw=false -->
-                <i style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
+                <!-- Thumbnails are decorative: the link text already names the file, so clicking the image reuses clickFileOrDir. -->
+                <img v-if="isImage(f)" class="file-thumb" v-bind:src="genThumbURL(f)" alt="" loading="lazy">
+                <video v-if="isVideo(f)" class="file-thumb" v-bind:src="genThumbURL(f)" preload="metadata" muted playsinline aria-hidden="true"></video>
+                <i v-if="!isImage(f) && !isVideo(f)" style="padding-right: 0.5em" class="fa" v-bind:class='genFileClass(f)'></i> {{f.name}}
               </a>
               <!-- for search -->
               <button v-show="f.type == 'file' && f.name.indexOf('/') >= 0" class="btn btn-default btn-xs" @click="changeParentDirectory(f.path)">

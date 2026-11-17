@@ -8,6 +8,15 @@ function getExtention(fname) {
   return fname.slice((fname.lastIndexOf(".") - 1 >>> 0) + 2);
 }
 
+// One list per media kind: the icon, the thumbnail and the click handler all
+// consult these, so adding an extension cannot make them disagree.
+var imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg', 'avif', 'tiff'];
+var videoExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
+
+function hasExtension(name, extensions) {
+  return extensions.indexOf(getExtention(name).toLowerCase()) !== -1;
+}
+
 function pathJoin(parts, sep) {
   var separator = sep || '/';
   var replace = new RegExp(separator + '{1,}', 'g');
@@ -230,6 +239,18 @@ var vm = new Vue({
     shouldHaveQrcode: function (name) {
       return ['apk', 'ipa'].indexOf(getExtention(name)) !== -1;
     },
+    isImage: function (f) {
+      return !!f && f.type == "file" && hasExtension(f.name, imageExtensions);
+    },
+    isVideo: function (f) {
+      return !!f && f.type == "file" && hasExtension(f.name, videoExtensions);
+    },
+    genThumbURL: function (f) {
+      var url = this.getEncodePath(f.name);
+      // Media fragments make the browser decode the frame at 0.1s, which gives
+      // video rows a poster without a server-side thumbnailer or ffmpeg.
+      return this.isVideo(f) ? url + '#t=0.1' : url;
+    },
     genFileClass: function (f) {
       if (f.type == "dir") {
         if (f.name == '.git') {
@@ -237,7 +258,10 @@ var vm = new Vue({
         }
         return "fa-folder-open";
       }
-      var ext = getExtention(f.name);
+      if (this.isImage(f)) {
+        return "fa-file-picture-o";
+      }
+      var ext = getExtention(f.name).toLowerCase();
       switch (ext) {
         case "go":
         case "py":
@@ -254,12 +278,6 @@ var vm = new Vue({
         case "mp3":
         case "wav":
           return "fa-file-audio-o";
-        case "jpg":
-        case "png":
-        case "gif":
-        case "jpeg":
-        case "tiff":
-          return "fa-file-picture-o";
         case "ipa":
         case "dmg":
           return "fa-apple";
@@ -274,10 +292,7 @@ var vm = new Vue({
       var reqPath = this.getEncodePath(f.name)
       // TODO: fix here tomorrow
       if (f.type == "file") {
-        // check whether the file is video
-        var videoExtensions = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
-        var fileExtension = getExtention(f.name).toLowerCase();
-        if (videoExtensions.includes(fileExtension)) {
+        if (this.isVideo(f)) {
           window.location.href = '/-/video-player' + reqPath;
         } else {
           window.location.href = reqPath;
