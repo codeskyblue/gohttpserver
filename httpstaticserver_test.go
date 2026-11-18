@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"fmt"
+	"io"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -358,5 +361,294 @@ func TestUploadFailureLeavesNoTempFile(t *testing.T) {
 	}
 	if data, err := os.ReadFile(filepath.Join(dstPath, "keep")); err != nil || string(data) != "keep" {
 		t.Fatalf("failed upload modified the destination: %v, %q", err, data)
+	}
+}
+
+// TestUploadLargeFileDoesNotBufferForm reproduces issue #200: uploading a large
+// file must not go through ParseMultipartForm, which keeps up to 32MB of the
+// body in memory per request. Allocations are measured on the heap
+// (TotalAlloc) rather than RSS, which never shrinks on its own.
+func TestUploadLargeFileDoesNotBufferForm(t *testing.T) {
+	root := t.TempDir()
+	server := NewHTTPStaticServer(root, true)
+	server.Upload = true
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+
+	const (
+		fileSize  = 40 << 20 // above the 32MB defaultMaxMemory budget
+		memBudget = 16 << 20
+		chunkSize = 64 << 10
+	)
+	chunk := bytes.Repeat([]byte("0123456789abcdef"), chunkSize/16)
+	sentHash := sha256.New()
+
+	pipeReader, pipeWriter := io.Pipe()
+	writer := multipart.NewWriter(pipeWriter)
+	writeErr := make(chan error, 1)
+	go func() {
+		part, err := writer.CreateFormFile("file", "large.bin")
+		if err != nil {
+			pipeWriter.CloseWithError(err)
+			writeErr <- err
+			return
+		}
+		for written := 0; written < fileSize; written += chunkSize {
+			if _, err := part.Write(chunk); err != nil {
+				pipeWriter.CloseWithError(err)
+				writeErr <- err
+				return
+			}
+			sentHash.Write(chunk)
+		}
+		if err := writer.Close(); err != nil {
+			pipeWriter.CloseWithError(err)
+			writeErr <- err
+			return
+		}
+		writeErr <- nil
+		pipeWriter.Close()
+	}()
+
+	req, err := http.NewRequest(http.MethodPost, ts.URL+"/", pipeReader)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{Timeout: 60 * time.Second}
+	var before, after runtime.MemStats
+	runtime.ReadMemStats(&before)
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, readErr := io.Copy(io.Discard, resp.Body)
+	resp.Body.Close()
+	runtime.ReadMemStats(&after)
+	if readErr != nil {
+		t.Fatal(readErr)
+	}
+	if err := <-writeErr; err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("upload status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+
+	if allocated := after.TotalAlloc - before.TotalAlloc; allocated > memBudget {
+		t.Fatalf("uploading %d bytes allocated %d bytes, want < %d (the form must be streamed, not buffered)",
+			fileSize, allocated, memBudget)
+	}
+
+	dstPath := filepath.Join(root, "large.bin")
+	info, err := os.Stat(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Size() != fileSize {
+		t.Fatalf("uploaded file size = %d, want %d", info.Size(), fileSize)
+	}
+	file, err := os.Open(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	gotHash := sha256.New()
+	if _, err := io.Copy(gotHash, file); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(gotHash.Sum(nil), sentHash.Sum(nil)) {
+		t.Fatal("uploaded file content does not match what was sent")
+	}
+	if leftovers := listUploadTempFiles(t, root); len(leftovers) != 0 {
+		t.Fatalf("upload left temporary files behind: %v", leftovers)
+	}
+}
+
+type uploadField struct {
+	name  string
+	value string
+}
+
+func newUploadRequestWithFields(t *testing.T, url, filename string, content []byte, before, after []uploadField) *http.Request {
+	t.Helper()
+
+	var body bytes.Buffer
+	writer := multipart.NewWriter(&body)
+	for _, field := range before {
+		if err := writer.WriteField(field.name, field.value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	part, err := writer.CreateFormFile("file", filename)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = part.Write(content); err != nil {
+		t.Fatal(err)
+	}
+	for _, field := range after {
+		if err := writer.WriteField(field.name, field.value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err = writer.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, &body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+	return req
+}
+
+// TestUploadFieldOrder covers #200's streaming handler: the file part is
+// written before the rest of the body is known, so filename/token fields must
+// work both before and after it, and a rejected upload must not leave anything
+// on disk.
+func TestUploadFieldOrder(t *testing.T) {
+	root := t.TempDir()
+	conf := "upload: false\nusers:\n" +
+		"  - email: user@example.com\n" +
+		"    upload: true\n" +
+		"    token: secret\n"
+	if err := os.WriteFile(filepath.Join(root, YAMLCONF), []byte(conf), 0644); err != nil {
+		t.Fatal(err)
+	}
+	server := NewHTTPStaticServer(root, true)
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	tests := []struct {
+		name    string
+		target  string
+		before  []uploadField
+		after   []uploadField
+		status  int
+		content string
+	}{
+		{
+			name:   "filename before token after",
+			target: "before.txt",
+			before: []uploadField{{"filename", "before.txt"}},
+			after:  []uploadField{{"token", "secret"}},
+			status: http.StatusOK,
+		},
+		{
+			name:   "token before filename after",
+			target: "after.txt",
+			before: []uploadField{{"token", "secret"}},
+			after:  []uploadField{{"filename", "after.txt"}},
+			status: http.StatusOK,
+		},
+		{
+			name:   "wrong token",
+			target: "forbidden.txt",
+			before: []uploadField{{"filename", "forbidden.txt"}},
+			after:  []uploadField{{"token", "wrong"}},
+			status: http.StatusForbidden,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := client.Do(newUploadRequestWithFields(t, ts.URL+"/", "ignored.txt", []byte(tc.name), tc.before, tc.after))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != tc.status {
+				t.Fatalf("upload status = %d, want %d", resp.StatusCode, tc.status)
+			}
+
+			dstPath := filepath.Join(root, tc.target)
+			if tc.status != http.StatusOK {
+				if _, err := os.Stat(dstPath); !os.IsNotExist(err) {
+					t.Fatalf("rejected upload created %s", dstPath)
+				}
+				if leftovers := listUploadTempFiles(t, root); len(leftovers) != 0 {
+					t.Fatalf("rejected upload left temporary files behind: %v", leftovers)
+				}
+				return
+			}
+			data, err := os.ReadFile(dstPath)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(data) != tc.name {
+				t.Fatalf("uploaded content = %q, want %q", data, tc.name)
+			}
+		})
+	}
+}
+
+// TestUploadMkdirWithoutBody keeps the "POST without a file only creates the
+// directory" contract that the dashboard's new-directory button relies on.
+func TestUploadMkdirWithoutBody(t *testing.T) {
+	root := t.TempDir()
+	server := NewHTTPStaticServer(root, true)
+	server.Upload = true
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Post(ts.URL+"/newdir", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("mkdir status = %d, want %d", resp.StatusCode, http.StatusOK)
+	}
+	if !isDir(filepath.Join(root, "newdir")) {
+		t.Fatal("mkdir request did not create the directory")
+	}
+
+	server.Upload = false
+	resp2, err := client.Post(ts.URL+"/denied", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp2.Body.Close()
+	if resp2.StatusCode != http.StatusForbidden {
+		t.Fatalf("mkdir without upload permission status = %d, want %d", resp2.StatusCode, http.StatusForbidden)
+	}
+	if _, err := os.Stat(filepath.Join(root, "denied")); !os.IsNotExist(err) {
+		t.Fatal("forbidden mkdir request created the directory")
+	}
+}
+
+// TestUploadForbiddenCleansUp guards the streaming handler's only downside: an
+// unauthorized upload is written to disk before its token is known, so nothing
+// it created may survive the 403.
+func TestUploadForbiddenCleansUp(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, YAMLCONF), []byte("upload: false\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	server := NewHTTPStaticServer(root, true)
+	ts := httptest.NewServer(server)
+	defer ts.Close()
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	req := newUploadRequestWithFields(t, ts.URL+"/newdir", "upload.txt", bytes.Repeat([]byte("x"), 1<<20),
+		nil, []uploadField{{"token", "wrong"}})
+	resp, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Fatalf("upload status = %d, want %d", resp.StatusCode, http.StatusForbidden)
+	}
+	if _, err := os.Stat(filepath.Join(root, "newdir")); !os.IsNotExist(err) {
+		t.Fatal("forbidden upload left the directory it created behind")
+	}
+	if leftovers := listUploadTempFiles(t, root); len(leftovers) != 0 {
+		t.Fatalf("forbidden upload left temporary files behind: %v", leftovers)
 	}
 }
