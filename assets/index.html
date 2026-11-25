@@ -111,6 +111,22 @@
                 <button class="btn btn-xs btn-default" v-on:click='toggleHidden()'>
                   Hidden <i class="fa" v-bind:class='showHidden ? "fa-eye" : "fa-eye-slash"'></i>
                 </button>
+                <!-- Sort controls: same state as the table headers, always visible
+                     (no hidden-xs) so the mtime column stays reachable on phones. -->
+                <div class="btn-group sort-group" role="group" aria-label="Sort files">
+                  <button type="button" class="btn btn-xs btn-default" v-bind:class="{active: sortKey == 'name'}"
+                    v-on:click="sortBy('name')" title="Sort by name">Name</button>
+                  <button type="button" class="btn btn-xs btn-default" v-bind:class="{active: sortKey == 'size'}"
+                    v-on:click="sortBy('size')" title="Sort by size">Size</button>
+                  <button type="button" class="btn btn-xs btn-default" v-bind:class="{active: sortKey == 'type'}"
+                    v-on:click="sortBy('type')" title="Sort by type">Type</button>
+                  <button type="button" class="btn btn-xs btn-default" v-bind:class="{active: sortKey == 'mtime'}"
+                    v-on:click="sortBy('mtime')" title="Sort by modified time">Time</button>
+                  <button type="button" class="btn btn-xs btn-default" v-on:click="toggleSortDir()"
+                    v-bind:title="sortDir == 'asc' ? 'Sort ascending' : 'Sort descending'">
+                    <i class="fa" v-bind:class="sortDir == 'asc' ? 'fa-sort-amount-asc' : 'fa-sort-amount-desc'"></i>
+                  </button>
+                </div>
                 <button class="btn btn-xs btn-default" v-show="auth.upload" data-toggle="modal" data-target="#upload-modal">
                   Upload <i class="fa fa-upload"></i>
                 </button>
@@ -121,10 +137,26 @@
             </td>
           </tr>
           <tr>
-            <th>Name</th>
-            <th>Size</th>
-            <th class="hidden-xs">
-              <span style="cursor: pointer" v-on:click='mtimeTypeFromNow = !mtimeTypeFromNow'>ModTime</span>
+            <th v-bind:aria-sort="ariaSort('name')">
+              <button type="button" class="th-sort" v-on:click="sortBy('name')">
+                Name <i class="fa" v-bind:class="sortIcon('name')"></i>
+              </button>
+            </th>
+            <th v-bind:aria-sort="ariaSort('size')">
+              <button type="button" class="th-sort" v-on:click="sortBy('size')">
+                Size <i class="fa" v-bind:class="sortIcon('size')"></i>
+              </button>
+            </th>
+            <th class="hidden-xs" v-bind:aria-sort="ariaSort('mtime')">
+              <button type="button" class="th-sort" v-on:click="sortBy('mtime')">
+                ModTime <i class="fa" v-bind:class="sortIcon('mtime')"></i>
+              </button>
+              <!-- Kept from the old header: toggles absolute vs relative display,
+                   now on its own control because the header text sorts. -->
+              <button type="button" class="th-sort th-sort-time" v-on:click="mtimeTypeFromNow = !mtimeTypeFromNow"
+                v-bind:title="mtimeTypeFromNow ? 'Show absolute time' : 'Show relative time'">
+                <i class="fa" v-bind:class="mtimeTypeFromNow ? 'fa-history' : 'fa-clock-o'"></i>
+              </button>
             </th>
             <th>Actions</th>
           </tr>
@@ -298,7 +330,6 @@
   <script src="[[.Prefix]]/-/assets/js/showdown-1.6.4.min.js"></script>
   <script src="[[.Prefix]]/-/assets/js/moment.min.js"></script>
   <script src="[[.Prefix]]/-/assets/js/dropzone.js"></script>
-  <script src="[[.Prefix]]/-/assets/js/underscore-min.js"></script>
   <script src="[[.Prefix]]/-/assets/js/clipboard-1.5.12.min.js"></script>
   <script src="[[.Prefix]]/-/assets/bootstrap-3.3.5/js/bootstrap.min.js"></script>
   <script src='[[.Prefix]]/-/assets/[["js/index.js" | urlhash ]]'></script>

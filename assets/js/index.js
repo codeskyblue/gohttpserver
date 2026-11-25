@@ -36,6 +36,42 @@ function checkPathNameLegal(name) {
   return r == null;
 }
 
+// Sorting state is shared by the table headers and the toolbar button group,
+// and persisted in localStorage so the chosen order survives a reload.
+var sortKeys = ['name', 'size', 'type', 'mtime'];
+var sortDefaults = { name: 'asc', size: 'desc', type: 'asc', mtime: 'desc' };
+var sortStorageKey = 'gohttpserver-sort';
+
+function loadSortPref() {
+  var pref = { key: 'mtime', dir: 'desc' };
+  try {
+    var stored = JSON.parse(window.localStorage.getItem(sortStorageKey));
+    if (stored && sortKeys.indexOf(stored.key) !== -1) {
+      pref.key = stored.key;
+    }
+    if (stored && (stored.dir == 'asc' || stored.dir == 'desc')) {
+      pref.dir = stored.dir;
+    }
+  } catch (e) {
+    // localStorage throws in private mode, or holds corrupted JSON: keep defaults.
+  }
+  return pref;
+}
+
+// localeCompare with numeric: true puts "2" before "10" and sensitivity: 'base'
+// ignores case; the raw-string tiebreak keeps the order deterministic because
+// the server sends the list out of a Go map, so every equal pair would
+// otherwise come back in a random order on each load.
+function compareNames(a, b) {
+  var r = a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+  if (r === 0 && a !== b) {
+    r = a < b ? -1 : 1;
+  }
+  return r;
+}
+
+var sortPref = loadSortPref();
+
 function showErrorMessage(jqXHR) {
   let errMsg = jqXHR.getResponseHeader("x-auth-authentication-message")
   if (errMsg == null) {
@@ -69,6 +105,8 @@ var vm = new Vue({
     page: 1,
     pageSize: 100,
     pageSizeOptions: [50, 100, 200],
+    sortKey: sortPref.key,
+    sortDir: sortPref.dir,
     files: [{
       name: "loading ...",
       path: "",
@@ -123,7 +161,7 @@ var vm = new Vue({
         })
       }
 
-      return files;
+      return this.sortFiles(files);
     },
     totalPages: function () {
       return Math.max(1, Math.ceil(this.computedFiles.length / this.pageSize));
@@ -143,6 +181,12 @@ var vm = new Vue({
     },
     showHidden: function () {
       this.page = 1;
+    },
+    sortKey: function () {
+      this.persistSort();
+    },
+    sortDir: function () {
+      this.persistSort();
     },
   },
   created: function () {
@@ -185,6 +229,76 @@ var vm = new Vue({
     },
     toggleHidden: function () {
       this.showHidden = !this.showHidden;
+    },
+    // Clicking the active column flips the direction; switching columns starts
+    // from the direction that reads naturally (A→Z for names, newest/biggest
+    // first for time and size). Headers and toolbar buttons share this.
+    sortBy: function (key) {
+      if (key == this.sortKey) {
+        this.toggleSortDir();
+        return;
+      }
+      this.sortKey = key;
+      this.sortDir = sortDefaults[key] || 'asc';
+    },
+    toggleSortDir: function () {
+      this.sortDir = this.sortDir == 'asc' ? 'desc' : 'asc';
+    },
+    sortIcon: function (key) {
+      if (key != this.sortKey) {
+        return 'fa-sort';
+      }
+      return this.sortDir == 'asc' ? 'fa-sort-asc' : 'fa-sort-desc';
+    },
+    ariaSort: function (key) {
+      if (key != this.sortKey) {
+        return 'none';
+      }
+      return this.sortDir == 'asc' ? 'ascending' : 'descending';
+    },
+    persistSort: function () {
+      try {
+        window.localStorage.setItem(sortStorageKey, JSON.stringify({
+          key: this.sortKey,
+          dir: this.sortDir,
+        }));
+      } catch (e) {
+        // Private mode: sorting works for this visit, it just is not remembered.
+      }
+    },
+    // Directories stay ahead of files, like the old mtime-weighted sort; the
+    // chosen key and direction only order the entries inside each group.
+    sortFiles: function (files) {
+      var that = this;
+      var dirs = [];
+      var others = [];
+      files.forEach(function (f) {
+        (f.type == 'dir' ? dirs : others).push(f);
+      });
+      var compare = function (a, b) {
+        return that.compareFiles(a, b);
+      };
+      dirs.sort(compare);
+      others.sort(compare);
+      return dirs.concat(others);
+    },
+    compareFiles: function (a, b) {
+      var result = 0;
+      if (this.sortKey == 'name') {
+        result = compareNames(a.name, b.name);
+      } else {
+        if (this.sortKey == 'type') {
+          result = compareNames(getExtention(a.name).toLowerCase(), getExtention(b.name).toLowerCase());
+        } else {
+          // size and mtime arrive as plain numbers in the listing JSON.
+          result = (Number(a[this.sortKey]) || 0) - (Number(b[this.sortKey]) || 0);
+        }
+        if (result === 0) {
+          // Equal values fall back to the name so the order stays stable.
+          result = compareNames(a.name, b.name);
+        }
+      }
+      return this.sortDir == 'asc' ? result : -result;
     },
     clampPage: function () {
       var lastPage = this.totalPages;
@@ -447,10 +561,8 @@ function loadFileList(pathname, resetPage) {
       dataType: "json",
       cache: false,
       success: function (res) {
-        res.files = _.sortBy(res.files, function (f) {
-          var weight = f.type == 'dir' ? 1000 : 1;
-          return -weight * f.mtime;
-        })
+        // No sorting here: computedFiles orders the list (directories first,
+        // then by sortKey/sortDir) so the order reacts to the sort controls.
         vm.files = res.files;
         if (resetPage) {
           vm.page = 1;
