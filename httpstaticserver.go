@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"mime"
+	"mime/multipart"
 	"net/http"
 	"net/url"
 	"os"
@@ -197,19 +198,47 @@ func (s *HTTPStaticServer) hDelete(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte("Success"))
 }
 
+// maxUploadFieldSize bounds a non-file multipart field. Filenames and tokens
+// are small; without a limit a single field could grow the heap instead of the
+// file body, which is the bug this handler avoids (issue #200).
+const maxUploadFieldSize = 4096
+
 func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Request) {
 	dirpath := s.getRealPath(req)
 
-	// check auth
 	auth := s.readAccessConf(dirpath)
-	if !auth.canUpload(req) {
-		http.Error(w, "Upload forbidden", http.StatusForbidden)
+	// The upload token may be a form field that follows the file part, so the
+	// final decision is made after the body has been streamed. Only the query
+	// string and the session count here: req.FormValue would run
+	// ParseMultipartForm and keep up to 32MB of every upload in memory, which
+	// is what made repeated 100MB uploads grow the heap.
+	allowed := auth.canUpload(req)
+
+	// Read the parts one by one and stream the file straight to disk instead
+	// of letting ParseMultipartForm buffer them.
+	reader, err := req.MultipartReader()
+	if err != nil {
+		// Not a multipart upload: only mkdir is possible, as before, and the
+		// token can still be a regular urlencoded form value.
+		if !allowed {
+			allowed = auth.canUploadWithToken(req, req.PostFormValue("token"))
+		}
+		if !allowed {
+			http.Error(w, "Upload forbidden", http.StatusForbidden)
+			return
+		}
+		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
+			log.Println("Create directory:", err)
+			http.Error(w, "Directory create "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeMkdirResponse(w, dirpath)
 		return
 	}
 
-	file, header, err := req.FormFile("file")
-
+	dirExisted := true
 	if _, err := os.Stat(dirpath); os.IsNotExist(err) {
+		dirExisted = false
 		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
 			log.Println("Create directory:", err)
 			http.Error(w, "Directory create "+err.Error(), http.StatusInternalServerError)
@@ -217,28 +246,120 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 		}
 	}
 
-	if file == nil { // only mkdir
-		w.Header().Set("Content-Type", "application/json;charset=utf-8")
-		json.NewEncoder(w).Encode(map[string]interface{}{
-			"success":     true,
-			"destination": dirpath,
-		})
-		return
-	}
-
-	if err != nil {
-		log.Println("Parse form file:", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	var (
+		tmpFile      *os.File
+		tmpPath      string
+		partFilename string
+		filename     string
+		token        string
+		unzip        bool
+		parseErr     error
+		copyErr      error
+	)
+	renamed := false
 	defer func() {
-		file.Close()
-		req.MultipartForm.RemoveAll() // Seen from go source code, req.MultipartForm not nil after call FormFile(..)
+		if tmpFile != nil {
+			tmpFile.Close()
+		}
+		// A failed or rejected upload must not leave .upload-*.tmp behind.
+		if tmpPath != "" && !renamed {
+			os.Remove(tmpPath)
+		}
 	}()
 
-	filename := req.FormValue("filename")
+	buf := s.bufPool.Get().([]byte)
+	defer s.bufPool.Put(buf)
+
+	for {
+		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			parseErr = err
+			break
+		}
+
+		if part.FormName() == "file" && part.FileName() != "" {
+			if tmpFile != nil { // FormFile only ever used the first file part
+				continue
+			}
+			partFilename = part.FileName()
+			// Write to a temporary file in the destination directory first and
+			// rename it at the end, so concurrent downloads never see a
+			// partially written file (see #245).
+			tmpFile, err = os.CreateTemp(dirpath, ".upload-*.tmp")
+			if err != nil {
+				log.Println("Create temp file:", err)
+				http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+			tmpPath = tmpFile.Name()
+			// os.CreateTemp uses 0600, keep uploads readable like os.Create did.
+			if err = tmpFile.Chmod(0644); err != nil {
+				log.Println("Chmod temp file:", err)
+			}
+			_, copyErr = io.CopyBuffer(tmpFile, part, buf)
+			if copyErr == nil {
+				copyErr = tmpFile.Sync()
+			}
+			if closeErr := tmpFile.Close(); copyErr == nil && closeErr != nil {
+				copyErr = closeErr
+			}
+			tmpFile = nil // closed
+			continue
+		}
+
+		switch part.FormName() {
+		case "filename":
+			if filename == "" { // like FormValue, the first value wins
+				filename = readUploadField(part)
+			}
+		case "token":
+			if token == "" {
+				token = readUploadField(part)
+			}
+		case "unzip":
+			unzip = readUploadField(part) == "true"
+		}
+	}
+
+	if !allowed && token != "" {
+		allowed = auth.canUploadWithToken(req, token)
+	}
+	if !allowed {
+		// Untrusted tokens are only known after the body has been read, so an
+		// unauthorized upload may already have created a directory and a
+		// temporary file. Remove them again.
+		if tmpPath != "" {
+			os.Remove(tmpPath)
+			tmpPath = ""
+		}
+		if !dirExisted {
+			os.Remove(dirpath) // only succeeds while the directory is empty
+		}
+		http.Error(w, "Upload forbidden", http.StatusForbidden)
+		return
+	}
+
+	if parseErr != nil {
+		log.Println("Parse form file:", parseErr)
+		http.Error(w, parseErr.Error(), http.StatusInternalServerError)
+		return
+	}
+	if copyErr != nil {
+		log.Println("Handle upload file:", copyErr)
+		http.Error(w, copyErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if tmpPath == "" { // only mkdir
+		writeMkdirResponse(w, dirpath)
+		return
+	}
+
 	if filename == "" {
-		filename = header.Filename
+		filename = partFilename
 	}
 	if err := checkFilename(filename); err != nil {
 		http.Error(w, err.Error(), http.StatusForbidden)
@@ -246,46 +367,17 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 	}
 
 	dstPath := filepath.Join(dirpath, filename)
-
-	// Write to a temporary file in the same directory first, then atomically
-	// rename it over the destination. Otherwise concurrent downloads can see
-	// an empty or partially written file while the upload is in progress.
-	tmp, err := os.CreateTemp(dirpath, ".upload-*.tmp")
-	if err != nil {
-		log.Println("Create temp file:", err)
-		http.Error(w, "File create "+err.Error(), http.StatusInternalServerError)
+	if err := os.Rename(tmpPath, dstPath); err != nil {
+		log.Println("Handle upload file:", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpPath := tmp.Name()
-	// os.CreateTemp uses 0600, keep uploads readable like os.Create did.
-	if err = tmp.Chmod(0644); err != nil {
-		log.Println("Chmod temp file:", err)
-	}
-
-	// Note: very large size file might cause poor performance
-	buf := s.bufPool.Get().([]byte)
-	defer s.bufPool.Put(buf)
-	_, copyErr := io.CopyBuffer(tmp, file, buf)
-	if copyErr == nil {
-		copyErr = tmp.Sync()
-	}
-	if closeErr := tmp.Close(); copyErr == nil && closeErr != nil {
-		copyErr = closeErr
-	}
-	if copyErr == nil {
-		copyErr = os.Rename(tmpPath, dstPath)
-	}
-	if copyErr != nil {
-		os.Remove(tmpPath)
-		log.Println("Handle upload file:", copyErr)
-		http.Error(w, copyErr.Error(), http.StatusInternalServerError)
-		return
-	}
+	renamed = true
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 
-	if req.FormValue("unzip") == "true" {
-		err = unzipFile(dstPath, dirpath)
+	if unzip {
+		err := unzipFile(dstPath, dirpath)
 		os.Remove(dstPath)
 		message := "success"
 		if err != nil {
@@ -301,6 +393,23 @@ func (s *HTTPStaticServer) hUploadOrMkdir(w http.ResponseWriter, req *http.Reque
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":     true,
 		"destination": dstPath,
+	})
+}
+
+// readUploadField reads a small non-file multipart field.
+func readUploadField(part *multipart.Part) string {
+	data, err := io.ReadAll(io.LimitReader(part, maxUploadFieldSize))
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func writeMkdirResponse(w http.ResponseWriter, dirpath string) {
+	w.Header().Set("Content-Type", "application/json;charset=utf-8")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":     true,
+		"destination": dirpath,
 	})
 }
 
@@ -568,8 +677,15 @@ func (c *AccessConf) canUploadByToken(token string) bool {
 	return c.Upload
 }
 
-func (c *AccessConf) canUpload(r *http.Request) bool {
-	token := r.FormValue("token")
+// canUploadWithToken reports whether the request is allowed to upload. The
+// token is taken from the query string or from formToken, which the multipart
+// upload handler fills in from the body: calling r.FormValue there would
+// buffer the whole upload in memory again (issue #200).
+func (c *AccessConf) canUploadWithToken(r *http.Request, formToken string) bool {
+	token := r.URL.Query().Get("token")
+	if token == "" {
+		token = formToken
+	}
 	if token != "" {
 		return c.canUploadByToken(token)
 	}
@@ -589,6 +705,10 @@ func (c *AccessConf) canUpload(r *http.Request) bool {
 		}
 	}
 	return c.Upload
+}
+
+func (c *AccessConf) canUpload(r *http.Request) bool {
+	return c.canUploadWithToken(r, "")
 }
 
 func (s *HTTPStaticServer) hJSONList(w http.ResponseWriter, r *http.Request) {
