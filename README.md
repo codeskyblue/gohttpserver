@@ -48,7 +48,7 @@ Tested with go-1.16
 1. [x] \.ghs.yml support (like \.htaccess)
 1. [ ] Calculate md5sum and sha
 1. [ ] Folder upload
-1. [ ] Support sort by size or modified time
+1. [x] Support sort by size or modified time
 1. [x] Add version info into index page
 1. [ ] Add api `/-/info/some.(apk|ipa)` to get detail info
 1. [x] Add api `/-/apk/info/some.apk` to get android package info
@@ -302,7 +302,6 @@ Theme are defined in [assets/themes](assets/themes) directory. Now only two them
 * Upload support <http://www.dropzonejs.com/>
 * ScrollUp <https://markgoodyear.com/2013/01/scrollup-jquery-plugin/>
 * Clipboard <https://clipboardjs.com/>
-* Underscore <http://underscorejs.org/>
 
 **Go Libraries**
 

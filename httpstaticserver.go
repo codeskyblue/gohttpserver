@@ -29,7 +29,12 @@ import (
 
 const YAMLCONF = ".ghs.yml"
 
-const contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'"
+// Vue 1.0 compiles every template expression with new Function, so the
+// dashboard needs 'unsafe-eval'; without it Vue silently swaps in noop getters
+// and the whole listing (v-if/v-for and all bindings) stops rendering. The
+// remaining directives still stop uploaded pages from loading remote scripts
+// or framing us, which is what this policy defends against.
+const contentSecurityPolicy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'"
 
 type ApkInfo struct {
 	PackageName  string `json:"packageName"`
