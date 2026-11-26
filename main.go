@@ -234,6 +234,11 @@ func main() {
 	// HTTP Basic Authentication
 	switch gcfg.Auth.Type {
 	case "http":
+		if gcfg.Cert == "" || gcfg.Key == "" {
+			log.Printf("WARNING: http basic auth is enabled without TLS (--cert/--key). " +
+				"Credentials will be sent as easily-decoded base64 text over plain HTTP. " +
+				"Use --cert/--key or terminate TLS in front of this server.")
+		}
 		hdlr = multiBasicAuth(gcfg.Auth.HTTP)(hdlr)
 	case "openid":
 		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
