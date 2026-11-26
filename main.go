@@ -27,23 +27,24 @@ import (
 )
 
 type Configure struct {
-	Conf            *os.File `yaml:"-"`
-	Addr            string   `yaml:"addr"`
-	Port            int      `yaml:"port"`
-	Root            string   `yaml:"root"`
-	Prefix          string   `yaml:"prefix"`
-	HTTPAuth        string   `yaml:"httpauth"`
-	Cert            string   `yaml:"cert"`
-	Key             string   `yaml:"key"`
-	Theme           string   `yaml:"theme"`
-	XHeaders        bool     `yaml:"xheaders"`
-	Upload          bool     `yaml:"upload"`
-	Delete          bool     `yaml:"delete"`
-	PlistProxy      string   `yaml:"plistproxy"`
-	Title           string   `yaml:"title"`
-	Debug           bool     `yaml:"debug"`
-	GoogleTrackerID string   `yaml:"google-tracker-id"`
-	Auth            struct {
+	Conf               *os.File `yaml:"-"`
+	Addr               string   `yaml:"addr"`
+	Port               int      `yaml:"port"`
+	Root               string   `yaml:"root"`
+	Prefix             string   `yaml:"prefix"`
+	HTTPAuth           string   `yaml:"httpauth"`
+	Cert               string   `yaml:"cert"`
+	Key                string   `yaml:"key"`
+	AllowPlaintextAuth bool     `yaml:"allow-plaintext-auth"`
+	Theme              string   `yaml:"theme"`
+	XHeaders           bool     `yaml:"xheaders"`
+	Upload             bool     `yaml:"upload"`
+	Delete             bool     `yaml:"delete"`
+	PlistProxy         string   `yaml:"plistproxy"`
+	Title              string   `yaml:"title"`
+	Debug              bool     `yaml:"debug"`
+	GoogleTrackerID    string   `yaml:"google-tracker-id"`
+	Auth               struct {
 		Type   string   `yaml:"type"` // openid|http|github
 		OpenID string   `yaml:"openid"`
 		HTTP   []string `yaml:"http"`
@@ -114,6 +115,7 @@ func parseFlags() error {
 	kingpin.Flag("addr", "listen address, eg 127.0.0.1:8000").Short('a').StringVar(&gcfg.Addr)
 	kingpin.Flag("cert", "tls cert.pem path").StringVar(&gcfg.Cert)
 	kingpin.Flag("key", "tls key.pem path").StringVar(&gcfg.Key)
+	kingpin.Flag("allow-plaintext-auth", "allow HTTP basic auth credentials to be sent over plaintext HTTP (insecure, disables TLS enforcement)").BoolVar(&gcfg.AllowPlaintextAuth)
 	kingpin.Flag("auth-type", "Auth type <http|openid>").StringVar(&gcfg.Auth.Type)
 	kingpin.Flag("auth-http", "HTTP basic auth (ex: user:pass)").StringsVar(&gcfg.Auth.HTTP)
 	kingpin.Flag("auth-openid", "OpenID auth identity url").StringVar(&gcfg.Auth.OpenID)
@@ -189,6 +191,41 @@ func multiBasicAuth(auths []string) func(http.Handler) http.Handler {
 	})
 }
 
+// isLoopbackAddr reports whether addr (host:port, or just a host/port) only
+// binds to the local loopback interface, i.e. it is not reachable from the
+// network and so plaintext Basic Auth credentials cannot be sniffed remotely.
+func isLoopbackAddr(addr string) bool {
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		host = addr
+	}
+	if host == "" {
+		return false
+	}
+	if host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
+}
+
+// requireTLSOrProxy wraps next so that requests which did not arrive over
+// TLS, and were not forwarded by an upstream proxy that terminated TLS
+// (signalled via X-Forwarded-Proto: https), are rejected before reaching the
+// wrapped handler. This prevents Basic Auth credentials from ever being
+// accepted over a plaintext connection (CWE-287/CWE-319).
+func requireTLSOrProxy(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.TLS != nil || strings.EqualFold(r.Header.Get("X-Forwarded-Proto"), "https") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		http.Error(w, "403 Forbidden: HTTP Basic Auth requires TLS. Connect via HTTPS, terminate TLS upstream "+
+			"(forwarding X-Forwarded-Proto: https), or start the server with --allow-plaintext-auth to override.",
+			http.StatusForbidden)
+	})
+}
+
 func main() {
 	if err := parseFlags(); err != nil {
 		log.Fatal(err)
@@ -198,6 +235,13 @@ func main() {
 		fmt.Printf("--- config ---\n%s\n", string(data))
 	}
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
+	// --cert/--key only make sense together; a single flag silently falls
+	// back to plaintext ListenAndServe below, which is surprising and
+	// dangerous when auth is enabled, so fail fast instead.
+	if (gcfg.Cert == "") != (gcfg.Key == "") {
+		log.Fatal("TLS requires both --cert and --key to be set; only one was provided")
+	}
 
 	// make sure prefix matches: ^/.*[^/]$
 	gcfg.Prefix = fixPrefix(gcfg.Prefix)
@@ -234,12 +278,29 @@ func main() {
 	// HTTP Basic Authentication
 	switch gcfg.Auth.Type {
 	case "http":
-		if gcfg.Cert == "" || gcfg.Key == "" {
-			log.Printf("WARNING: http basic auth is enabled without TLS (--cert/--key). " +
-				"Credentials will be sent as easily-decoded base64 text over plain HTTP. " +
-				"Use --cert/--key or terminate TLS in front of this server.")
-		}
 		hdlr = multiBasicAuth(gcfg.Auth.HTTP)(hdlr)
+		if gcfg.Cert == "" || gcfg.Key == "" {
+			switch {
+			case gcfg.AllowPlaintextAuth:
+				log.Printf("WARNING: http basic auth is enabled without local TLS (--cert/--key) and " +
+					"--allow-plaintext-auth is set. Credentials will be sent as easily-decoded base64 text " +
+					"over plain HTTP; this is insecure unless TLS is otherwise guaranteed.")
+			case isLoopbackAddr(gcfg.Addr):
+				log.Printf("INFO: http basic auth without local TLS on loopback-only address %s; "+
+					"assuming no untrusted network can reach this listener.", strconv.Quote(gcfg.Addr))
+			case gcfg.XHeaders:
+				log.Printf("INFO: http basic auth without local TLS; assuming TLS is terminated by an " +
+					"upstream proxy (--xheaders is set). Requests without an X-Forwarded-Proto: https " +
+					"header will be rejected with 403.")
+				hdlr = requireTLSOrProxy(hdlr)
+			default:
+				log.Printf("WARNING: http basic auth is enabled without TLS (--cert/--key), the listen " +
+					"address is not loopback-only, and --xheaders is not set. Requests not arriving over " +
+					"TLS will be rejected with 403. Use --cert/--key, terminate TLS in front of this server " +
+					"with --xheaders, or pass --allow-plaintext-auth to send credentials in plaintext anyway.")
+				hdlr = requireTLSOrProxy(hdlr)
+			}
+		}
 	case "openid":
 		handleOpenID(gcfg.Auth.OpenID, false) // FIXME(ssx): set secure default to false
 		// case "github":
